@@ -17,6 +17,7 @@
 | MCP 服务 | `npx -y @modelcontextprotocol/server-github`（stdio，`github-mcp-server 0.6.2`，暴露 **26 个工具**） |
 | 本机 git | `git version 2.25.1`（**可用**，注意：AGENTS.md 里"git 命令不可用"的说法已过时） |
 | 工作区体积 | 244 MB（其中 `SV630N系列伺服用户手册-CN-D00.PDF` 单文件 **133.9 MB**，超过 GitHub 100MB 硬限制） |
+| 首次提交结果 | commit `92958ac5`，**373 个文件**，最大 20.9MB（`xCore控制系统使用手册V2.2_A.pdf`）；`943b31c..92958ac` `main -> main` 推送成功；MCP `list_commits` + `get_file_contents` 校验通过（远端根目录 37 个条目） |
 
 ---
 
@@ -97,8 +98,12 @@ git init
 git remote add origin "https://x-access-token:${TOKEN}@github.com/lizhi90/TuFu.git"
 GIT_TERMINAL_PROMPT=0 git fetch origin
 
-# ③ 基于远端 main 建本地分支（保留仓库里已有的 README.md）
-git checkout -b main origin/main
+# ③ 让本地 main 指向远端已有提交，但【不要 checkout】
+#    ⚠ 实测坑：`git checkout -b main origin/main` 会因工作区已有同名未跟踪文件而中止：
+#      error: The following untracked working tree files would be overwritten by checkout: README.md
+#    正确做法：只移动分支指针，不动工作区
+git symbolic-ref HEAD refs/heads/main       # HEAD 指向 main（此前是未出生的 master）
+git update-ref refs/heads/main origin/main  # main = 远端提交；工作区文件原样保留
 
 # ④ 提交（用 -c 传身份，避免改动任何 git config）
 git add -A
@@ -163,6 +168,9 @@ git checkout -- <file>         # 丢弃工作区改动（危险：不可恢复�
 6. 首次提交前 `git init` 会在工作区生成 `.git/`；本项目此前"非 git 仓库"，从此**有本地版本历史**，
    后续请勿删除 `.git/`，否则增量提交会退化成全量。
 7. 一个仓库里 `README.md` 只有 6 字节，被本项目的根 `README.md` 覆盖（正常修改，非冲突）。
+8. 首次提交时根目录夹带了几个无关文件（`.vscode/`、`EtherCAT.txt`、Windows 残留
+   `SV630N系列伺服用户手册-CN-D00.PDF:Zone.Identifier`）；如不需要可
+   `git rm --cached <file> && echo '<file>' >> .gitignore` 后提交剔除。
 
 ---
 
@@ -183,3 +191,4 @@ git checkout -- <file>         # 丢弃工作区改动（危险：不可恢复�
 | 日期 | 内容 |
 |------|------|
 | 2026-09-30 | 建立本文；完成项目首次全量提交到 `lizhi90/TuFu`（git CLI + MCP 校验），并记录四种提交方式对比 |
+| 2026-09-30 | 修正 §4.1 第 ③ 步：`git checkout -b main origin/main` 会因工作区已有未跟踪 `README.md` 而中止，改为 `git symbolic-ref HEAD refs/heads/main` + `git update-ref refs/heads/main origin/main`（实测通过） |
