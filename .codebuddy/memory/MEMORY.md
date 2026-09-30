@@ -32,6 +32,7 @@
 - 硬纪律「**降级不伪装**」：`caps` 无 `dX` 时 UI/Adapter 必须明确报不支持。
 - Extension 边界：纯逻辑模块不 import vscode（可 Node 单测）；UI 文案集中 `strings.ts`；命令名从 `command_table.h` 经 `gen-commands.mjs` 生成（改 kDocs/命令后必须重跑）。
 - 插件形态铁律：侧边栏控制台只放菜单栏+状态行（高频表格会冲掉菜单交互）；轴状态/Modbus/通讯状态均为右侧独立面板；**面板可见才订阅**（引用计数）；`extension.ts onEvent` 的 switch 新增事件主题必须显式 `case`（v0.8.8 空表根因）。
+- ★ **GitHub 提交（2026-09-30 起）**：本仓库已是 git 仓库并推送至**私有**远端 `lizhi90/TuFu`（分支 `main`，本地 `git 2.25.1` 可用）。**整仓/批量提交用 git CLI**；GitHub MCP 工具（26 个）只做建仓/分支/PR/Issue 与**单文件**读写（contents API 上限 1MB）、推送后校验——`push_files` 需内联全部文件内容，244MB 工作区不可行。`.gitignore` 必排除 **`SV630N系列伺服用户手册-CN-D00.PDF`（133.9MB，超 GitHub 100MB 单文件硬限制）**、`build/`、`Extension/node_modules/`。推送用 `x-access-token:$TOKEN@` 临时 URL 后 `git remote set-url` 还原（token 不落 `.git/config`）。四种方式对比+可复制命令见 `lubancat2/docs/GitHub提交指南.md`。
 
 ## 当前状态（2026-09-27）
 - ★ **M3（CSP）+ 多轴直线插补已完成（2026-09-27）**：`motion/interp.h`（Trapezoid+LinInterp）+ `Axis` CSP 子模式（6060=8 每拍 607A，完成=规划完+容差）+ DC SYNC0 1ms 真机启用 + 脚本 `MOTION_MODE(0|1)`/`BASE(n1,n2,...)` 多轴/`MOVEABS(p1,p2,...,spd,acc)` 直线插补（阻塞）；真机 CSP 定位 1mm 精确（MPOS=DPOS=1.000）；**现场默认仍 MOTION_MODE=pp**（csp 通路保留，config/脚本可切）；多轴 LIN 真机待 ≥2 轴硬件（单测覆盖：interp_test 6 组 + axis_test 用例14/15 + motion_host_test 用例7，ctest 16/16）。详见 planA 04 §3.3/§3.4。
