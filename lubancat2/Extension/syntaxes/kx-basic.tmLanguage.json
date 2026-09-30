@@ -1,0 +1,94 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Kine-X BASIC",
+  "scopeName": "source.kx-basic",
+  "patterns": [
+    {
+      "include": "#comment-rem"
+    },
+    {
+      "include": "#string"
+    },
+    {
+      "include": "#comment-apostrophe"
+    },
+    {
+      "include": "#label"
+    },
+    {
+      "include": "#number"
+    },
+    {
+      "include": "#keyword"
+    },
+    {
+      "include": "#command"
+    },
+    {
+      "include": "#builtin"
+    },
+    {
+      "include": "#constant"
+    },
+    {
+      "include": "#operator"
+    }
+  ],
+  "repository": {
+    "comment-rem": {
+      "name": "comment.line.rem.kx-basic",
+      "match": "^[ \\t]*REM\\b.*$"
+    },
+    "comment-apostrophe": {
+      "name": "comment.line.apostrophe.kx-basic",
+      "begin": "'",
+      "end": "$"
+    },
+    "string": {
+      "name": "string.quoted.double.kx-basic",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.kx-basic",
+          "match": "\"\""
+        }
+      ]
+    },
+    "label": {
+      "match": "^[ \\t]*([A-Za-z_][A-Za-z0-9_]*)(:)",
+      "captures": {
+        "1": {
+          "name": "entity.name.label.kx-basic"
+        },
+        "2": {
+          "name": "punctuation.separator.label.kx-basic"
+        }
+      }
+    },
+    "number": {
+      "name": "constant.numeric.kx-basic",
+      "match": "\\b\\d+(\\.\\d+)?([eE][+-]?\\d+)?\\b"
+    },
+    "keyword": {
+      "name": "keyword.control.kx-basic",
+      "match": "\\b(IF|THEN|ELSE|ELSEIF|ENDIF|FOR|TO|STEP|NEXT|WHILE|WEND|DO|LOOP|UNTIL|REPEAT|GOSUB|RETURN|SUB|ENDSUB|GOTO|END|AND|OR|NOT|XOR|MOD|LOCAL|GLOBAL|DIM|CONST|AS|SELECT|CASE|ENDSELECT|USE)\\b"
+    },
+    "command": {
+      "name": "support.function.kx-basic",
+      "match": "\\b(DRIVE_CONTROLWORD|NODE_AXIS_COUNT|DISABLE_GROUP|DRIVE_PROFILE|AXIS_ADDRESS|PORT_CLIENTS|MODBUS_IEEE|MOTION_MODE|NODE_STATUS|PORT_STATUS|PORT_TARGET|PROC_STATUS|AXISSTATUS|MODBUS_REG|NODE_COUNT|SCAN_EVENT|SLOT_START|NODE_INFO|PORT_INFO|RAPIDSTOP|SDO_WRITE|SLOT_SCAN|SLOT_STOP|ETH_MODE|ETHERCAT|MOVE_ABS|NODE_AIO|PORT_MAX|STOPTASK|VP_SPEED|WAITIDLE|BUSSTOP|DISABLE|ECUSTOM|ENABLED|FASTDEC|JOGLEAD|MOVEABS|MOVEREL|NODE_IO|PUTCHAR|RUNTASK|CANCEL|ENABLE|ISIDLE|ACCEL|ALARM|ATYPE|BUSOK|CLOSE|DATUM|DECEL|DELAY|NVGET|NVSET|PRINT|SLEEP|SPEED|SRAMP|TICKS|UNITS|VMOVE|AXIS|BASE|BUSY|DPOS|HOME|IDLE|MOVE|MOVR|MPOS|OPEN|SCAN|STOP|VJOG|WAIT|BUS|DIS|GET|JOG|POS|EN)\\b"
+    },
+    "builtin": {
+      "name": "support.function.builtin.kx-basic",
+      "match": "\\b(STR|VAL|ABS|SIN|COS|TAN|ASIN|ACOS|ATAN|SQR|SQRT|INT|ROUND|FLOOR|CEIL|MAX|MIN|RND|EXP|LOG|POW|LEFT|RIGHT|MID|LEN|CHR|ASC|UPPER|LOWER|TRIM|INSTR)\\b"
+    },
+    "constant": {
+      "name": "constant.language.kx-basic",
+      "match": "\\b(MV_[A-Z0-9_]+|ON|OFF|TRUE|FALSE)\\b"
+    },
+    "operator": {
+      "name": "keyword.operator.kx-basic",
+      "match": "[+\\-*/\\\\=<>&|^]"
+    }
+  }
+}

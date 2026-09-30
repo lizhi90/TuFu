@@ -1,0 +1,2293 @@
+===== PDF page 281 =====
+15 RL指令
+VAR byte data2[2] = {13,17}
+SendByte(data2, “socket0”)
+通过socket0发送一个byte类型数组变量data2。会将数组中的内容全部发出去。
+例 4
+VAR byte data2[2] = {13,17,20}
+SendByte(data2[2], “socket0”)
+通过socket0发送一个byte类型变量，该变量为data2[2]，仅表示数组中的第2个元素。此时会
+将data2[2]的值17发出去，而不会多发任何其他元素。
+15.4.7.6 ReadBit
+控制系统按 bit 接收数据。
+说明 1）通过网络通信以TCP形式接收，外部发送的数据需以SocketConn配置好的结束符结尾。
+2）通过串口通信方式接收，外部设备只需要发送数据部分即可，无需考虑结束符。
+返回值，数据类型：bool 数组，使用 bool 型数组存储接收到的 bit 数据，每一个 bit 对应一个
+bool 成员。
+Ret = ReadBit(BitNum, TimeOut, name)
+定义 BitNum ，数据类型：int ，需要读取的 bit 数量，大小应该为 8 的整数倍。
+TimeOut ，数据类型：int ，超时时间。单位 s，范围 0~86400，默认 60s。
+name ，数据类型：string，通信连接SocketConn的名称或者串口的名称。
+Ret ，数据类型：bool 数组，接收到的数据，数组第一个元素表示最低位。
+例 1
+bool groupio[16]
+groupio = ReadBit(16, 60, “Socket0”)
+示例 通过 ReadBit 指令读取 16 个 bit 的数据存储到名为 groupio 的布尔型数组中，超时时间60s。
+假设外部设备发送 ASCII 字符：95+结束符，则机器人接收到“95”。其中“9”的十六进制为 0x39，
+“5”的十六进制为0x35，因此用户接收到的数据为0x3935。此时groupio数组从[1]~[16]表示为：
+1001 1100 1010 1100。[1]是数据低位，与0x3935符合。
+15.4.7.7 ReadByte
+说明 接收一定字节的数据。注意数据之间需要使用逗号隔开
+返回值，数据类型：byte数组，使用 byte型数组存储接收到的数据。
+Ret = ReadByte(ByteNum, TimeOut, name)
+ByteNum ，数据类型：int ，需要读取的 bit 数量，大小应该为 8 的整数倍。
+定义
+TimeOut ，数据类型：int ，超时时间。单位 s，范围 0~86400，默认 60s。
+name ，数据类型：string，通信连接SocketConn的名称或者串口的名称。
+Ret ，数据类型：byte数组，接收到的数据。
+例 1
+byte rets[6] = {0,0,0,0,0,0}
+示例
+rets = ReadByte(6,60,"clt1")
+读取 6个 byte的数据存储到名为 rets的byte类型数组中，超时时间60s。
+注意外部设备的byte数据之间需要使用逗号隔开，比如发送”1,2,3,4,5,6”。
+注意 通过TCP发送数据，需要在数据后面加上预设好的结束符。
+通过串口发送数据，不需要结束符。
+xCore控制系统使用手册 267
+
+===== PDF page 282 =====
+15 RL指令
+15.4.7.8 ReadDouble
+通过 Socket 接收 double 型数据，外部发送的数据需以配置好的结束符结尾。
+说明
+注意，该指令仅对TCP网络通信生效，适用于机器人做客户端和服务端，但不适用于串口。
+返回值，数据类型：double数组，使用 double 型数组存储接收到的数据。
+Ret = ReadDouble(DoubleNum, TimeOut, name)
+定义 DoubleNum ，数据类型：double ，需要读取的 double 数个数，最大为 30 个。
+TimeOut ，数据类型：int ，超时时间。单位 s，范围 0~86400，默认 60s。
+name ，数据类型：string，用于接收数据的 Socket 名称。
+例 1
+double dd[10]
+示例
+dd =ReadDouble(10, 60, “Socket0”)
+读取 10 个 double 型的数据存储到名为 dd 的 double 型数组中，超时时间 60s。
+15.4.7.9 ReadInt
+通过 Socket 接收int型数据，外部发送的数据需以配置好的结束符结尾。
+说明
+注意，该指令仅对TCP网络通信生效，适用于机器人做客户端和服务端，但不适用于串口。
+返回值，数据类型：int ，使用 int 型数组存储接收到的数据。
+Ret = ReadInt(IntNum, TimeOut, name)
+定义 IntNum ，数据类型：int ，需要读取的int数个数，最大为30个。
+TimeOut ，数据类型：int ，超时时间。单位s，范围 0~86400，默认60s。
+name ，数据类型：string，用于接收数据的Socket名称。
+例 1
+int ii[10]
+示例
+ii = ReadInt(10, 60, “Socket0”)
+读取10个int型的数据存储到名为ii的int型数组中，超时时间60s。
+15.4.7.10 ReadString
+说明 读取字符串并返回，外部发送的数据需以配置好的结束符结尾
+返回值，数据类型： string，存储接收到的字符串。
+Ret = ReadString(TimeOut, name, [len])
+TimeOut ，数据类型： int ，超时时间。 单位 s， 范围 0~86400，默认 60s。
+定义
+name ，数据类型：string，用于接收数据的Socket或者串口名称。
+len，数据类型：int，可选参数，使用串口读取时才使用。由于串口中没有加入结束符的概念，因此
+需要指定长度后才能正确读取和解析。
+例 1
+VAR String str1
+str1 = ReadString(60, “Socket1”)
+从 Socket1 中接收一个字符串，并存储到 str1 中，超时时间 60s。网络通信方式。
+示例
+例 2
+VAR String str1
+str1 = ReadString(60, “serial0”,5)
+从 serial0中接收一个长度为5的字符串，并存储到 str1 中，超时时间 60s。串口通信方式。
+268 xCore控制系统使用手册
+
+===== PDF page 283 =====
+15 RL指令
+15.4.7.11 GetSocketConn
+从socket连接名称查找对应的socket属性集对象。该指令获取的结果可以用来进行判断和处理逻
+说明 辑。仅应该将其当作只读对象使用。该指令仅适用于通信连接（包括机器人作为客户端，或者作为
+服务端已经连接上的用于通信的通道），不适用于监听服务器和串口。
+返回值，数据类型：SocketConn，通过字面名称查找到的socket属性对象。
+Ret = GetSocketConn(name)
+name ，数据类型：string，通信连接SocketConn的名称。
+Ret，数据类型：SocketConn ，通过字面名称查找到的socket属性对象。
+可查询属性 查询方法 含义和示例
+ip地址 ret.ip 字符串，如”192.168.0.161”
+定义 端口号 ret.port 整型，如8090
+机器人做服务器：“incoming”；
+属性 ret.attr 机器人做客户端：“outgoing”；
+如果连接未建立：“”或者其他值，通常为空
+缓存大小 ret.cache 1~100
+名称 ret.name 示例为“client0”
+连接状态 ret.state closed、establish
+例 1
+SocketConn ret= GetSocketConn(“client0”)
+示例
+查找名称为“client0”的SocketConn对象。可以使用ret来获得这个连接的属性，包括ip地址、端
+口号、通信结束符、连接状态等信息。
+15.4.7.12 GetSocketServer
+从用户定名称查找对应的服务器属性集对象。该指令获取的结果可以用来进行判断和处理逻辑。仅
+说明 应该将其当作只读对象使用。该指令仅适用于监听服务器（SocketServer对象），不适用于通信连
+接（包括机器人作为客户端，或者作为服务端已经连接上的用于通信的通道）和串口。
+返回值，数据类型：SocketServer，通过字面名称查找到的服务器属性对象。
+Ret = GetSocketServer(name)
+Name，数据类型：string，通信连接SocketServer的名称。
+Ret ，数据类型：SocketServer，通过字面名称查找到的socket属性对象。
+定义
+可查询属性 查询方法 含义和示例
+ip地址 ret.ip 字符串，如”192.168.0.161”
+端口号 ret.port 整型，如8090
+名称 ret.name 示例为“svr1”
+连接状态 ret.state closed、listening、error
+例 1
+SocketServer listener1 = {"192.168.0.200", 8090, "svr1"}
+OpenDev( "svr1" ) //绑定端口、监听端口
+示例 //根据连接标识 "svr1" 获取SocketServer对象，此时ret将复制任务1中listener1的全部状态
+SocketServer ret= GetSocketServer("svr1"）
+if(ret.state == "listening") //使用SocketServer的attr属性，判断是否监听中
+//逻辑处理
+xCore控制系统使用手册 269
+
+===== PDF page 284 =====
+15 RL指令
+endif
+15.4.7.13 GetBufSize
+获取串口缓冲区中还剩余多少数据未读，单位为字节。指令仅适用于串口，不适用于TCP服务器和
+说明
+客户端。
+返回值，数据类型：int，缓冲区中未处理数据量，以字节为单位。
+Ret = GetBufSize(name)
+定义
+name ，数据类型：string，串口资源的字面名称。
+Ret，数据类型：int，缓冲区中未处理数据量，以字节为单位。
+例 1
+OpenDev("serial0")
+示例
+int a = GetBufSize("serial0")
+print(a)
+15.4.7.14 ClearBuffer
+说明 清除缓冲区，未读取完毕的字符将丢失。指令仅适用于串口，不适用于TCP服务器和客户端。
+Ret = ClearBuffer(name)
+定义 name ，数据类型：string，串口资源的字面名称。
+Ret ，数据类型：int，缓冲区中未处理数据量，以字节为单位。
+15.4.7.15 ReadOpcUaVarByName
+说明 通过名称读取OPC-UA自定义变量的值。
+ReadOpcUaVarByName(name, value)
+name，数据类型：string，OPC-UA自定义变量名称。
+value ，数据类型：bool/byte/int/double/string，用于存放读取到的OPC-UA自定义变量的值，
+定义
+如果value的类型与opcua变量的类型不一致，将自动转换，注意：string转换为数值类型时，都
+为0。
+无返回值。
+例 1
+int value = 0
+示例
+ReadOpcUaVarByName(“int_var”, value)
+print(value)
+15.4.7.16 WriteOpcUaVarByName
+说明 通过名称修改OPC-UA自定义变量的值。
+WriteOpcUaVarByName(name, value)
+name ,数据类型：string,OPC-UA自定义变量名称。
+定义
+value ,数据类型：bool/byte/int/double/string,OPC-UA变量的修改值，如果value的类型与opcua
+变量的类型不一致，将自动转换，注意：string转换为数值类型时，都为0。
+例 1
+int value = 0
+示例
+WriteOpcUaVarByName(“int_var”, value)
+WriteOpcUaVarByName(“int_var”, 123)
+270 xCore控制系统使用手册
+
+===== PDF page 285 =====
+15 RL指令
+15.4.8 网络指令
+15.4.8.1 SocketCreate（过期的）
+建立一个 Socket 连接，通过使用 Socket 指令，RL 程序可以从外部设备获取数据或者向外发送
+程序数据。 RL 语言支持同时建立多个不同的 Socket 以便于连接多个外部设备，不同 Socket 之
+间采用不同的名称来进行区分。Socket 指令是基于 TCP/IP 协议的，因此理论上任何支持 TCP/IP
+的外部设备都可以和 RL 程序通信以交换数据。所有发送给 RL Socket 指令的数据（即使用
+说明 SocketRead 系列指令接收的数据），都应该以“回车”结尾，在接收到“回车”之前的所有数据都将合
+并做为同一条数据处理。使用 Socket 功能时，机器人控制器仅支持作为 client 连接外部 server。
+最多支持创建 10 个 Socket 连接。
+注意，该指令被标注为“过期的”，为xCore控制系统1.3版本使用指令，在更高版本中依然有效，
+但不再继续维护，也不推荐继续使用。
+返回值，数据类型：bool，如果创建成功返回true，创建失败返回false
+SocketCreate（"ip_Address", Port, "Name", [Cache] [, "Terminator"]）
+ip_Address，数据类型：string定义需要连接 server 的 ipv4 地址，需使用双引号包含。
+定义 Port ，数据类型：int ，定义 server 端口号。
+Name ，数据类型：string ，定义新建 Socket 的名称，不同 Socket 之间需指定不同的名称。
+Cache ，数据类型：int，定义Socket缓存大小，通信数据存在缓存队列中，可省略。
+Terminator ，数据类型：string 定义Socket通信的结束符类型，可省略，默认是"\r"。
+例子：
+if (SocketCreate("10.0.6.11",8080,"S1",10,"\r"))
+// 创建成功
+示例
+else
+// 错误处理
+endif
+由于 TCP/IP 协议资源释放机制限制，请不要频繁调用 SocketCreate 和 SocketClose 指令，否则
+可能会造成程序运行出错。
+为避免循环模式下，频繁调用SocketCreate 和 SocketClose 指令，两条指令之间最好增加时间延
+注意 时，例如：
+SocketClose("S1")
+wait 0.1
+SocketCreate("10.0.6.11",8080,"S1",10,"\r")
+15.4.8.2 SocketClose（过期的）
+关闭 Socket
+说明 注意，该指令被标注为“过期的”，为xCore控制系统1.3版本使用指令，在更高版本中依然有效，
+但不再继续维护，也不推荐继续使用。
+SocketClose（”SocketName”）
+定义
+SocketName ，数据类型：string ，需要关闭的 Socket 名称。
+例 1
+示例
+SocketClose（”Socket0”）
+不要在SocketSend系列指令后直接使用SocketClose指令，否则可能造成数据发送失败，等待收
+注意
+到确认消息 后再使用SocketClose指令。
+xCore控制系统使用手册 271
+
+===== PDF page 286 =====
+15 RL指令
+15.4.8.3 SocketSendString（过期的）
+通过Socket对外发送一个字符串。
+说明 注意，该指令被标注为“过期的”，为xCore控制系统1.3版本使用指令，在更高版本中依然有效，
+但不再继续维护，也不推荐继续使用。
+SocketSendString（StringData，”SocketName”）
+定义 StringData ，数据类型：string ，待发送的 string 数据。
+SocketName ，数据类型：string ，用于发送数据的 Socket 名称。
+例 1
+SocketSendString（“Hello World”，”Socket0”）
+通过 Socket0 对外发送 Hello World 字符串。
+示例
+例 2
+VAR String str1 =“Hello World”
+SocketSendString（str1，”Socket0”）
+通过 Socket0 发送 str1 存储的字符串。
+15.4.8.4 SocketSendByte（过期的）
+通过 Socket 对外发送一个字节 byte，在需要发送 ASCII 字符时非常有用。
+说明 注意，该指令被标注为“过期的”，为xCore控制系统1.3版本使用指令，在更高版本中依然有效，
+但不再继续维护，也不推荐继续使用。
+SocketSendByte(ByteData, “SocketName”)
+ByteData ，数据类型：int 或 byte 或 byte 数组 ，发送一个 0~255 的无符号字节或数组，主
+定义
+要用于发送 ASCII 码。
+SocketName ，数据类型：string ，用于发送数据的 Socket 名称。
+例 1
+SocketSendByte(13, “socket0“)
+通过 socket0 对外发送一个回车符。
+例 2
+VAR byte data1 = 13
+示例 SocketSendByte(data1, “socket0“)
+首先定义一个byte类型变量data1，它其实是一个回车符。然后通过socket0对外发送。
+例 3
+VAR byte data2[2] = {13,17}
+SocketSendByte(data2, “socket0”)
+通过socket0发送一个byte类型数组变量data2。
+15.4.8.5 SocketReadBit（过期的）
+通过 Socket 按 bit 接收数据，外部发送的数据需以回车结尾。
+说明 注意，该指令被标注为“过期的”，为xCore控制系统1.3版本使用指令，在更高版本中依然有效，
+但不再继续维护，也不推荐继续使用。
+定义 返回值，数据类型：bool ，使用 bool 型数组存储接收到的 bit 数据，每一个 bit 对应一个 bool
+272 xCore控制系统使用手册
+
+===== PDF page 287 =====
+15 RL指令
+成员。
+SocketReadBit(BitNum, TimeOut, “SocketName”)
+BitNum ，数据类型：int ，需要读取的 bit 数量，大小应该为 8 的整数倍。
+TimeOut ，数据类型：int ，超时时间。单位 s，范围 0~86400，默认 60s。
+SocketName ，数据类型：string，用于接收数据的 Socket 名称。
+例 1
+bool groupio[16]
+示例 groupio = SocketReadBit(16, 60, “Socket0”)
+通过 SocketReadBit 指令读取 16 个 bit 的数据存储到名为 groupio 的布尔型数组中，超时时间
+60s。
+15.4.8.6 SocketReadDouble（过期的）
+通过 Socket 接收 double 型数据，外部发送的数据需以回车结尾。
+说明 注意，该指令被标注为“过期的”，为xCore控制系统1.3版本使用指令，在更高版本中依然有效，
+但不再继续维护，也不推荐继续使用。
+返回值，数据类型：double ，使用 double 型数组存储接收到的数据。
+SocketReadDouble(DoubleNum, TimeOut, “SocketName”)
+定义 DoubleNum ，数据类型：double ，需要读取的 double 数个数，最大为 30 个。
+TimeOut ，数据类型：int ，超时时间。单位 s，范围 0~86400，默认 60s。
+SocketName ，数据类型：string，用于接收数据的 Socket 名称。
+例 1
+double dd[10]
+示例 dd = SocketReadDouble(10, 60, “Socket0”)
+通过 SocketReadDouble 指令读取 10 个 double 型的数据存储到名为 dd 的 double 型数组
+中，超时时间 60s。
+15.4.8.7 SocketReadInt（过期的）
+通过 Socket 接收 int 型数据，外部发送的数据需以回车结尾。
+说明 注意，该指令被标注为“过期的”，为xCore控制系统1.3版本使用指令，在更高版本中依然有效，
+但不再继续维护，也不推荐继续使用。
+返回值，数据类型：int ，使用 int 型数组存储接收到的数据。
+SocketReadInt(IntNum, TimeOut, “SocketName”)
+定义 IntNum ，数据类型：int ，需要读取的int数个数，最大为30个。
+TimeOut ，数据类型：int ，超时时间。单位s，范围 0~86400，默认60s。
+SocketName ，数据类型：string，用于接收数据的Socket名称。
+例 1
+int ii[10]
+示例
+ii = SocketReadInt(10, 60, “Socket0”)
+通过 SocketReadInt 指令读取10个int型的数据存储到名为ii的int型数组中，超时时间60s。
+15.4.8.8 SocketReadString（过期的）
+从 Socket 读取一个字符串并返回，外部发送的数据应以回车结尾。
+说明 注意，该指令被标注为“过期的”，为xCore控制系统1.3版本使用指令，在更高版本中依然有效，
+但不再继续维护，也不推荐继续使用。
+xCore控制系统使用手册 273
+
+===== PDF page 288 =====
+15 RL指令
+返回值，数据类型： string，存储接收到的字符串。
+SocketReadString(TimeOut, “SocketName”)
+定义
+TimeOut ，数据类型： int ，超时时间。 单位 s， 范围 0~86400，默认 60s。
+SocketName ，数据类型：string，用于接收数据的Socket名称。
+例 1
+VAR String str1
+示例
+str1 = SocketReadString(60, “Socket1”)
+从 Socket1 中接收一个字符串，并存储到 str1 中，超时时间 60s。
+15.4.9 逻辑指令
+15.4.9.1 Return
+函数返回。
+说明 程序遇到 RETURN 指令时，如果程序当前处于子函数中，则程序将返回到上一级函数中。如果程
+序当前处于主函数中，则程序直接结束。
+15.4.9.2 Wait
+说明 程序等待一段时间，范围是 0~2147484 秒
+例1
+示例 Wait 2
+表示等待 2s的时间
+15.4.9.3 WaitUntil
+说明 程序等待某个条件成立，若超时，则将超时标志置true，结束等待继续向下执行。
+WaitUntil(cond,\MaxTime,\TimeFlag)
+Cond，bool类型逻辑表达式
+定义
+MaxTime，超时等待时间，可选参数；单位s，使用int或double类型
+TimeFlag，超时标志位，若超时则置true，可选参数；使用bool类型变量
+例1
+WaitUntil (di2 == true)
+…
+表示等待di 2 信号值为 true，然后才开始执行后面的语句。
+例2
+WaitUntil (di2 == true,5)
+…
+示例
+表示等待di 2 信号值为 true，若等待超过5s，di2信号依然为false，则执行后面的语句。
+例3
+Bool flag = false
+WaitUntil (di2 == true, 5,flag)
+…
+表示等待di 2 信号值为 true；若等待超过5s，di2信号依然为false，则将flag置为true，然后才
+开始执行后面的语句；若在5s内di2变为true，则flag置为false。可以将flag用于后续的逻辑判
+274 xCore控制系统使用手册
+
+===== PDF page 289 =====
+15 RL指令
+断
+15.4.9.4 Break
+跳出当前循环，在 RL 语言中在 WHILE 循环中使用，当 WHILE 循环执行到 Break 时，不管
+说明
+WHILE 的 CONDITION 如何，都会直接跳出 WHILE 循环。
+例 1
+VAR int counter = 0
+WHILE(1)
+IF(counter == 5)
+示例 break
+Endif
+counter++
+ENDWHILE
+该程序在执行到 counter 等于 5 时会跳出 WHILE 循环。
+15.4.9.5 IF…Else if…Else
+说明 条件判断语句
+例 1
+IF(condition1)
+//a
+Else if (condition2)
+//b
+示例 Else if (condition3)
+//c
+Else
+//d
+Endif
+condition1成立时执行逻辑a，condition2成立时执行逻辑b，以此类推。
+15.4.9.6 Goto
+说明 Goto语句允许把指针跳转到被标记的语句
+例 1
+int a = 0
+int b = 9
+Goto end
+示例 print(a)
+end:
+print(b)
+先定义两个变量a和b，然后用print函数打印两句话，直接用Goto语句强制跳转到打印b语句
+的end标记位置，此时a的打印就不会执行了
+15.4.9.7 For
+说明 For循环允许您编写一个执行指定次数的循环控制结构
+xCore控制系统使用手册 275
+
+===== PDF page 290 =====
+15 RL指令
+例 1
+For(int i from 1 to 10)
+printf(“i = %d\n”, i)
+endfor
+该程序把i从1到9每次加1依次打印9次。
+例 2
+示例
+For(int i from 1 to 10 step 3)
+printf(“i = %d\n”, i)
+Endfor
+该程序把i从1到10每次加3依次打印3次。
+补充说明：
+Continue和Break可以用来控制For的流程,详细操作见Continue和Break指令说明。
+15.4.9.8 Continue
+说明 跳出本次循环。继续从循环起始处执行下条语句，但不退出循环体，仅仅结束本次循环
+例 1
+VAR int count = 0
+WHILE(1)
+count++
+IF(count == 1)
+Continue
+示例
+Else
+break
+MoveAbsJ j10， v500， fine， tool1
+Endif
+ENDWHILE
+MoveAbsJ 的代码将不会被执行到。
+15.4.9.9 Inzone
+该指令和SetDO或者modbus、cclink等IO操作或指令配合使用，可保证信号在确定的点位触发，
+说明
+不会被前瞻指针提前触发。
+MoveL p1
+MoveL p2
+Inzone
+SetDO dox, true
+print(123)
+EndInzone
+示例
+MoveL p3
+补充说明：
+在示例中，使用了一个Inzone指令，解释器前瞻到Inzone之后，并不会立即执行，而是生成了一
+个附加函数，函数内容是SetDO以及print指令，这个附加函数会在运动指令move p2完成之后
+生效。
+1、如果p2 p3两条运动指令之间存在转弯区，则附加函数会在机器人进入两段运动的转弯区的时
+276 xCore控制系统使用手册
+
+===== PDF page 291 =====
+15 RL指令
+刻开始执行
+2、如果没有转弯区，则附加函数会在机器人到达p2的时刻开始执行
+15.4.9.10 While
+说明 While循环允许您编写一个在条件满足前不断执行的循环控制结构
+例 1
+int count = 0
+while(count < 10)
+count++
+示例 print(count)
+endwhile
+该程序实现一个count从0到10每次加1并打印的循环。
+补充说明：Continue和Break可以用来控制While的流程,详细操作见Continue和Break指令说
+明。
+15.4.9.11 Pause
+暂停程序运行。
+说明 程序会在 pause 语句的前一句执行完毕后进入暂停状态，必须使用示教器点击运行或者通过
+外部程序启动信号才可恢复程序运行。
+注意 该指令暂时不支持辅助编程
+15.4.9.12 try/catch
+try-catch指令是一种RL语言的错误处理机制，try 到catch指令中间的指令，如果出错后，程序
+说明
+会将执行错误转换为错误信息集合"e" 并从catch-endtry的代码块继续运行
+try
+// do something
+catch(error e)
+print(e)
+endtry
+举例, 从网络链接读数据是很有可能失败的指令，但是此时不希望机器人停机，可以用 try-catch
+将错误捕获并通过RL编程处理
+详细说明
+error类型说明，error是一个结构体，一共有四个参数组成，分别是
+定义
+⚫ file : string (错误发生文件名)
+⚫ line : int (错误行)
+⚫ num : int (错误码)
+⚫ reason : string(错误原因)
+error结构体可以通过print指令直接打印。
+// error data
+...
+catch(error e)
+print(e.file)
+print(e.line)
+xCore控制系统使用手册 277
+
+===== PDF page 292 =====
+15 RL指令
+print(e.num)
+print(e.reason)
+print(e)
+endtry
+例 1
+ReadOnce:
+Try
+Double xyz[3] = ReadDouble(3, timeout, socketname)
+Robtarget_0.trans.x = xyz[1]
+Robtarget_0.trans.y = xyz[2]
+Robtarget_0.trans.z = xyz[3]
+MoveL Robtarget_0, v2000, fine, tool0
+Catch(error e)
+SendString(“Recv rob xyz error”, socketname)
+Goto ReadOnce
+endtry
+该程序实现了一个简单的应用场景，使用通信指令ReadDouble从TcpSocket读取一个三维数组作
+为运动点位的xyz参数，然后使用MoveL指令运动到对应笛卡尔点。
+如果没有使用try/catch指令并且从TcpSocket收到点位是错误数据，则机器人会报错“超出运动范
+围”或者“规划错误”，并且停止程序的运行。
+示例 如果使用了try/catch指令，虽然依然会报告运动指令错误，但是程序不会停止，而是跳转到catch
+到 endtry的代码段，执行用户想要的错误处理。本样例中就是通过SendString告诉Socket上位
+机收到的点位错误，再由上位机决定如何处理，并执行goto指令重新执行ReadDouble等待下一
+次的位置。
+例2
+re_read:
+try
+opendev("conn_name")
+string_res = readstring("conn_name")
+catch (error e)
+if (e.num == xxx)
+// 某种可处理的错误不暂停
+goto re_read
+else
+print(e)
+Pause
+endif
+endtry
+注意 注意：力控指令不能触发try-catch
+try/catch能够处理的错误类型及标准错误码：
+分类 出错指令 说明 error.num error.reason
+默认错误 未分配专属错误码的指令 -1 未知错误
+278 xCore控制系统使用手册
+
+===== PDF page 293 =====
+15 RL指令
+串口相关
+串口不存在时 -1 未知错误
+指令
+运动坐标的工具、工件错误
+MoveXX, Search, 运动速度错误
+运动相关 TrigL 等 运动负载错误
+-1 未知错误
+指令 AccRamp, HomeSet 超出运动范围
+等运动参数设置 规划错误
+遇到奇异点等
+OpenDev 网络链接的端口错误 -1 未知错误
+网络指令
+所有网络指令 通过RL操作外部通讯的连接 -1 未知错误
+CalcJoinT
+CalcRobt
+计算、逻 CRobT
+控制器内部错误 -1 未知错误
+辑指令 CJointT
+CLKSTOP
+GOTO
+JodellGripInit
+JodellSuckInit
+JodellSuckStatus
+RMRGMGripPosMove
+外设控制 RMRGMGripTrqMove
+(Jodell系 RMRGMGripStatus
+列） RMRGMResetErr 外设通讯异常 -1 未知错误
+(RM系 RMCGripPosMove
+列） RMCGripTrqMove
+RMCGripStatus
+RMCResetErr
+RMRGMGripInit
+RMCGripInit
+激光控制 Laser所有指令 激光焊接已关闭 -1 未知错误
+TrayUpdate
+TrayCount
+PalletUpdate
+码垛控制 与上位机数据收发错误 -1 未知错误
+PalletLayerCount
+PalletWobjCount
+SolarVisionExec
+寄存器控
+ReadRegByteByName 读取数据失败 -1 未知错误
+制
+四轴锁定 SingAreaLockAxis4 位姿错误，无法开启四轴锁定功能 -1 未知错误
+解释器内 绝大部分指令的参数
+-1 XXX 参数错误
+部错误 类型、数量错误
+解释器内
+0
+部错误
+OpenDev 连接到服务器失败 101 OpenDevConn失败
+OpenDev 机器人作为服务端开启失败 102 OpenDevServer失败
+GetSocketConn SocketConn 对应的连接未建立 103 GetSocketConn失败 连接不存在
+网络指令 获取SocketConn结构体的名字是 GetSocketConn 失 败 对 象 是
+GetSocketConn 104
+串口指令 一个服务器 SocketServer
+GetSocketServer 失败 服务器不
+GetSocketServer 105 GetSocketServer失败 服务器不存在
+存在
+OpenDev 开启连接输入参数错误，变量列表 106 OpenDev失败 使用不存在的对象
+xCore控制系统使用手册 279
+
+===== PDF page 294 =====
+15 RL指令
+无对应连接
+SocketAccept(server) 指令需要服务器名
+SocketAccept 输入参数不是服务器名称 107
+称
+获取SocketConn结构体的名字错 GetSocketConn(conn) 不 存 在 的
+GetSocketConn 108
+误 SocketConn
+获取SocketConn结构体的名字错 GetSocketConn(server) 不 存 在 的
+GetSocketServer 109
+误 SocketServer
+ReadBit 指令输入参数错误 110 ReadBit 必须读取8的整数倍数
+ReadDouble 指令输入参数错误 111 ReadDouble 指令超出预设范围(0, 4096]
+ReadInt 指令输入参数错误 112 ReadInt 指令超出预设范围(0, 4096]
+ReadByte 指令输入参数错误 113 ReadByte 指令超出预设范围(0, 4096]
+ReadBit ReadDouble
+ReadInt 输入的时间太长 114 ReadXX 指令时间超出预设范围(0. 86400]
+ReadByte ReadString
+ReadBit
+ReadDouble
+ReadInt 连接断开 或者 读取数据错误 115 Read指令失败
+ReadByte
+ReadString
+ReadDouble 超出限定时间 116 ReadDouble 指令超时
+ReadInt 超出限定时间 117 ReadInt 指令超时
+ReadString 超出限定时间 118 ReadString 指令超时
+ReadBit 超出限定时间 119 ReadBit 指令超时
+ReadByte 超出限定时间 120 ReadByte 指令超时
+SendString 指令超时或者连接断开 121 SendString 指令超时或者连接断开
+SendByte 指令超时或者连接断开 122 SendByte 指令超时或者连接断开
+执行指令时，工件已经越过启动窗
+WaitObj 123 Out StartWindow
+口，无法跟踪
+传送带跟
+WaitObj 等待跟踪工件超时 124 Out WaitTime
+踪指令
+WaitObj 重复跟踪工件 125 Connected Twice
+开启跟踪后可能发生 跟踪过程超出工作区域抛出异常 126 Out MaxDistance
+15.4.9.13 SwitchCase
+SwitchCase 指令跟IF指令类似，是根据输入的变量条件进行流程控制的指令。
+RL解释器将根据输入的变量（condition）依次与Case字段的变量进行比较。
+如果两个变量相等，解释器将进入对应Case的代码分支，并且不再进行后续比较，不会进入其他
+说明 代码分支；
+如果所有条件都不满足，则会进入Default分支；
+如果没有Case条件匹配且没有Default分支，则不会进入任何分支，Switch指令结束；
+Case指令可以输入多个条件（见指令结构 Case C1,C12,C13 和示例1）。
+Switch(condition)
+Case C1,C12,C13:
+Functions1()
+定义 Case C2:
+Functions2()
+Default:
+DefaultFunction()
+280 xCore控制系统使用手册
+
+===== PDF page 295 =====
+15 RL指令
+EndSwitch
+例 1
+reg_int 是一个寄存器变量，上位机（PLC）会通过相关寄存器协议（如modbus、cclink）更新变
+量的数值，生产工程希望机器人根据寄存器的数值，执行对应的函数分支（比如走不通的运动轨迹），
+如果寄存器输入1,2,3 则执行A函数，如果输入4,5,6则执行B函数，如果不符合上述条件，则进
+入Default分支执行C函数。
+Switch(reg_int)
+示例 Case 1,2,3:
+FunctionsA() // 机器人走功能A相关点位
+Case 4,5,6:
+FunctionsB() // 机器人走功能B相关点位
+Default:
+FunctionC() // 无指定输入执行C功能
+EndSwitch
+15.4.10 起始点指令
+15.4.10.1 Home
+说明 以轴空间运动让机器人回到设定好的初始点
+定义 指令无参数
+例 1
+HomeSet 0,30,0,60,0,90,0
+示例
+Home
+通过HomeSet指令设置初始点，再通过Home指令让机器人运动到轴空间的拖拽位姿
+必须在机器人设置>快速调整 界面开启Home位姿设置或者通过HomeSet指令开启Home位姿
+注意
+设置，才可以使用Home指令，否则Home指令会报错。
+15.4.10.2 HomeSet
+说明 设定机器人的轴空间初始点位置
+HomeSet axis1,axis2,axis3,axis4,axis5,axis6,axis7
+定义
+Axisx，数据类型：Double，设定在初始点各个轴的角度
+例 1
+HomeSet 0,30,0,60,0,90,0
+示例
+Home
+通过HomeSet指令设置初始点，再通过Home指令让机器人运动到轴空间的拖拽位姿
+15.4.10.3 HomeSetAt
+说明 获得机器人的初始点的设定数据
+HomeSetAt(index)
+返回值，数据类型：double，关节角，单位°
+定义
+Index，数据类型：int，获得初始点指定轴的关节角，当index为0时，返回是否开启了Home设
+置，1表示已开启，0表示未开启。
+例 1
+示例
+HomeSet 0,30,0,60,0,90,0
+xCore控制系统使用手册 281
+
+===== PDF page 296 =====
+15 RL指令
+double angle2 = HomeSetAt(2)
+angle2 获得关节2的关节角30°。
+15.4.10.4 HomeDef
+说明 判断是否设置了初始点
+HomeDef()
+定义
+返回值，数据类型：bool，true 已设置初始点，false 未设置初始点
+15.4.10.5 HomeSpeed
+说明 设定Home指令的运行速度
+定义 HomeSpeed Speed
+例 1
+HomeSpeed v1000
+示例
+Home
+设定初始点运动的速度为V1000，随后Home指令让机器人按照V1000的速度往初始点运动。
+15.4.10.6 HomeClr
+说明 清除初始点设置
+例 1
+示例 HomeClr
+清除程序中设定的起始点。清除后Home指令将无法执行。
+15.4.11 数学指令
+15.4.11.1 Sin
+说明 sin()用来计算参数 x 的正弦值, 然后将结果返回。
+double sin(double x)
+定义 x 单位为弧度；
+返回值：返回-1 至 1 之间的计算结果。
+15.4.11.2 Cos
+说明 cos()用来计算参数 x 的余弦值, 然后将结果返回
+double cos(double x)
+定义 x 单位为弧度；
+返回值：返回-1 至 1 之间的计算结果。
+15.4.11.3 Tan
+说明 tan()用来计算参数 x 的正切值, 然后将结果返回。
+double tan(double x)
+定义 x 单位为弧度；
+返回值：返回参数 x 的正切值。
+282 xCore控制系统使用手册
+
+===== PDF page 297 =====
+15 RL指令
+15.4.11.4 Cot
+说明 cot()用来计算参数 x 的余切值, 然后将结果返回。
+double cot(double x)
+定义 x 单位为弧度；
+返回值：返回参数 x 的余切值。
+15.4.11.5 Asin
+说明 asin()用来计算参数 x 的反正弦值, 然后将结果返回。
+double asin(double x)
+定义 x 范围为－1 至 1 之间, 超过此范围则会报错；
+返回值：返回－PI/2 之 PI/2 之间的计算结果，单位为弧度
+15.4.11.6 Acos
+说明 acos()用来计算参数 x 的反余弦值, 然后将结果返回。
+double acos(double x)
+定义 x 范围为－1 至 1 之间，超过此范围则会报错；
+返回值：返回 0 至 PI 之间的计算结果, 单位为弧度。
+15.4.11.7 Atan
+说明 atan()用来计算参数 x 的反正切值, 然后将结果返回；
+double atan(double x)
+定义
+返回值：返回-PI/2 至 PI/2 之间的计算结果
+15.4.11.8 Sinh
+说明 sinh()用来计算参数 x 的双曲线正弦值, 然后将结果返回，
+double sinh(double x)
+定义 数学定义式为：(exp(x)-exp(-x))/2；
+返回值：返回参数 x 的双曲线正弦值。
+15.4.11.9 Cosh
+说明 cosh()用来计算参数 x 的双曲线余弦值, 然后将结果返回
+double cosh(double x)
+定义 数学定义式为：(exp(x)+exp(x))/2；
+返回值：返回参数 x 的双曲线余弦值。
+15.4.11.10 Tanh
+说明 tanh()用来计算参数 x 的双曲线正切值, 然后将结果返回。
+double tanh(double x)
+定义 数学定义式为：sinh(x)/cosh(x)；
+返回值：返回参数 x 的双曲线正切值。
+xCore控制系统使用手册 283
+
+===== PDF page 298 =====
+15 RL指令
+15.4.11.11 Exp
+说明 exp()用来计算以 e 为底的 x 次方值, 即 e^x 值, 然后将结果返回；
+double exp(double x)
+定义
+返回值：返回 e 的 x 次方计算结果。
+15.4.11.12 Ln
+说明 ln()用来计算以 e 为底的 x 对数值, 然后将结果返回。
+double ln(double x)
+定义 函数说明：也就是求 x 的自然对数ln(x)，x > 0；
+返回值：返回参数 x 的自然对数值。
+15.4.11.13 log10
+说明 log10()用来计算以 10 为底的 x 对数值, 然后将结果返回。
+double log10(double x)
+定义 要求 x>0；
+返回值：返回参数 x 以 10 为底的对数值。
+15.4.11.14 pow
+说明 pow()用来计算以 x 为底的 y 次方值, 即 xy 值, 然后将结果返回；
+double pow(double x, double y)
+定义
+返回值：返回 x 的 y 次方计算结果。
+15.4.11.15 sqrt
+说明 sqrt()用来计算参数 x 的平方根, 然后将结果返回。
+double sqrt(double x)
+定义 参数 x 必须为正数；
+返回值：返回参数 x 的平方根值。
+15.4.11.16 ceil
+说明 ceil()会返回不小于参数 x 的最小整数值, 结果以 double 形态返回；
+double ceil(double x)
+定义
+返回值：返回不小于参数 x 的最小整数值。
+15.4.11.17 floor
+说明 floor()会返回不大于参数 x 的最大整数值, 结果以 double 形态返回；
+double floor(double x)
+定义
+返回值：返回不大于参数 x 的最大整数值。
+15.4.11.18 abs
+说明 求 x 的绝对值 |x|；
+284 xCore控制系统使用手册
+
+===== PDF page 299 =====
+15 RL指令
+int abs(int x)/double abs(double x)
+定义 返回值：当输入参数为 int 型时，输出也为 int 型。当输入参数为 double 型时，输出也为double
+型。
+15.4.11.19 rand
+说明 产生一个整型随机数；
+rand()
+定义
+返回值：一个整型随机数，范围为 0~2147483647。
+15.4.12 位操作
+15.4.12.1 BitAnd
+BitAnd用于生成一个逻辑位与的操作，针对byte类型数据。如下表：
+说明
+返回值，数据类型：byte，表示2个byte类型数据执行逻辑与返回的结果。
+BitAnd (BitData1, BitData2)
+定义
+BitData1，数据类型：byte，要操作的字节数据1。
+BitData2，数据类型：byte，要操作的字节数据2。
+例 1
+VAR byte data1 = 34
+VAR byte data2 = 38
+示例
+VAR byte byte3 = BitAnd(data1, data2) //34
+定义byte类型变量data1，赋值34，定义byte类型变量data2，赋值38，对data1和data2执行
+逻辑与操作，得到34，赋值给byte3。
+15.4.12.2 BitCheck
+说明 BitCheck用于检查定义的byte类型数据的某一位是否为1，若为1则返回true，否则返回false。
+返回值，数据类型：bool，true表示指定位为1，false表示指定位为0。
+BitCheck (BitData, BitPos)
+定义
+BitData，数据类型：byte，要操作的字节数据。
+BitPos，数据类型：int，要操作位的位置，范围1~8。
+例 1
+VAR byte data1 = 130
+示例
+VAR bool b1 = BitCheck(data1, 8) //true
+定义byte类型变量data1，赋值130，检测data1第8位是否为1，返回true。
+xCore控制系统使用手册 285
+
+===== PDF page 300 =====
+15 RL指令
+15.4.12.3 BitClear
+说明 通过BitClear可将byte或int类型的数据某一位置为0。位数从1开始。
+BitClear BitData | IntData, BitPos
+BitData，数据类型：byte，要操作的字节数据。
+定义 IntData，数据类型：int，要操作的整型数据。
+BitPos，数据类型：int，要操作位的位置，对于byte数据来说是（1-8），对于int数据来说是1-
+32。
+例 1
+VAR byte data1 = 255
+BitClear data1 1 //254
+示例
+BitClear data1 2 //252
+定义byte类型变量data1，赋值255，对data1进行BitClear操作，将第1位置为0，得到254，
+将第2位置为0，得到252。
+15.4.12.4 BitLSh
+说明 BitLSh用于对byte数据执行逻辑左移操作。
+返回值，数据类型：byte，表示执行左移操作得到的byte数据。
+BitLSh (BitData, ShiftSteps)
+定义
+BitData，数据类型：byte，要操作的字节数据。
+ShiftSteps，数据类型：int，要左移的位数，范围1~8。
+例 1
+VAR int left_shift = 3
+VAR byte data1 = 38
+示例
+VAR byte data2
+data2 = BiLSh(data1, left_shift) //48
+定义byte类型变量data1，赋值38，对data1进行左移3位操作，得到48。
+15.4.12.5 BitNeg
+说明 BitNeg用于对byte数据执行逻辑非操作。
+返回值，数据类型：byte，表示执行逻辑非操作得到的byte数据。
+定义 BitNeg (BitData)
+BitData，数据类型：byte，要操作的字节数据。
+例 1
+VAR byte data1 = 38
+示例 VAR byte data2
+data2 = BitNeg(data1) //217
+定义byte类型变量data1，赋值38，对data1执行逻辑非操作，得到217。
+15.4.12.6 BitOr
+说明 BitOr用于对byte数据执行逻辑或操作。
+返回值，数据类型：byte，表示执行逻辑或操作得到的byte数据。
+定义
+BitOr (BitData1, BitData2)
+286 xCore控制系统使用手册
+
+===== PDF page 301 =====
+15 RL指令
+BitData1，数据类型：byte，要操作的字节数据1。
+BitData2，数据类型：byte，要操作的字节数据2。
+例 1
+VAR byte data1 = 39
+VAR byte data2 = 162
+示例 VAR byte data3
+data3 = BitOr(data1, data2) //167
+定义byte类型变量data1，赋值39，定义byte类型变量data2，赋值162，对data1和data2执
+行逻辑或操作，得到167。
+15.4.12.7 BitRSh
+说明 BitRSh用于对byte数据执行逻辑右移操作。
+返回值，数据类型：byte，表示执行右移操作得到的byte数据。
+BitLSh (BitData, ShiftSteps)
+定义
+BitData，数据类型：byte，要操作的字节数据。
+ShiftSteps，数据类型：int，要右移的位数，范围1~8。
+例 1
+VAR int right_shift = 3
+VAR byte data1 = 38
+示例
+VAR byte data2
+data2 = BiRSh(data1, right_shift) //4
+定义byte类型变量data1，赋值38，对data1进行右移3位操作，得到4。
+15.4.12.8 BitSet
+说明 通过BitSet可将byte或int类型的数据某一位置为1，位数从1开始。
+BitSet BitData | IntData, BitPos
+BitData，数据类型：byte，要操作的字节数据。
+定义 IntData，数据类型：int，要操作的整型数据。
+BitPos，数据类型：int，要操作位的位置，对于byte数据来说是（1-8），对于int数据来说是1-
+32。
+例 1
+VAR byte data1 = 0
+BitSet data1 1 //1
+示例
+BitSet data1 2 //3
+定义byte类型变量data1，赋值255，对data1进行BitSet操作，将第1位置为1，得到1，将第2
+位置为1，得到3。
+15.4.12.9 BitXOr
+说明 BitXOr用于对byte数据执行逻辑异或操作。
+返回值，数据类型：byte，表示执行逻辑或操作得到的byte数据。
+BitXOr (BitData1, BitData2)
+定义
+BitData1，数据类型：byte，要操作的字节数据1。
+BitData2，数据类型：byte，要操作的字节数据2。
+示例 例 1
+xCore控制系统使用手册 287
+
+===== PDF page 302 =====
+15 RL指令
+VAR byte data1 = 39
+VAR byte data2 = 162
+VAR byte data3
+data3 = BitOr(data1, data2) //133
+定义byte类型变量data1，赋值39，定义byte类型变量data2，赋值162，对data1和data2执
+行逻辑异或操作，得到133。
+15.4.13 字符串操作
+15.4.13.1 StrFind
+说明 StrFind用于在字符串中查找，从一个特定位置开始查找属于另一个特定字符集合的位置。
+返回值，数据类型：int，表示执行查找得到的第一个字符匹配的位置。如果没有找到，返回字符串
+长度+1。
+StrFind (Str ChPos Set [\NotInSet])
+定义 Str，数据类型：string，表示要查找的字符串。
+ChPos，数据类型：int，表示开始查找的位置，从1开始，如果位置越界，报错提示。
+Set，数据类型：string，表示要匹配的字符集合。
+[\NotInSet]，标识符，标识搜索不在匹配的字符集合内的字符。
+例 1
+VAR int found
+found = StrFind(“Robotics”, 1, “aeiou”) //2
+示例
+从第1个字符“R”开始匹配，发现第2个字符“o”在字符集合“aeiou”，返回匹配位置2。
+found = StrFind(“Robotics”, 1, “aeiou” \NotInSet) //1
+从第1个字符“R”开始匹配，发现第1个字符“R”不在字符集合“aeiou“，返回匹配位置1。
+15.4.13.2 StrLen
+说明 StrLen用于获取字符串长度
+返回值，数据类型：int，表示当前字符串长度，>=0。
+定义 StrLen (Str)
+Str，数据类型：string，表示要计算字符个数的字符串。
+例 1
+VAR int num
+示例
+num = StrLen(“Robotics”) //8
+字符串“Robotics“长度为8。
+15.4.13.3 StrMap
+StrMap用于创造一份string备份，它其中所有字符都将按照指定映射关系进行替换。映射字符根
+说明
+据位置一一对应，没有映射的字符保持不变。
+返回值，数据类型：string，表示替换得到的字符串。
+StrMap (Str, FromMap, ToMap)
+定义 Str，数据类型：string，表示原字符串。
+FromMap，数据类型：string，表示映射的索引部分。
+ToMap，数据类型：string，表示映射的值部分。
+示例 例 1
+288 xCore控制系统使用手册
+
+===== PDF page 303 =====
+15 RL指令
+VAR string str
+str = StrMap(“Robotics”, “aeiou”, “AEIOU”) //RObOtIcs
+对字符串“Robotics“进行字符映射，”aeiou”分别映射成”AEIOU“。
+使用限制：FromMap和ToMap必须匹配，长度一致。
+15.4.13.4 StrMatch
+说明 StrMatch 用于在字符串中搜索，从指定位置开始，搜索特定格式或字符串，返回匹配的位置。
+返回值，数据类型： int，表示匹配字符串首字符所在的位置，如果没有匹配，则返回字符串长度
++1。
+StrMatch (Str, ChPos, Pattern)
+定义
+Str，数据类型： string，表示要搜索的字符串。
+ChPos，数据类型： int，表示起始位置，如果超出字符串长度范围报错。
+Pattern，数据类型： string，表示要匹配的格式字符串。
+例 1
+VAR int found
+示例
+Found = StrMatch(“Robotics”, 1, “bo”) //3
+从第 1 个字符开始搜索“bo“，发现第 3 个位置匹配，返回匹配的首字符所在位置 3。
+15.4.13.5 StrMemb
+说明 StrMemb用于检查字符串中某个字符是否属于指定的字符集合。
+返回值，数据类型：bool，true表示字符串中指定位置的字符属于指定的字符集合，否则false。
+StrMemb (Str, ChPos, Set)
+定义 Str，数据类型：string，表示要检查的字符串。
+ChPos，数据类型：int，表示要检查的字符位置，超出字符串范围报错。
+Set，数据类型：string，表示要匹配的字符集合。
+例 1
+VAR bool memb
+示例
+memb = StrMemb(“Robotics”, 2, “aeiou”) //true
+第2个字符o属于字符集合“aeiou”中一员，返回true。
+15.4.13.6 StrOrder
+说明 StrOrder用于比较两个字符串，并且返回布尔值。
+返回值，数据类型：bool，当str1<=str2时返回true，否则false。
+StrOrder (Str1, Str2)
+定义
+Str1，数据类型：string，表示第一个字符串值。
+Str2，数据类型：string，表示第二个字符串值。
+例 1
+VAR bool le
+示例
+le = StrOrder(“FIRST”, “SECOND”) //true
+le = StrOrder(“FIRSTB”, “FIRST”) //false
+15.4.13.7 StrPart
+xCore控制系统使用手册 289
+
+===== PDF page 304 =====
+15 RL指令
+说明 StrPart用于截取字符串一部分生成一个新的字符串。
+返回值，数据类型：string，表示截取得到的字符串，从指定位置开始截取指定长度的字符串。
+StrPart (Str, ChPos, Len)
+定义 Str，数据类型：string，表示要被截取的原字符串。
+ChPos，数据类型：int，表示起始截取位置，当超出字符串范围时报错。
+Len，数据类型：int，表示要截取的长度。
+例 1
+VAR string part
+示例
+part = StrPart(“Robotics”, 1, 5) //Robot
+从第1个位置开始截取长度为5的字符串，得到“Robot“。
+15.4.13.8 StrSplit
+说明 StrSplit 可以对字符串进行分割，通过指定分隔符，将字符串分割成字符串数组
+返回值，数据类型：string 数组，表示分割得到的字符串数组
+StrSplit (Str [, separator])
+定义 Str，数据类型：string，表示要被分割的原字符串。
+Separator，数据类型：string，分隔符，该字符串中的所有字符都被看做分隔符，可以缺省，当缺
+省时，空格作为默认分隔符
+string str_arr[4] = StrSplit("test1,test2;test3\test4", "\,;")
+字符串分割结果为四个子串(test1 test2 test3 test4)。
+示例
+使用限制：
+⚫ 输入字符串为空时会报错。
+⚫ 分割结果和定义字符串的长度不匹配时会报错。
+15.4.13.9 StrToByte
+说明 StrToByte 可以将字符串转换为byte类型数据
+返回值，数据类型：byte，字符串的转换结果。
+StrToByte (Str, [ trans])
+定义 Str，数据类型：string，将要进行数据转换的字符串。
+Trans，数据类型：枚举，表示字符串的数学进制格式，可用参数为 \Bin（二进制），\Okt（八进
+制），\Hex（十六进制），\Char（字符）以及默认参数（无参数，十进制）
+例1
+Byte NumBin = StrToByte(“10”, \Bin)
+Byte NumOkt = StrToByte(“10”, \Okt)
+Byte NumBin = StrToByte(“10”)
+Byte NumHex = StrToByte(“10”, \Hex)
+依次将字符串 “10” 按照二进制、八进制、十进制、16进制转换为byte数字，结果依次为2, 8, 10,
+示例
+16。
+例2
+Byte NumChar = StrToByte(“0”, \Char)
+将字符”0”按照字符与ASCII的转换关系，转为48。
+290 xCore控制系统使用手册
+
+===== PDF page 305 =====
+15 RL指令
+使用限制：输入字符串不符合指定的数据格式时会报错。
+15.4.13.10 StrToDouble
+说明 StrToDouble 可以将字符串转换为double类型数据
+返回值，数据类型：double，字符串的转换结果。
+定义 StrToDouble (Str)
+Str，数据类型：string，将要进行数据转换的字符串。
+例1：
+Double NumDouble = StrToDouble(“3.1415926”)
+将“3.1415926”字符串转换为double类型数据。
+示例
+使用限制：
+输入字符串不符合指定的数据格式时会报错。
+15.4.13.11 StrToInt
+说明 StrToInt 可以将字符串转换为Int类型数据
+返回值，数据类型：Int，字符串的转换结果。
+定义 StrToDouble (Str)
+Str，数据类型：string，将要进行数据转换的字符串。
+例1
+Int NumInt = StrToInt(“99”)
+示例 将“99”字符串转换为Int类型数据。
+使用限制：输入字符串不符合指定的数据格式时会报错。
+15.4.13.12 StrToDoubleArray
+说明 可以对大量double字符串进行类型转换，转换成 double 数组数据
+返回值，数据类型：Int，转换是否遇到异常，-1错误，0正常。
+StrToDoubleArray(output, input, spilit)
+定义 Output，数据类型：double数组，转换结果输出
+Input，数据类型：str 字符串，输入的字符串
+Spilit，数据类型: str字符串，字符串的分隔符
+例1
+string tmp_ss = "1,2,3,4,5,6,7"
+double db_arr[10]
+StrToDoubleArray (db_arr, tmp_ss, ",")
+// 结果 db_arr = {1,2,3,4,5,6,7,0,0,0}
+示例
+使用限制：
+字符串允许结尾出现一个多余的结束符
+转换失败或含非法字符报错“输入的字符串分割后不是Double形式”
+double 数组应大于等于字符串中数据量的大小，否则报错 “输入的数组大小不足 或者 数组不是
+一维数组”
+xCore控制系统使用手册 291
+
+===== PDF page 306 =====
+15 RL指令
+15.4.14 运算符
+15.4.14.1 基础运算符
+15.4.14.1.1 算数运算符
+算数运算符包括：
+运算符 作用
++ 加
+- 减/负号
+* 乘
+/ 除
+% 取余
+-- 自减
+++ 自加
+算数运算操作符支持bool,byte,int,double类型数据的操作，
+不同类型的变量如果放在一起进行加减乘除运算，会触发隐式转换
+各种算术运算符用法示例如下：
+例 1
+VAR int a = 1
+VAR int b = 2
+VAR int c = -b //取负
+VAR int ac = a * c //乘法
+例 2
+++，--两个运算符又称单目运算符，是指对一个操作数进行操作的运算符，RL不区分前后自
+加自减：
+x = n++ //表示n先加1，再将n的值赋给x
+x = --n //表示n先减1后，再将新值赋给x
+例3
+不同类型变量的进行加减乘除运算的隐式转化结果
+类型1 类型2 结果
+bool bool bool
+bool byte byte
+bool int int
+bool double double
+byte byte byte
+byte int int
+byte double double
+int int int
+int double double
+double double double
+292 xCore控制系统使用手册
+
+===== PDF page 307 =====
+15 RL指令
+15.4.14.1.2 逻辑运算符
+逻辑运算符支持基本数据类型的运算，包括：
+运算符 作用
+&& 逻辑与
+|| 逻辑或
+< 小于
+> 大于
+<= 小于等于
+>= 大于等于
+== 等于
+!= 不等于
+! 取逻辑非
+逻辑与&&表达式为真的条件是两边的结果都为真，而逻辑或||为真的条件是两边只要有一个
+条件为真即可。
+例 1
+其他逻辑运算符用法示例如下：
+VAR int res = 1
+while(res < 3) //比较res是否小于3
+res++
+endwhile
+di5 = !di6 //取逻辑非
+VAR int counter = 4
+while(di7 && di8) //求逻辑与
+if(counter == 5) //是否相等
+break
+endif
+endwhile
+15.4.14.1.3 赋值运算符
+赋值运算符包括：
+运算符 作用
+= 赋值
++= 加等
+-= 减等
+*= 乘等
+/= 除等
+%= 取模等
+各种赋值运算符用法示例如下
+xCore控制系统使用手册 293
+
+===== PDF page 308 =====
+15 RL指令
+VAR int num1 = 3
+VAR int num2 = 4
+num1 += num2 //等同于 num1 = num1 + num2 则num1 = 7。
+num1 -= num2 //等同于 num1 = num1 – num2，则num1 = -1。
+num1 *= num2 //等同于 num1 = num1 * num2 则num1 = 12。
+num1 /= num2 //等同于 num1 = num1 / num2 则num1 = 0。
+num1 %= num2 //等同于 num1 = num1 % num2 则num1 = 3。
+变量所有赋值操作，都支持隐式转换。当赋值运算左右两边的数据类型不一致时，解释器会
+尝试触发隐式转换以使得程序能继续运行，当转换失败时，程序会报错停止。
+Bool, Byte, Int, Double 四种数据类型之间能进行转换。IO、寄存器变量属于上面四种变量的
+特殊形式，如果它们用于赋值操作，也可触发隐式转换。
+函数的返回值如果属于上面四种类型，也可作为赋值操作的右值，进行赋值计算。
+例1
+int tmp_num = 10.5 // 10
+bool tmp_bool = 1 // true
+tmp_bool = 0 // false
+double tmp_d = 999 // 999.0
+例2
+// 直接用寄存器变量修改普通变量
+double tmp_num = register0
+// 寄存器变量可以直接用于条件判断
+WaitUntil(register0 == 10)
+例3
+int mem_ret = StrMemb(“Robotics”, 2, “aeiou”)
+// StrMemb的返回值是 bool 类型，如果一定要用int类型接收返回值，
+// 控制器不会报错，而是会进行隐式转换
+// true -> 1 ， false-> 0
+15.4.14.1.4 其他运算符
+运算符 作用
+（） 圆括号
+. 点操作符
+各运算符用法示例如下：
+例 1
+VAR int num = arr[1] //取数组第一个元素赋给num
+VAR int num2 = (1+2)*3 //使用括号可以改变运算顺序，这里num2的值为9
+例 2
+定义一个robtarget变量pt1
+294 xCore控制系统使用手册
+
+===== PDF page 309 =====
+15 RL指令
+pt1.trans.x = 200 //使用“.”操作符将pt1点的x坐标改为200
+使用限制：
+“.”操作符不支持对robtarget变量A，B，C成员的修改。
+15.4.14.2 运算优先级
+优先级 运算符 使用形式 结合方向
+( ) （表达式）/函数名(形参表)
+1
+. 变量名.
+- -表达式 右到左
+++ ++变量名/变量名++
+2
+-- --变量名/变量名--
+! !表达式
+/ 表达式/表达式 左到右
+3 * 表达式*表达式
+% 整型表达式/整型表达式
++ 表达式+表达式 左到右
+4
+- 表达式-表达式
+> 表达式>表达式 左到右
+>= 表达式>=表达式
+5
+< 表达式<表达式
+<= 表达式<=表达式
+== 表达式==表达式 左到右
+6
+!= 表达式!= 表达式
+7 && 表达式&&表达式 左到右
+8 || 表达式||表达式 左到右
+= 变量=表达式 右到左
+/= 变量/=表达式
+*= 变量*=表达式
+9
+%= 变量%=表达式
++= 变量+=表达式
+-= 变量-=表达式
+15.4.15 时钟指令
+15.4.15.1 ClkRead
+说明 ClkRead用于读取计时器的值。
+返回值，数据类型：double，返回计时器停止时刻或当前时刻距启动clock的时间间隔，精度0.001s。
+定义 ClkRead (Clock)
+Clock，数据类型：clock，计时器名称。
+例 1
+VAR clock clock1
+示例
+ClkStart clock1
+ClkStop clock1
+xCore控制系统使用手册 295
+
+===== PDF page 310 =====
+15 RL指令
+VAR double interval=ClkRead(clock1)
+interval 存储 clock1 在启动和停止之间的时间间隔。
+15.4.15.2 ClkReset
+说明 ClkReset用于重置一个计时器。使用一个计时器前可通过ClkReset保证计数为0。
+ClkReset Clock
+定义
+Clock，数据类型：clock，计时器名称。
+例 1
+VAR clock clock1
+示例
+ClkReset clock1
+重置 clock1。
+15.4.15.3 ClkStart
+ClkStart用于启动一个计时器。
+说明 当一个计时器启动后，它会不断的运行计数，直到计时器停止或程序重置。 即使程序停止或
+机器人下电，计时器仍会继续运行。
+ClkStart Clock
+定义
+Clock，数据类型：clock，计时器名称。
+例 1
+VAR clock clock1
+示例
+ClkStart clock1
+声明 clock1，启动计时器 clock1。
+15.4.15.4 ClkStop
+ClkStop 用于停止一个计时器。
+说明
+当计时器停止后，它会停止计数。计时器停止后，可以被读取间隔，重新启动或重置。
+ClkStop Clock
+定义
+Clock，数据类型：clock，计时器名称。
+例 1
+VAR clock clock1
+ClkStart clock1
+示例
+…
+ClkStop clock1
+停止计时器 clock1。
+15.4.16 高级指令
+15.4.16.1 RelTool
+在当前指令指定的工具坐标系下对空间位置进行平移或者旋转。
+说明
+与 Offs 主要区别：Offs 是相对于工件坐标系偏移，RelTool是相对于工具坐标系偏移。
+返回值，数据类型： robtarget，返回偏移后的新位姿。
+定义 RelTool(Point, XOffset, YOffset, ZOffset, Rx, Ry, Rz [, Tool, Wobj])
+Point，数据类型： robtarget，待偏移的位置点，或者说偏移指令的初始点。
+296 xCore控制系统使用手册
+
+===== PDF page 311 =====
+15 RL指令
+XOffset，数据类型： double，沿工具坐标系 x 方向上的偏移量。
+YOffset，数据类型： double，沿工具坐标系 y 方向上的偏移量。
+ZOffset，数据类型： double，沿工具坐标系 z 方向上的偏移量。
+Rx，数据类型： double，绕工具坐标系 x 轴的转动角度。
+Ry，数据类型： double，绕工具坐标系 y 轴的转动角度。
+Rz，数据类型： double，绕工具坐标系 z 轴的转动角度。
+Tool，数据类型： tool 工具，包含描述Point点位的工具坐标系信息。
+Wobj，数据类型： wobj 工件，包含描述Point点位的工件坐标系信息。
+例 1
+p2=RelTool(p1,100,0,30,20,0,0)
+由于未指定工具工件，默认使用tool0,wobj0作为工具工件，将 p1 点沿工具坐标系的 x 方向偏移
+100 mm， y 方向偏移 0 mm， z 方向偏移 30 mm，绕 x 轴旋转 20 度后，将新的目标点位置
+赋给 p2 点。
+例 2
+p2=RelTool(p1,100,0,30,20,0,0, tool5, wobj6)
+示例
+将 p1 点沿tool5工具坐标系的 x 方向偏移 100 mm， y 方向偏移 0 mm， z 方向偏移 30 mm，
+绕 x 轴旋转 20 度后，将新的目标点位置赋给 p2 点。
+例 3
+MoveL RelTool(p1, 100,0,30,20,0,0), v4000, fine, tool2, wobj4
+RelTool和Move指令配合使用，未指定特定的工具工件坐标系，将使用运动指令的tool和wobj,
+将 p1 点沿tool2工具坐标系的 x 方向偏移 100 mm， y 方向偏移 0 mm， z 方向偏移 30 mm，
+绕 x 轴旋转 20 度后，将新的目标点位置赋给 p2 点。
+该指令的可选参数Tool和 Wobj暂时不支持辅助编程。
+注意 xMate CR系列的5轴机型，由于一个姿态自由度的缺失，在使用RelTool命令时会有较多点位不
+可达情况，需要结合可达姿态特点确定偏移（如在法兰平行基座的情况下点位的平移通常都可达）。
+15.4.16.2 Offs
+位置偏移函数，用于把某个点在当前指令中指定的工件坐标系下偏移一段距离并返回新点的位置
+说明
+值，平移偏移量由 x、 y、 z 三个量来表示，姿态旋转偏移量由Rx、 Ry、 Rz表示。
+返回值，数据类型： robtarget，偏移后的新位姿。
+Offs（Point， XOffset， YOffset， ZOffset [, Rx, Ry, Rz] ）
+Point，数据类型： robtarget，待偏移的位置点，或者说偏移指令的初始点。
+XOffset，数据类型： double，沿工件坐标系 x 方向上的偏移量。
+定义 YOffset，数据类型： double，沿工件坐标系 y 方向上的偏移量。
+ZOffset，数据类型： double，沿工件坐标系 z 方向上的偏移量。
+Rx，数据类型： double，绕工件坐标系 x 轴的转动角度。
+Ry，数据类型： double，绕工件坐标系 y 轴的转动角度。
+Rz，数据类型： double，绕工件坐标系 z 轴的转动角度
+例 1
+p11=Offs(p10,100,200,300)
+示例
+将 p10 点沿工件坐标系的 x 方向偏移 100 mm， y 方向偏移 200 mm， z 方向偏移 300 mm，
+并将新的目标点位置赋给 p11 点。
+注意 该指令暂时不支持辅助编程。
+xCore控制系统使用手册 297
+
+===== PDF page 312 =====
+15 RL指令
+15.4.16.3 ConfL
+笛卡尔坐标对应一组conf参数(cf1~7, cfx)，用户手动更改或写入的笛卡尔坐标点对应的conf数据
+可能是错误的，导致控制器无法解析出目标点的路径，但是存在部分场景，用户只关心机器人TCP
+说明 点的位置而不关心姿态，此时可以使用ConfL Off解除conf限制，让控制器尝试计算出离路径起
+点最（较）近的逆解（可能算不出来，导致运动指令失败）。
+可以阅读confdata的介绍，了解更多conf相关的知识。
+例 1
+p1.trans.x = ….
+MoveJ p1, v1000 ….
+//只修改了坐标，未修改cf参数，该指令很可能导致执行失败
+…
+ConfL Off
+示例
+MoveJ p1, v1000 ….
+//关闭conf检查，机器人能够运动到p1点，但是姿态不确定
+例 2
+ConfL On
+//打开conf检查
+HMI点位列表界面的“运动至”功能，默认打开conf限制（即ConfL On）；
+注意
+RL编程，默认关闭conf限制（即ConfL Off）；
+15.4.16.4 VelSet
+当机器人搬运易碎物品时，可使用 VelSet 指令调节最大运动速度以达到更加平顺的运动效果。机
+器人在实际运动路径下，每个关节的最大速度能力往往并非恒定值，而是会随着负载状态、本体姿
+说明
+态等因素始终处于变化中，VelSet指令是对特定任务路径下的最大速度能力曲线进行的缩放，缩放
+后的最大速度能力曲线同样也是一条变化的曲线。
+VelSet gain
+定义 Gain，数据类型：int，按照百分比来指定最大速度能力的大小，取值范围1%~100%，其中100%对
+应最大加速度，超过限制范围机器人会报错。
+例 1
+示例 VelSet 50
+将最大速度能力设置为机器人默认最大速度的一半。
+1. VelSet指令只影响所在的RL工程的运动指令，对非工程的JOG功能、运动至功能、快速移动功
+能等均不生效。
+2. VelSet功能会打断转弯区，请勿在需要转弯区的运动指令之间插入VelSet指令。
+3. VelSet 指令和程序运行速率调整滑块的功能区别：程序运行速率调整滑块修改的是用户期望速
+度，如V4000的运动指令，在50%的滑块控制下，实际相当于V2000的用户期望速度，但假如此
+时机器人处于极限工况，此运动指令能够达到的实际最大速度只有V1000，那么不管速度滑块处于
+注意
+50%还是100%的时候，机器人实际的运动速度是不会改变的，因为不论是V2000还是V4000，都
+超过了V1000，所以在这个区间范围内改变期望速度，对实际执行速度不会造成影响；相反，VelSet
+50 并不改变用户期望速度，而是在运动规划的过程中，将该运动指令能达到的实际最大速度缩小
+了50%，同样以此运动指令为例，实际机器人的运动速度将会缩小一半，从原本的V1000变为V500。
+这两个功能的区别需要用户在使用的过程中能够加以区分。
+4. 发生以下操作时，速度自动恢复为默认大小（100%）：
+298 xCore控制系统使用手册
+
+===== PDF page 313 =====
+15 RL指令
+⚫ RL 程序被手动重置时（PP to Main）
+⚫ 加载新的RL 程序时
+15.4.16.5 AccSet
+说明 当机器人搬运易碎物品时，可使用AccSet指令调节加速度以达到更加平顺的运动效果。
+AccSet acc, ramp
+Acc，数据类型：int，按照系统预设值的百分比大小指定加速度的大小，取值范围30%~100%，其
+定义 中100%对应最大加速度，超过限制范围机器人会报错。
+Ramp，数据类型：int，按照系统预设值的百分比大小指定加加速度（Jerk），取值范围30%~100%，
+其中100%对应最大加加速度，超过限制范围机器人会报错。
+例 1
+示例 AccSet 50,15
+加速度、加加速度设置为默认的一半。
+发生以下操作时，加速度自动回复为默认大小（100%）：
+注意 ⚫ RL 程序被手动重置时（PP to Main）
+⚫ 加载新的RL 程序时
+15.4.16.6 MotionSup
+说明 用于打开、关闭碰撞检测功能
+MotionSup type [, level, event]
+Type，数据类型：关键字，On打开，Off关闭
+Level，数据类型：int，MotionSup On 的额外参数，修改碰撞检测灵敏度百分比，范围：[1,200]
+定义 Event，数据类型：string，MotionSup On 的额外参数，设置碰撞后的行为
+⚫ "safestop" 安全停止
+⚫ "pause" 触发暂停（只有协作机器人支持，工业机器人不支持设置此行为）
+⚫ "softstop" 柔顺停止
+例 1
+MotionSup On
+//... 其他指令
+MotionSup Off
+示例 开启碰撞检测后执行其他指令，执行完成后使用MotionSup Off关闭碰撞检测
+例 2
+MotionSup On, 200, “softstop”
+开启碰撞检测，设置检测灵敏度百分比为200%，并设置检测到碰撞后触发的行为为柔顺停止。
+15.4.16.7 MotionSupPlus
+MotionSupPlus（Motion Supervision Plus）运动监控用于在RL程序中随时调整机器人各关节碰撞
+说明
+检测灵敏度参数。
+MotionSupPlus x1,x2,x3,x4,x5,x6,x7
+定义
+x1至x7，分别表示关节1到关节7碰撞检测灵敏度，单位%。
+例 1
+示例 MotionSupPlus 5,20,7,20,6,20,5
+表示7个关节灵敏度分别为5，20，7，20，6，20，5。
+xCore控制系统使用手册 299
+
+===== PDF page 314 =====
+15 RL指令
+注意：
+当用于六轴机器人，也需要设置7个参数，其中前6个参数起作用，对应1~6关节；
+该指令支持协作机器人和六轴工业机器人，不支持三、四轴工业机器人。
+15.4.16.8 BreakLookAhead
+该指令通知控制系统取消前瞻，强制取消上一条运动指令和下一条运动指令之间的转弯区。机器人
+说明 TCP将运行至上一条运动指令的目标点后，再向下一个点位运动，不衔接转弯区。程序指针也将等
+待TCP运行至上一条运动指令的目标点后，再继续往下前瞻扫描。
+定义 指令无参数和返回值
+例 1
+MoveL P1,v1000,z50,tool0
+BreakLookAhead
+MoveL P2,v1000,z50,tool0
+示例 MoveL P3,v1000,z50,tool0
+1）点位P1的转弯区设置为z50 ，由于BreakLookAhead指令存在，此处前瞻将取消，转弯区也
+将取消，机器人TCP会精确运动至P1点，再向P2运动。而P2和P3之间没有BreakLookAhead
+指令，因此在P2点会前瞻并且保留z50转弯区向P3运动。
+2）BreakLookAhead指令与wait 0指令效果完全相同。
+15.4.16.9 GetRobotMaxLoad
+说明 获取当前型号机器人的最大负载值
+Ret = GetRobotMaxLoad()
+定义
+Ret，返回值，数据类型：int，最大负载
+int maxload = GetRobotMaxLoad()
+示例 print(maxload)
+以xMate 7为例，返回值为7。
+15.4.16.10 GetRobotState
+获取控制系统当前的运行状态。用4个字节的bit信息来表示控制系统的状态，包括故障、紧急停
+说明
+止、安全门、操作模式、伺服模式、运动状态等信息。具体如下表
+Ret = GetRobotState()
+定义
+Ret，返回值，数据类型：byte数组，用四个byte类型来表示机器人状态。
+例 1
+byte st[4] = GetRobotMaxLoad()
+示例 print(st)
+返回{0,5,0,0}，查表可知当前状态为：无故障，电机已上电，自动模式，机器人运动状态，伺服处
+于位置模式
+序号 状态位 含义
+1 Byte[1].bit[1] 1：控制系统未授权
+2 Byte[1].bit[2] 1：控制系统可恢复故障
+3 Byte[1].bit[3] 1：控制系统致命错误
+300 xCore控制系统使用手册
+
+===== PDF page 315 =====
+15 RL指令
+4 Byte[1].bit[4] 1：伺服系统故障
+5 Byte[1].bit[5] 1：伺服系统致命故障
+6 Byte[1].bit[6] 1：紧急停止
+7 Byte[1].bit[7] 1：安全门停止
+8 Byte[1].bit[8] 保留
+9 Byte[2].bit[1] 上电状态 ， 0 ：电机未上电；1 ：电机已上电
+10 Byte[2].bit[2] 机器人运动状态 ， 0：空闲；1：运动中
+11 Byte[2].bit[3] 操作模式， 0：手动模式；1：自动模式
+12 Byte[2].bit[4] 伺服模式， 0：位置模式；1：力矩模式
+13 Byte[2].bit[5] 保留
+14 Byte[2].bit[6] 保留
+15 Byte[2].bit[7] 保留
+16 Byte[2].bit[8] 保留
+17 Byte[3] 保留
+18 Byte[4] 保留
+15.4.16.11 AutoIgnoreZone
+说明 用于指定是否允许控制系统自动忽略转弯区
+AutoIgnoreZone true/false
+true：允许控制系统自动忽略转弯区（这也是控制系统地默认状态）；
+false：不允许控制系统自动忽略转弯区；
+定义
+如上图所示：机器人运行两条MoveL指令，中间含有z50的转弯区。机器人在运动的过程中，为
+了运动的柔顺性和安全性，需要从当前位置，向前前瞻一段距离。例如，机器人运动到P0点时，
+前瞻到了P1点。在此过程中，控制系统会对p0到p1点间的信息进行预处理。
+机器人向前运动的过程中，前瞻终点也在不断向前移动，在某一时刻，前瞻终点 p1 和转弯区起点
+p2 重合。此时，如果控制系统已经收到了第二条运动指令，便可正常生成转弯区，控制机器人沿
+着预定的轨迹运动；如果控制系统未能收到第二条运动指令，则无法生成转弯区，此时控制系统会
+依据AutoIgnoreZone指令状态对转弯区进行处理。具体处理逻辑如下：
+AutoIgnoreZone true：控制系统不会等待第二条运动指令，而是将转弯区取消，直接向着P3点运
+动。
+AutoIgnoreZone false：控制系统会等待第二条运动指令，在此过程中，机器人会降低运动速度，
+直至生成转弯区轨迹。若机器人运动到p2点时，仍未收到第二条运动指令，则机器人会停止运动，
+并通过HMI报错。
+机器人未能及时收到第二条运动指令，往往在于两条运动指令间加入了过多的非运动指令，例如：
+xCore控制系统使用手册 301
+
+===== PDF page 316 =====
+15 RL指令
+两条运动指令间加入了非常多的打印指令，控制系统处理完第一条运动指令后，经过很长时间才能
+收到第二条运动指令。
+例 1
+AutoIgnoreZone true
+MoveL p3,v1000,z50,tool0
+MoveL p4,v1000,fine,tool0
+允许控制系统自动忽略转弯区
+示例
+例 2
+AutoIgnoreZone false
+MoveL p3,v1000,z50,tool0
+MoveL p4,v1000,fine,tool0
+不允许控制系统自动忽略转弯区
+15.4.16.12 MotionWaitAtFinePoint true/false
+机器人静止状态时，点击启动，控制系统会依据前瞻参数，前瞻一段距离后再启动机器人。该指令
+说明 用于设定，当前瞻遇到fine点时，机器人是否立即启动运动。
+Fine点:指的是没有衔接转弯区的目标点，即转弯区参数写作fine的目标点。
+MotionWaitAtFinePoint true/false
+MotionWaitAtFinePoint true：控制系统严格按照前瞻参数，控制机器人的启动，当前瞻距离达到前
+瞻参数设定值或前瞻完所有运动指令时，机器人才启动运动。此状态下，控制系统能够保证设定的
+前瞻距离长度。
+定义
+MotionWaitAtFinePoint false：控制系统不严格遵守前瞻参数，当前瞻遇到fine点时，机器人立即
+启动运动。此状态下，遇到非常复杂的程序逻辑，机器人依然能够顺利启动，但是无法保证前瞻距
+离的长度。
+控制系统默认状态：MotionWaitAtFinePoint false
+例 1
+MotionWaitAtFinePoint true
+MoveL p1,v1000,fine,tool0
+MoveL p2,v1000,fine,tool0
+MoveL p3,v1000,fine,tool0
+MoveL p4,v1000,fine,tool0
+MoveL p5,v1000,fine,tool0
+示例
+控制系统前瞻到 p1 点时，不会立即启动机器人，而是检查当前前瞻距离是否达到了前瞻参数设定
+长度，从而决定是否启动机器人。
+例 2
+MotionWaitAtFinePoint false
+MoveL p1,v1000,fine,tool0
+MoveL p2,v1000,fine,tool0
+302 xCore控制系统使用手册
+
+===== PDF page 317 =====
+15 RL指令
+MoveL p3,v1000,fine,tool0
+MoveL p4,v1000,fine,tool0
+MoveL p5,v1000,fine,tool0
+控制系统前瞻到 p1 点时，不会检查当前前瞻距离是否达到了前瞻参数设定长度，而是立即启动机
+器人。
+15.4.16.13 DynamicThreshold
+当用户对工程中某一部分或某几部分程序有较高的碰撞检测灵敏度要求时，可以打开 hmi 上碰撞
+检测动态阈值功能开关，并使用DynamicThreshold指令，将对应的程序“囊括”进动态阈值区间。
+动态阈值区间内的程序进行碰撞检测判断时，不再使用预设的阈值，而是自动辨识并使用最适合当
+说明
+前区间的阈值进行判断。
+注意：程序循环运行到动态阈值区间的前三次用于辨识，并不会进行碰撞检测，请保证辨识时无外
+界干扰。
+DynamicThreshold mark,switch
+定义 Mark，数据类型： int，用于标记不同动态阈值区间，避免阈值混淆
+Switch，数据类型： bool，true/false分别代表动态阈值区间的开启和关闭
+例 1
+MoveL p1,v1000,fine,tool0
+DynamicThreshold 1,true
+MoveL p2,v1000,fine,tool0
+MoveL p3,v1000,fine,tool0
+DynamicThreshold 1,false
+MoveL p4,v1000,fine,tool0
+DynamicThreshold 2,true
+MoveL p5,v1000,fine,tool0
+DynamicThreshold 2,false
+MoveL p6,v1000,fine,tool0
+机器人运动到p2,p3以及p5的过程中会使用动态阈值进行碰撞检测
+示例
+例 2
+MoveL p1,v1000,fine,tool0
+DynamicThreshold 1,true
+MoveL p2,v1000,fine,tool0
+MoveL p3,v1000,fine,tool0
+DynamicThreshold 1,false
+MoveL p4,v1000,fine,tool0
+DynamicThreshold 2,true
+MoveL p5,v1000,fine,tool0
+DynamicThreshold 23,false
+MoveL p6,v1000,fine,tool0
+机器人运动到p2,p3的过程中会使用动态阈值进行碰撞检测，运动到p5的过程中则不会，因为前
+后两条DynamicThreshold指令中mark对应不上。
+15.4.16.14 DynamicThresholdPause
+说明 当用户期望工程中原使用碰撞检测动态阈值的某程序块，暂停使用动态阈值，转而使用预设的固定
+xCore控制系统使用手册 303
+
+===== PDF page 318 =====
+15 RL指令
+阈值，可以在程序块前后插入 DynamicThresholdPause true/fasle 指令。
+注意：该指令需与 DynamicThreshold 指令配合使用。
+DynamicThresholdPause type
+定义
+Type，数据类型 ：关键字， on/false 分别代表暂停使用动态阈值功能开启和关闭。
+示例
+MoveL p1,v1000,fine,tool0 // 固定阈值
+DynamicThreshold 1,true
+MoveL p2,v1000,fine,tool0 //动态阈值
+DynamicThresholdPause true
+MoveL p3,v1000,fine,tool0 // 固定阈值
+示例 MoveL p4,v1000,fine,tool0 // 固定阈值
+DynamicThresholdPause false
+MoveL p5,v1000,fine,tool0 //动态阈值
+DynamicThreshold 1,false
+MoveL p6,v1000,fine,tool0 // 固定阈值
+机器人运动到p2过程中使用动态阈值进行碰撞检测，运动到p3、p4 过程中使用固定阈值进行碰
+撞检测，运动到p5过程中使用动态阈值进行碰撞检测（和运动到p2过程中的动态阈值相同）。
+15.4.16.15 IgnoreOverride
+焊接、涂胶等对沿路径的运动速度有严格要求的场景，希望工艺段的运动速度不受全局速率影响。
+可以通过该指令，暂时屏蔽速率滑块对运动指令的影响，使指定某段运动指令、轨迹不受全局速率
+说明 影响。
+该指令支持在自动模式和手动模式下使用。手动模式下，运动速度受v250限制，速度超过v250，
+按照v250执行。自动模式下则按期望速度运动。
+IgnoreOverride On/Off
+定义 IgnoreOverride On表示其后运动指令不受速率滑块影响；
+IgnoreOverride Off效果与其相反。
+例 1
+MoveJ p1, v1000 …. //受滑块速率影响
+IgnoreOverride On
+MoveJ p2, v1000 ….//不受滑块速率影响
+MoveJ p3, v1000 ….//不受滑块速率影响
+IgnoreOverride Off
+MoveJ p4, v1000 ….//受滑块速率影响
+例 2（手动模式）
+示例
+IgnoreOverride On
+MoveJ p2, v1000 ….//不受滑块速率影响，速度按v250执行
+MoveJ p3, v100 ….//不受滑块速率影响，速度按v100执行
+IgnoreOverride Off
+例 3（自动模式）
+IgnoreOverride On
+MoveJ p2, v1000 ….//不受滑块速率影响，速度按v1000执行
+MoveJ p3, v100 ….//不受滑块速率影响，速度按v100执行
+304 xCore控制系统使用手册
+
+===== PDF page 319 =====
+15 RL指令
+IgnoreOverride Off
+受影响的运动指令：MoveAbsJ、MoveJ、MoveL、MoveC、MoveCF、MoveT、SearchL、SearchC、
+TrigL、TrigC、TrigJ。
+注意
+该指令未立即执行指令，不打断转弯区。
+只能在运动任务中使用且不能在Inzone中使用，否则报错。
+15.4.16.16 SingAreaLockAxis4
+说明 该指令表示采用锁定4轴的方式，规避机器人手腕奇异点
+SingAreaLockAxis4 on/off
+On,表示开启锁定4轴规避腕部奇异功能。需要注意的是只有当机器人已经4轴处于0度或者±180
+度时才能开启该功能。通常SingAreaLockAxis4 on前一句运动指令的目标点位，需要保证4轴处
+于上述点位，或者机器人四轴已经处于上述角度才能保证程序正常运行，否则将会引发报错提示。
+Off,表示关闭该功能。
+定义
+注意：SingAreaLockAxis4 on和SingAreaLockAxis4 off之间的笛卡尔运动指令，其姿态将采用特
+殊的插补方式，不会改变4轴的运动角度。任何试图改变4轴角度的运动指令都会引起报错。同时
+该指令被设计为阻塞指令，会打断SingAreaLockAxis4前后运动指令间的转弯区。
+目前版本适用机型为：工业标准六轴系列(XB,NB型号)和协作xMateCR（5轴机型除外），xMateSR
+系列。
+例 1
+MoveAbsJ p1,v1000,z50,tool0
+SingAreaLockAxis4 on
+MoveL p2,v1000, z50,tool0
+MoveL p3,v1000, z50,tool0
+示例
+SingAreaLockAxis4 off
+MoveL p5,v1000, z50,tool0
+点位p1需要保证4轴角度为0度或者±180度，运行到SingAreaLockAxis4 on锁定四轴进行腕奇
+异规避功能开启，MoveL p2，MoveL p3 姿态将进行特殊的插补，保持 4 轴角度不变。
+SingAreaLockAxis4 off关闭该功能。
+15.4.16.17 SpeedRefresh
+说明 用于覆盖当前运动程序任务中的速度值。
+SpeedRefresh override
+定义
+Override,数据类型： int,取值范围1%~100%速度覆盖值 ，超过限值范围机器人会报错
+例 1
+示例 SpeedRefresh 70
+将当前的速度覆盖值设置为70%
+RL 程序被手动重置（PP to Main）或重新加载RL程序、重新运行、下一步时，通过SpeedRefresh
+指令设置的速度覆盖值将会被重置，重新使用示教器界面上设置的程序速度。
+注意
+通过SpeedRefresh设置的速度覆盖值不会立即完成，下达命令与对物理机械臂产生速度影响之间
+会存在一定时间滞后。
+15.4.16.18 CSpeedOverride
+说明 用户读取当前速度覆盖值
+定义 Ret = CSpeedOverride()
+xCore控制系统使用手册 305
+
+===== PDF page 320 =====
+15 RL指令
+Ret，数据类型： int，取值范围1~100%速度覆盖值
+例 1
+int override = CSpeedOverride()
+示例
+print(override)
+若当前速度覆盖值为70%，则返回70
+15.4.16.19 SingAreaJointWay
+该指令表示采用关节空间轨迹插补的方式，规避笛卡尔指令中的奇异点。
+SingAreaJointWay on 和 SingAreaJointWay off 之间的笛卡尔运动指令，控制系统会自动检测
+其上是否有奇异点。该轨迹如果不包含奇异点，将按照普通轨迹的方式进行运动，如果包含奇异点，
+将按照该模式特有的模式进行运动。具体如下所示：
+说明
+如上图所示，对于含有奇异点的笛卡尔轨迹P0P1，控制系统检测到奇异点Psingular后，围绕奇异
+点Psingular，在原轨迹上加入Pcut1和Pcut2两点，将原轨迹划分为P0Pcut1, Pcut1Pcut2, Pcut2P1
+三部分，其中P0Pcut1和Pcut2P1,依然为原笛卡尔轨迹，Pcut1Pcut2采用关节空间轨迹(MoveAbsJ)
+代替原轨迹部分，从而能够通过奇异点。三段轨迹间采用转弯区平滑过渡，该转弯区的转弯半径可
+以进行设置，即为指令中的zone参数。
+机器人在奇异点附近的运动，关节角度通常运动幅度很大，所以使用该指令时，需要确认机器人的
+运动轨迹是否符合要求。
+注意：目前版本适用机型为：工业标准六轴系列(XB,NB型号)。
+SingAreaJointWay on/off,zone
+on/off ,分别代表关节插补奇异功能的开启和关闭
+定义
+Zone,表示切割后P0Pcut1, Pcut1Pcut2, Pcut2P1三段轨迹间的转弯区半径，如上图，参考转弯区定
+义。
+例 1
+MoveAbsJ p1,v1000,z50,tool0
+SingAreaJointWay on,50
+MoveL p2,v1000, z50,tool0
+MoveL p3,v1000, z50,tool0
+示例
+SingAreaJointWay off
+MoveL p5,v1000, z50,tool0
+上述指令中SingAreaJointWay on,50开启奇异规避，并指定奇异规避内部转弯区半径为50mm，
+SingAreaJointWay off关闭奇异规避，两者之间的运动指令将采用关节插补奇异规避的方式进行运
+动。
+15.4.16.20 SingAreaWrist
+该指令表示采用牺牲姿态的方式，规避笛卡尔指令中的奇异点。
+说明
+SingAreaWrist on和SingAreaWrist off之间的笛卡尔运动指令，都使用牺牲姿态的方式来运动。
+306 xCore控制系统使用手册
+
+===== PDF page 321 =====
+15 RL指令
+在这种情况下, 机器人工具遵循正确的, 精准的轨迹运动, 但是机器人腕关节形态将被改变。未通
+过奇异点时, 亦将出现上述情况。
+机器人使用牺牲姿态的方式来运动，机器人腕关节姿态可能运动幅度很大，所以使用该指令时，需
+要确认机器人的运动轨迹是否符合要求。
+注意：
+目前版本适用机型包括工业标准六轴系列(XB,NB型号)和协作xMateCR, xMateSR系列。
+SingAreaWrist on/off, limit
+定义 on/off，分别代表牺牲姿态规避奇异点功能开启和关闭。
+Limit，表示设置的允许最大的可牺牲姿态的值, 单位角度。
+例 1
+MoveAbsJ p1,v1000,z50,tool0
+SingAreawrist on,30
+MoveL p2,v1000, z50,tool0
+MoveL p3,v1000, z50,tool0
+示例
+SingAreaWrist off
+MoveL p4,v1000, z50,tool0
+上述指令中 SingAreaWrist on,30 开启奇异规避，并指定奇异规避最大可牺牲姿态为 30 度，
+SingAreaWrist off 关闭奇异规避，两者之间的运动指令将采用奇异规避的方式进行运动。需注意,
+p1与p2, p2与p3之间的转弯区可正常生成, p3和p4之间的转弯区不可生成。
+只可以对直线运动使用,不可对弧线运动使用。
+使用牺牲姿态奇异规避功能, 示教点在奇异点范围内时, 示教点将被变更。运动时的手腕姿态与示
+注意
+教的可能有所不同, 不仅通过奇异点的示教点, 而且以后的示教点的姿态也可能被改变。
+单步运动时和连续运动时的奇异点附近姿态的运动可能不同。
+15.4.17 功能指令
+15.4.17.1 CRobT
+用于获取机器人位姿。使用该函数时，需要给定工具名称和工件名称，返回指定工具坐标系的 pose，
+说明 当前的轴配置信息以及外部轴位置。
+注意：使用 CRobT 时，机器人应处于停止状态，即 CRobT 之前的运动语句转弯区设置应为 fine。
+返回值，数据类型： robtarget，返回当前机器人的位置、姿态、轴配置数据以及外部轴信息。
+CRobT（ Tool， Wobj）
+定义
+Tool，数据类型： tool，计算位置时使用的工具。
+Wobj，数据类型： wobj，计算位置时使用的工件。
+例 1
+示例
+p2 = CRobT( tool1， wobj2 )
+15.4.17.2 CJointT
+CJointT用于读取机器人轴和外部轴当前角度。
+说明
+注意：使用CJointT时，机器人应处于停止状态，即CRobT之前的运动语句转弯区设置应为fine。
+返回值，数据类型：jointtarget，旋转轴单位：度，线性轴单位：mm，返回机器人轴和外部轴的当
+定义 前角度值。
+CJointT（）
+例 1
+示例
+VAR jointtarget j2
+xCore控制系统使用手册 307
+
+===== PDF page 322 =====
+15 RL指令
+j2 = CJointT（）
+15.4.17.3 CalcJointT
+说明 根据指定的 robtarget 变量计算对应的关节角度
+返回值，数据类型： jointtarget，返回输入位置对应的关节角度和外部轴位置。关节角度的单位是
+度（ °），直线外部轴的单位是毫米（ mm），旋转外部轴的单位是度（Degree）。
+CalcJointT（Rob_Target，Tool，Wobj）
+Rob_Target，数据类型： robtarget，指定的笛卡尔空间目标点，请注意该点定义时使用的工具和
+定义 工件应和 CalcJointT 指令中使用的工具/工件保持一致，否则可能会导致错误的结果。
+Tool，数据类型： tool，计算关节角度时使用的工具，注意需要与定义所用的 robtarget 时使用的
+工具一致。
+Wobj，数据类型： wobj，计算关节角度时使用的工件，注意需要与定义所用的 robtarget 时使用
+的工件一致。
+例 1
+示例 jpos2 = CalcJointT(pt1, tool1,wobj2)
+计算 tool1 到达 pt1 点时对应的关节角度，并赋值给 jpos2， pt1 点是在工件 wobj2 下定义的。
+15.4.17.4 CalcRobt
+说明 根据指定的关节角度计算对应的笛卡尔空间位姿。
+返回值，数据类型： robtarget，返回给定关节角对应的笛卡尔空间位姿。
+CalcRobt（Joint_Target，Tool，Wobj）
+定义 Joint_Target，数据类型： jointtarget，给定的用来计算笛卡尔空间位姿的关节角度。
+Tool，数据类型： tool，计算笛卡尔空间位姿时使用的工具。
+Wobj，数据类型： wobj，计算笛卡尔空间位姿时使用的工件。
+例 1
+pt1 = CalcRobT（ jpos1, tool2,wobj1）
+示例
+根据关节角度 jpos1 来计算笛卡尔位姿，并赋值给 pt1。
+pt1 是工具坐标系 tool2 在工件坐标系 wobj1 下描述的位姿。
+15.4.17.5 Print
+将用户定义的内容打印输出到示教器，用户可以使用该函数对程序进行调试。
+Print 函数的输入参数比较特殊，输入参数的个数不限，但至少要有一个，且每个参数必须为
+说明 一个定义过的变量或者常量。
+系统将这些变量转换为字符串并串接在一起，最后输出到程序编辑器的调试窗口。（调试窗口关闭
+时，print的信息仍然被记录，记录数量上限为500条）
+定义 Print（ var1， var2，……）
+例 1
+counter = 0
+while(true)
+counter++
+示例
+Print(“counter = ”,counter)
+endwhile
+该程序段执行后， HMI 的程序调试窗口将打印出如下信息：
+counter = 1
+308 xCore控制系统使用手册
+
+===== PDF page 323 =====
+15 RL指令
+counter = 2
+counter = 3
+counter = 4
+……
+注意：当需要输出字符串时可以使用双引号“”来包含想要显示的字符，但不支持在双引号中嵌套双
+引号。
+15.4.17.6 PoseMult
+说明 PoseMult用于计算两个位姿变换的乘积
+pose3 = PoseMult(pose1，pose2)
+pose1，数据类型，pose，位姿1。
+定义
+pose2，数据类型，pose，位姿2。
+pose3，返回值，数据类型：pose，表示位姿乘积结果。
+示例
+pose1代表坐标系1相对坐标系0的位姿，pose2代表坐标系2相对坐标系1的位姿，坐标系2相
+对坐标系0的位姿pose3可以通过以下方式计算：
+VAR pose pose1
+VAR pose pose2
+VAR pose pose3
+...
+pose3 = PoseMult(pose1, pose2)
+15.4.17.7 PoseInv
+说明 PoseInv用于计算一个位姿变换的逆。
+pose2 = PoseInv(pose1)
+定义 pose1，数据类型：pose，输入位姿；
+pose2，数据类型：pose，返回值。
+pose1代表坐标系1相对坐标系0的位姿，pose2代表坐标系0相对坐标系1的位姿。
+如果已知pose1，pose2可以通过以下方式计算：
+VAR pose pose1
+示例
+VAR pose pose2
+...
+pose2 = PoseInv(pose1)
+xCore控制系统使用手册 309
+
+===== PDF page 324 =====
+15 RL指令
+15.4.17.8 GetRobABC
+获取笛卡尔空间点 P 的欧拉角姿态 ABC；旋转顺序定义为，初始坐标系（运动指令中选定的工件
+说明
+坐标系）首先绕自身X轴旋转后，再绕初始坐标系的Y轴旋转，最后绕初始坐标系的Z轴旋转
+double db_arr[3] = GetRobABC(Point [, A, B, C])
+Point，数据类型： robtarget，计算位置时使用的笛卡尔点位。
+定义
+A, B, C，数据类型： double，笛卡尔点位欧拉角姿态的返回值。
+返回值，数据类型： double三维数组，笛卡尔点位欧拉角姿态的返回值。
+示例1
+point0是一个笛卡尔点位变量，将变量的欧拉角姿态转换成RL的Double变量，可以使用下面的
+RL指令
+VAR double Rob_A
+VAR double Rob_B
+VAR double Rob_C
+示例 // 将point0的欧拉角赋值到Rob_A|B|C
+GetRobABC(point0, Rob_A, Rob_B, Rob_C)
+示例2
+point0是一个笛卡尔点位变量，生成一个临时变量数组来存储笛卡尔点位的欧拉角信息，可以使用
+下面的RL指令
+double db_arr[3] = GetRobAbc(point0)
+15.4.17.9 SetRobABC
+根据输入的欧拉角ABC，设置笛卡尔空间点P的姿态；旋转顺序定义为，初始坐标系（运动指令中
+说明 选定的工件坐标系）首先绕自身X轴旋转后，再绕初始坐标系的Y轴旋转，最后绕初始坐标系的Z
+轴旋转。
+SetRobABC(Point , A, B, C)
+定义 Point，数据类型： 笛卡尔点位，将要被修改姿态的笛卡尔点位。
+A, B, C，数据类型： double，设置笛卡尔点位的欧拉角姿态，单位°（度）。
+示例1
+示例 point0是一个笛卡尔点位变量，点位绕定轴X,Y,Z轴依次旋转30°，60°，90°。
+SetRobABC(point0, 30, 60, 90)
+15.4.17.10 RotRobABC
+说明 根据输入的欧拉角 ABC，在笛卡尔空间 P 的已有的姿态前提下，再进行欧拉角的旋转；旋转顺序
+310 xCore控制系统使用手册
+
+===== PDF page 325 =====
+15 RL指令
+定义为，初始坐标系（P自身的姿态）首先绕自身X轴旋转后，再绕初始坐标系的Y轴旋转，最后
+绕初始坐标系的Z轴旋转。表现为已有的欧拉角跟输入的ABC相加。
+RotRobABC(Point , A, B, C)
+定义 Point，数据类型： 笛卡尔点位，将要被修改姿态的笛卡尔点位。
+A, B, C，数据类型： double，设置笛卡尔点位旋转的欧拉角姿态，单位°（度）。
+示例1
+示例 point0是一个笛卡尔点位变量，将点位绕X,Y,Z再旋为30°, 60°, 90°
+RotRobABC(point0, 30, 60, 90)
+15.4.17.11 OpMode
+说明 用于获取机器人当前的运行模式
+ret = OpMode()
+定义
+ret，返回值，数据类型： int，0为未定义模式，1为自动模式，2为手动模式。
+示例1
+int mode = OpMode()
+示例
+print(mode)
+若当前为自动模式则返回1，手动模式则返回2。
+15.4.18 寄存器指令
+15.4.18.1 ReadRegByName
+说明 根据寄存器的名字，读取对应寄存器的变量值
+ReadRegByName(RegData，Value)
+RegData，数据类型：可读的寄存器变量 ，设置>通信>寄存器界面功能，寄存器变量。
+定义
+Value ，数据类型：bool/int/double ，寄存器数据将写入Value，如果寄存器的变量类型和解释器
+变量不一致，将自动进行格式转换
+例 1
+int tmp_int
+示例
+ReadRegByName(modbus_int_read[6], tmp_int)
+将名为modbus_int_read 的下标为6的数据，读取到tmp_int变量中
+15.4.18.2 WriteRegByName
+根据寄存器的名字，读取对应寄存器的变量值 ，该指令如果放在运动指令之后使用，不会打断转
+说明
+弯区，在运动指令轨迹终点触发，或在转弯区起点触发，具体使用可参考SetDO例2。
+WriteRegByName(RegData，Value)
+RegData，数据类型：可写的寄存器变量 ，设置>通信>寄存器界面功能，寄存器变量。
+定义
+Value，数据类型：bool/int/double ，将Value数据写入寄存器中，如果寄存器的变量类型和解释
+器变量不一致，将自动进行格式转换。
+例 1
+示例 WriteRegByName(modbus_int_write[6], 200)
+将INT 200 的数据，写入modbus_int_write[6] 对应的寄存器中。
+15.4.18.3 ReadRegByteByName
+xCore控制系统使用手册 311
+
+===== PDF page 326 =====
+15 RL指令
+说明 根据寄存器的名字，读取寄存器对应字节的值
+ReadRegByteByName(RegData，Value，byteFlag)
+RegData，数据类型：可读或可写的int16/int32类型寄存器，通信>寄存器界面功能，寄存器变量。
+定义 Value ，数据类型：byte 类型变量，读取寄存器对应字节值到Value中，Value必须为byte类型
+变量。
+byteFlag ，字节标志位。取值范围1-4，1为低字节，4为高字节。
+例 1
+byte tmp_value
+示例
+ReadRegByteByName(modbus_reg, tmp_value,1)
+将名为modbus_reg寄存器的第一个字节，读取到tmp_value变量中
+15.4.18.4 WriteRegByteByName
+根据寄存器的名字，写对应寄存器字节的值 ，该指令如果放在运动指令之后使用，不会打断转弯
+说明
+区，在运动指令轨迹终点触发，或在转弯区起点触发，具体使用可参考SetDO例2。
+WriteRegByteByName(RegData，Value，byteFlag)
+RegData，数据类型：可写的int16/int32类型寄存器变量 ，通信>寄存器界面功能，寄存器变量。
+定义
+Value ，数据类型：byte，将Value数据写入寄存器对应字节中
+byteFlag ，字节标志位。取值范围1-4，1为低字节，4为高字节。
+例 1
+示例 WriteRegByteByName(modbus_reg, 200,2)
+将200 的数据，写入modbus_reg 的第2个字节中。
+15.4.19 末端工具指令
+15.4.19.1 JodellGripInit
+说明 钧舵电爪的初始化指令
+JodellGripInit ID,wait_time
+定义 ID，数据类型：Int变量 ，建立通信，初始化钧舵电爪，参数ID。
+Wait_time，数据类型：Int变量 ，等待初始化完成，等待时间阈值，超时报错；单位：s。
+示例
+15.4.19.2 JodellGripMove
+说明 钧舵电爪的运动指令
+JodellGripMove ID,Pos,Vel,Trq
+ID，数据类型：Int变量 ，控制电爪运动的电爪ID。
+定义 Pos，数据类型：Int变量 ，目标位置，无单位，设置范围0-255。
+Vel，数据类型：Int变量 ，电爪运行的速度，无单位，设置范围0-255。
+Trq，数据类型：Int变量 ，电爪运行检测的力，无单位，设置范围0-255。
+示例
+15.4.19.3 JodellGripStatus
+说明 获取钧舵电爪的状态
+定义 JodellGripStatus ID,Pos,Vel,Trq,Contact
+312 xCore控制系统使用手册
+
+===== PDF page 327 =====
+15 RL指令
+ID，数据类型：Int变量 ，获取电爪运动状态的电爪ID。
+Pos，数据类型：Int变量 ，获取电爪当前位置，无单位，数据范围0-255。
+Vel，数据类型：Int变量 ，获取电爪运行的速度，无单位，数据范围0-255。
+Trq，数据类型：Int变量 ，获取电爪运行的力矩，无单位，数据范围0-255。
+Contact，数据类型：Int变量 ，获取电爪运行的状态字，无单位，数据范围0-255，其中bit6-7表
+示电爪是否检测到物体的状态。
+Bit 名称 值/说明
+0 gAct 0表示电动夹爪复位中，1表示电动夹爪处于使能状态
+2 gMode 0表示处于参数控制模式，1表示处于无参数控制模式
+3 gGTO 0表示停止，1表示正在向目标位置运动
+0电动夹爪处于复位或巡检状态，1表示正在激活，2表示未使用，3
+4-5 gSTA
+表示激活完成
+0表示手指正在指定位置移动；1表示手指在张开达到指定位置时，由
+6-7 gOBJ 于接触到物体停止；2表示手指在闭合达到指定位置时，由于接触到物
+体停止；3手指到达指定的位置，但没有检测到对象。
+示例
+15.4.19.4 JodellSuckInit
+说明 钧舵吸盘的初始化指令
+JodellSuckInit ID
+定义
+ID，数据类型：Int变量 ，初始化此ID的吸盘，检测是否正确连接此ID的吸盘。
+示例
+15.4.19.5 JodellSuckSet
+说明 钧舵吸盘工作的指令 ，下发此指令后，吸盘立刻按照设定参数开始工作
+JodellSuckSet ID,CH1_enable,CH1_VacMin, CH1_VacMax, CH1_Waittime, CH2_enable,
+CH2_VacMin, CH2_VacMax, CH2_Waittime
+ID，数据类型：Int变量 ，控制吸盘工作的吸盘ID。
+CH1_enable，数据类型：Int变量 ，吸盘第一个通道是否工作，1表示工作，0表示不工作。
+CH1_VacMin，数据类型：Int变量 ，吸盘第一个通道最小真空度设置值，范围0-255，0表示纯真
+空，大于100表示吸盘释放；当实际真空度低于此阈值时停止抽气；
+CH1_VacMax，数据类型：Int变量 ，吸盘第一个通道最大真空度设置值，范围0-255，0表示纯真
+定义 空，大于100表示吸盘释放；当实际真空度高于此阈值时开始抽气；
+CH1_Waittime，数据类型：Double变量 ，吸盘第一个通道超时设置值；
+CH2_enable，数据类型：Int变量 ，吸盘第二个通道是否工作，1表示工作，0表示不工作。
+CH2_VacMin，数据类型：Int变量 ，吸盘第二个通道最小真空度设置值，范围0-255，0表示纯真
+空，大于100表示吸盘释放；当实际真空度低于此阈值时停止抽气；
+CH2_VacMax，数据类型：Int变量 ，吸盘第二个通道最大真空度设置值，范围0-255，0表示纯
+真空，大于100表示吸盘释放；当实际真空度高于此阈值时开始抽气；
+CH2_Waittime，数据类型：Double变量 ，吸盘第二个通道超时设置值；
+示例
+15.4.19.6 JodellSuckStatus
+xCore控制系统使用手册 313
+
+===== PDF page 328 =====
+15 RL指令
+说明 获取钧舵吸盘的状态
+JodellSuckStatus ID,Vac1,Contact1,Time_Err1,Vac2,Contact2,Time_Err2
+ID，数据类型：Int变量 ，获取吸盘状态的吸盘ID。
+Vac1，数据类型：Int变量 ，获取的吸盘通道一当前的实际真空度，数据范围0-100。
+Contact1，数据类型：Int变量 ，获取的吸盘通道一当前的状态信息数据，数据范围0-255，其中
+bit6-7表示是否检测到物体，具体的状态信息含义见下表。
+Bit 名称 值/说明
+0 gAct 0表示电动吸盘未使能，1表示电动吸盘已使能
+2 gMode 0表示处于自动控制模式，1表示处于高级控制模式
+3 gGTO 0表示停止调节，1表示正在调节压力或真空度
+定义
+4-5 gSTA 0电动吸盘处于未激活状态，1和2未使用，3表示吸盘已激活
+0表示气压已低于最低气压；1表示检测到工件，最低压力值已经
+6-7 gOBJ 达到；2表示检测到工件，最高压力值已达到；3表示没有检测到
+对象，物体已丢失或脱落。
+Time_Err1，数据类型：Int变量，获取的吸盘通道一是否超时报警。
+Vac2，数据类型：Int变量，获取的吸盘通道二当前的实际真空度，数据范围0-100。
+Contact2，数据类型：Int 变量，获取的吸盘通道二当前的状态信息数据，数据范围 0-255，其中
+bit6-7表示是否检测到物体，具体的状态信息含义与上表相同。
+Time_Err2，数据类型：Int变量，获取的吸盘通道二是否超时报警。
+示例
+15.4.19.7 RMRGMGripInit
+说明 增广电爪RM-RGM系列的初始化指令
+RMRGMGripInit ID
+定义
+ID，数据类型：Int变量 ，控制电爪运动的电爪ID。
+示例
+15.4.19.8 RMCGripInit
+说明 增广电爪RM-C系列的初始化指令
+RMCGripInit ID
+定义
+ID，数据类型：Int变量，控制电爪运动的电爪ID。
+示例
+15.4.19.9 RMRGMGripPosMove
+说明 增广电爪RMRGM系列的位置模式的运动指令
+RMRGMGripPosMove ID,Pos,Vel,Acc,PCheck
+ID，数据类型：Int变量 ，控制电爪运动的电爪ID。
+Pos，数据类型：Double变量 ，目标位置，单位mm，设置范围-2000.0-2000.0。
+定义
+Vel，数据类型：Double变量 ，电爪运行的速度，单位mm/s，设置范围0.01-1000.0。
+Acc，数据类型：Double变量 ，电爪运行加速度，单位mm/s^2，设置范围0.01-2000.0。
+PCheck，数据类型：Double变量 ，定位范围，单位mm，设置范围0.01-10.0。
+示例
+314 xCore控制系统使用手册
+
+===== PDF page 329 =====
+15 RL指令
+15.4.19.10 RMCGripPosMove
+说明 增广电爪RMC系列的位置模式的运动指令
+RMCGripPosMove ID,Pos,Vel,Acc,PCheck
+ID，数据类型：Int变量 ，控制电爪运动的电爪ID。
+Pos，数据类型：Double变量 ，目标位置，单位mm，设置范围-2000.0-2000.0。
+定义
+Vel，数据类型：Double变量 ，电爪运行的速度，单位mm/s，设置范围0.01-1000.0。
+Acc，数据类型：Double变量 ，电爪运行加速度，单位mm/s2，设置范围0.01-2000.0。
+PCheck，数据类型：Double变量 ，定位范围，单位mm，设置范围0.01-10.0。
+示例
+15.4.19.11 RMRGMGripTrqMove
+说明 增广电爪RMRGM系列的力矩模式的运动指令
+RMRGMGripTrqMove ID,Pos,Vel,Acc,Trq,PCheck,TCheck
+ID，数据类型：Int变量 ，控制电爪运动的电爪ID。
+Pos，数据类型：Double变量 ，目标距离，单位mm，设置范围-2000.0-2000.0。
+Vel，数据类型：Double变量 ，电爪运行的速度，单位mm/s，设置范围0.01-1000.0。
+定义
+Acc，数据类型：Double变量 ，电爪运行加速度，单位mm/s2，设置范围0.01-2000.0。
+Trq，数据类型：Double变量 ，定位范围，单位Nm，设置范围0.01-100.0。
+PCheck，数据类型：Double变量 ，定位范围，单位mm，设置范围0.01-10.0。
+TCheck，数据类型：Double变量 ，时间范围，单位mm，设置范围0.01-1000.0。
+示例
+15.4.19.12 RMCGripTrqMove
+说明 增广电爪RMC系列的力矩模式的运动指令
+RMCGripTrqMove ID,Pos,Vel,Acc,Trq,PCheck,TCheck
+ID，数据类型：Int变量 ，控制电爪运动的电爪ID。
+Pos，数据类型：Double变量 ，目标距离，单位mm，设置范围-2000.0-2000.0。
+Vel，数据类型：Double变量 ，电爪运行的速度，单位mm/s，设置范围0.01-1000.0。
+定义
+Acc，数据类型：Double变量 ，电爪运行加速度，单位mm/s2，设置范围0.01-2000.0。
+Trq，数据类型：Double变量 ，定位范围，单位Nm，设置范围0.01-100.0。
+PCheck，数据类型：Double变量 ，定位范围，单位mm，设置范围0.01-10.0。
+TCheck，数据类型：Double变量 ，时间范围，单位mm，设置范围0.01-1000.0。
+示例
+15.4.19.13 RMRGMGripStatus
+说明 增广电爪RMRGM系列的获取状态指令
+RMRGMGripStatus ID,Pos,Vel,Trq,Reach,Err
+ID，数据类型：Int变量 ，控制电爪运动的电爪ID。
+Pos，数据类型：Double变量 ，电爪位置，单位mm。
+定义 Vel，数据类型：Double变量 ，电爪运行的速度，单位mm/s。
+Trq，数据类型：Double变量 ，电爪出力力矩，单位%。
+Reach，数据类型：Bool变量 ，电爪是否到位。
+Err，数据类型：Int变量 ，电爪的错误代码。
+xCore控制系统使用手册 315
+
+===== PDF page 330 =====
+15 RL指令
+示例
+15.4.19.14 RMCGripStatus
+说明 增广电爪RMC系列的获取状态指令
+RMCGripStatus ID,Pos,Vel,Trq,Reach,Err
+ID，数据类型：Int变量 ，控制电爪运动的电爪ID。
+Pos，数据类型：Double变量 ，电爪位置，单位mm。
+定义 Vel，数据类型：Double变量 ，电爪运行的速度，单位mm/s。
+Trq，数据类型：Double变量 ，电爪出力力矩，单位%。
+Reach，数据类型：Bool变量 ，电爪是否到位。
+Err，数据类型：Int变量 ，电爪的错误代码。
+示例
+15.4.19.15 RMRGMResetErr
+说明 增广电爪RMRGM系列的复位电爪错误指令
+RMRGMResetErr ID
+定义
+ID，数据类型：Int变量 ，需要复位电爪的ID。
+示例
+15.4.19.16 RMCResetErr
+说明 增广电爪RMC系列的复位电爪错误指令
+RMCResetErr ID
+定义
+ID，数据类型：Int变量 ，需要复位电爪的ID。
+示例
+316 xCore控制系统使用手册

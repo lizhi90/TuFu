@@ -1,0 +1,2776 @@
+
+===== PDF page 405 =====
+                                                                                                                                                             Zbasic编程手册 V3.3.0
+
+                   IF OP (0) = ON THEN
+                        OP (0, OFF)
+                   ELSE
+                        OP (0, ON)
+                   ENDIF
+
+                   例二    区域操作
+                   OP(0,7,$FF)        'bit0-bit7 全开
+                   DELAY(1000)
+                   OP(0,7,0)
+
+                   OP(8,15,$FF)       'bit8-bit15 全开
+                   DELAY(1000)
+                   OP(8,15,0)
+
+                   OP(0,15,$FFFF)         'bit0-bit15 全开
+                   DELAY(1000)
+                   OP(0,15,0)
+
+                   OP(0,31,$FFFFFFFF)        'bit0-bit31 全开
+                   DELAY(1000)
+                   OP(0,31,0)
+相关指令               READ_OP，MOVE_OP
+
+
+AOUT --       模拟量输出
+
+
+类型                 输入输出指令或函数
+描述                 模拟通道输出。
+                   12 位刻度值范围         0~4095  对应   0~10V  电压。
+                   16 位刻度值范围         0~65536  对应    0~10V  电压。
+语法                 AOUT(channel) = value
+                        channel：模拟输出通道           0-63
+
+                   扩展板     DA  通道号与拨码有关，起始值为（4 +拨码组合值*4），详细查看硬件手册。
+适用控制器              通用
+例子                 AOUT(1) = 0    '关闭输出       DA  通道   1
+                   AOUT(1) = 4095     'DA1  口输出     10V 电压
+相关指令               AIN
+
+
+READ_OP --          读取输出口
+
+
+类型                 输入输出函数
+
+
+
+                                                     387
+===== PDF page 406 =====
+                                                                                                                                                           Zbasic编程手册 V3.3.0
+
+描述              读取输出状态。
+                同  OP，多个输出口操作时按位来指明多个口状态。
+语法              READ_OP ([firstnum[,[finalnum])
+                    firstnum：起始输出编号，从        0 开始
+                    finalnum：结束输出编号，从         0开始，没有这个参数时，读取单个输出口的状态
+适用控制器           通用
+例子              '翻转输出口     0
+                IF READ_OP (0) = ON THEN
+                    OP (0, OFF)
+                ELSE
+                    OP (0, ON)
+                ENDIF
+相关指令            OP
+
+
+12.3. 位置比较输出指令
+
+
+PSWITCH --       软件位置比较输出
+
+
+类型              输入输出指令
+描述              根据位置比较来操作输出口。
+                如果多个     PSWITCH  操作同一个输出口，需要编号顺序排在一起。
+                使用脉冲型电机时只有           ATYPE  为  4时才是比较反馈位置(MPOS)，默认出厂的                 ATYPE
+                为  1或  7比较的是命令位置(DPOS)。
+语法              PSWITCH(num,enable,[,axis,op num,op state,set pos,reset pos])
+                    num：比较器的编号，ZMC1xx          系列有    16个比较器，编号：0-15
+                    enable：操作比较器的使能         - ON 启动   / OFF 取消
+                    axis：指定要获取位置的轴号
+                    op num：操作的     IO编号
+                    op state：输出的状态，1     表示在下面位置范围内输出为              ON，0  表示在下面位置范围
+                内输出为     OFF
+                    set pos：设定产生输出的起始位置，采用              units单位
+                    reset pos：设定输出复位的位置，采用            units单位
+
+                不同型号控制器支持的比较器个数不同，使用                    ?*max 指令打印查看       max_pswitch参数确
+                认个数。
+适用控制器           通用
+例子              RAPIDSTOP(2)
+                WAIT IDLE
+                DELAY(1000)
+                ERRSWITCH = 3
+                BASE(0,1)          '选择轴号
+
+
+
+                                            388
+===== PDF page 407 =====
+                                                                                                                                                           Zbasic编程手册 V3.3.0
+
+                ATYPE=1,1     '脉冲方式步进或伺服
+                DPOS = 0,0
+                UNITS = 1,1     '脉冲当量
+                SPEED = 10000,10000
+                ACCEL=SPEED(0)*10,SPEED(1)*10
+                DECEL=SPEED(0)*10,SPEED(1)*10
+                REP_OPTION=1,1     '设置坐标循环范围为0到+ REP_DIST
+                REP_DIST=1000,1000
+                TRIGGER
+                MOVE(10000,8000)
+                PSWITCH(0,ON,0,0,ON,500,520)
+                PSWITCH(1,ON,1,1,ON,300,400)
+                END
+
+                DPOS(0)垂直刻度1000，无偏移
+                MSPEED(0)垂直刻度10000，无偏移
+                OP(0)垂直刻度     1，无偏移
+                DPOS(0)垂直刻度     2000，偏移-2000
+                MSPEED (0) 垂直刻度    10000，偏移-10000
+                OP(0)垂直刻度     5，偏移-1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                以上例程，仅修改如下指令，得出波形如下图。
+                REP_OPTION=0,0         '设置坐标循环范围为- REP_DIST       到+ REP_DIST
+
+                DPOS(0)垂直刻度     1000，无偏移
+                MSPEED(0)垂直刻度      10000，无偏移
+
+
+                                             389
+===== PDF page 408 =====
+                                                                                                                                                          Zbasic编程手册 V3.3.0
+
+               OP(0)垂直刻度   1，无偏移
+               DPOS(0)垂直刻度   2000，偏移-2000
+               MSPEED (0)垂直刻度   10000，偏移-10000
+               OP(0)垂直刻度   5，偏移-1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+相关指令           HW_PSWITCH
+
+
+HW_PSWITCH         -- 硬件位置比较输出
+
+
+类型             轴指令
+描述             硬件比较输出，不同的轴对应不同的输出口。
+
+               缺省轴   0-5分别对应输出口      0 1 2 3 0 1。总共4个比较输出口。
+               可以连续调用两个       HW_PSWITCH  指令，通过函数方式可以获取能调用的指令个数。
+               每个比较点触发都会使得当前输出口电平翻转。
+               HW 缓冲数   1024个，可以连续调用        1024个 HW 指令。
+               HW 指令调用后,不受后面的坐标修改功能的影响，HW                  指令  TABLE  存储的坐标必须在
+               调用时是正确的，因此尽量手动修改坐标              ,要规避   HW 指令与坐标循环自动修改的随机冲
+               突。
+               因为自动循环修改坐标不受程序控制，无法确定是在                   HW 的前面还是后面，这样         TABLE
+               里面的坐标就无法确定。
+
+               此指令仅支持脉冲轴硬件位置比较输出，总线轴请使用                    HW_PSWITCH2   指令。
+
+
+                                         390
+===== PDF page 409 =====
+                                                                                                                                                           Zbasic编程手册 V3.3.0
+
+                 使用脉冲型电机时只有            ATYPE  为  4 时才是比较反馈位置(MPOS)，默认出厂的                  ATYPE
+                 为  1或  7 比较的是命令位置(DPOS)。
+语法               HW_PSWITCH(mode, direction, reserve, tablestart, tableend)
+                 Buff = HW_PSWITCH([axisnum])
+                     mode：1-启动比较器，2-         停止并删除没完成的比较点
+                     direction：0-坐标负向，1-      坐标正向，2-不判断方向
+                     reserve：预留
+                     tablestart：第一个比较点坐标所在           TABLE  编号
+                     tableend：最后一个比较点坐标所在             TABLE   编号
+
+                 HW_PSWITCH    没有比较完所有点的话，一定要设置                 mode  值为  2，通过   HW_PSWITCH(2)
+                 指令停止并删除没有完成的比较点，否则后面此输出通道会工作不正常。
+适用控制器            4 系列及以上产品，4         系列固件     20170704 及以上
+                 ZMC420SCAN    不支持    HW_PSWTICH
+例子               以下例程测试环境：ZMC432，固件：20170709（仿真器无法运行此指令）。
+
+                 BASE(0)        '选择轴0 默认输出     OP(0)
+                 ATYPE=4        '采用编码器位置作比较输出参考点              ,无编码器改成脉冲轴类型
+                 UNITS=100
+                 SPEED=100
+                 ACCEL=500
+                 MPOS=0
+                 OP(0,OFF)
+                 TABLE(0, 100,150,250,300,400,450)
+                 'OP0 在 MPOS100-150   间打开，150-250    间关闭，250-300    间打开，300-400    间关闭，400-450
+                 间打开，450     后关闭
+                 HW_PSWITCH(2)    '停止并删除没有完成的比较点
+                 HW_PSWITCH(1, 1, 0, 0, 5)    '启动比较输出
+                 TRIGGER
+                 MOVEABS(500)
+
+                 比较输出图
+                 MPOS(0)垂直刻度      200
+                 OP(0)垂直刻度     2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                               391
+===== PDF page 410 =====
+                                                                                                                                                          Zbasic编程手册 V3.3.0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+相关指令           PSWITCH，HW_PSWITCH2
+
+
+HW_TIMER --       硬件定时
+
+
+类型             特殊命令
+描述             硬件定时器，用于硬件比较输出后一段时间后还原电平。
+               HW_TIMER  只有   1个，每次调用会强制停止之前的调用。
+               ZMC420SCAN  每个输出口的      HW_TIMER  功能独立。
+
+               振镜控制器     20170709以上固件版本增加功能：
+               OP 和 MOVE_OP   操作会关闭正在进行的         HW_TIMER  脉冲，这样可以使用        HW_TIMER
+               来实现类似     PWM  的功能，OP    输出打开脉冲输出，下一个           OP 输出关闭脉冲输出，当使
+               用 MOVE_OP   精准输出时，可以实现精准的           PWM  输出无限脉冲功能。
+               使用?*HW_TIMER    可以看到还有多少脉冲剩余。
+语法             HW_TIMER(mode, cyclonetime, optime, reptimes, opstate, opnum )
+               done = HW_TIMER_DONE
+                   mode：0 停止，2-启动
+                   cyclonetime：周期时间，us   单位
+                   optime：有效时间，us    单位
+                   reptimes：重复次数，启动模式，reptimes =0      时，软关闭     HW_TIMER，原来的脉冲
+               没有完成的，会继续输出完成
+                   opstate：输出缺省状态，输出口变为非此状态后开始计时
+                   opnum：输出口编号，必须能硬件比较输出的口
+
+               振镜控制器     20170710以上版本增加     mode 3，类似   0，当前脉冲完成后不再输出，但后面
+               的 OP 仍会继续触发脉冲。
+适用控制器          3系列部分、4     系列及以上产品，4       系列固件    20170704及以上
+例子             以下例程测试环境：ZMC432，固件：20170709（仿真器无法运行此指令）。
+
+
+                                          392
+===== PDF page 411 =====
+                                                                                                                                                             Zbasic编程手册 V3.3.0
+
+                   为了直观显示波形，周期设置的较大。
+
+                   例一：不重复输出，周期为                 1
+                   RAPIDSTOP(2)
+                   WAIT IDLE(0)
+                   BASE(0)
+                   ATYPE=1
+                   UNITS=100
+                   SPEED=100
+                   ACCEL=500
+                   DPOS=0
+                   TRIGGER
+                   OP(0, OFF)
+                   HW_TIMER(2, 1000000, 500000, 1, OFF, 0)    '输出口       0 变为   on 后，硬件定时器触发开始
+                   计时，500ms       后切换为      off
+                   OP(0, ON)
+                   运行效果：OP(0)保持输出              500ms  后关闭。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                   例二：周期调整为            2，输出两次
+                   RAPIDSTOP(2)
+                   WAIT IDLE(0)
+                   BASE(0)
+                   ATYPE=1
+                   UNITS=100
+                   SPEED=100
+                   ACCEL=500
+                   DPOS=0
+                   TRIGGER
+                   OP(0, OFF)
+                   HW_TIMER(2, 1000000, 500000,      2, OFF, 0)    '输出口  0 变为   on 后，硬件定时器触发开始
+                   计时，500ms       后切换为      off
+                   OP(0, ON)
+                   运行效果：以         1000ms  为周期，输出两个周期，每个周期前                       500ms  开启，后半个周期关
+                   闭。
+
+
+                                                     393
+===== PDF page 412 =====
+                                                                                                                                                          Zbasic编程手册 V3.3.0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+相关指令           HW_PSWITCH
+
+
+HW_PSWITCH2 --         总线硬件位置比较输出
+
+
+类型             轴指令
+描述             总线硬件位置比较输出，也支持脉冲轴，必须使用特定的输出口。
+
+               4系列产品有     4个比较输出口，可以选择不同的比较输出口，一般为OUT0/1/2/3                   口。
+               比较主轴带编码器输入时，自动使用编码器位置来触发，可以使用                         MOVEOP_DELAY
+               参数来调整输出准确时刻。
+               不同的总线驱动器效果可能有差异，也可以通过MOVEOP_DELAY参数来调整。
+
+               HW_PSWITCH2  与  MOVE_OP  精准使用同样的硬件资源，不建议在同一个通道同时使
+               用，可以在不同的通道同时使用。
+               每个系统周期内只能比较一次，系统周期通过SERVO_PERIOD查询。
+               TABLE 位置数据在所有比较点完成前不要修改。
+               脉冲轴和总线轴均支持此指令。
+               使用脉冲型电机时只有         ATYPE 为  4时才是比较反馈位置(MPOS)，默认出厂的             ATYPE
+               为 1或  7比较的是命令位置(DPOS)。
+语法             命令语法：HW_PSWITCH2(mode, [...])
+               函数语法：Buff = HW_PSWITCH2([axisnum])
+
+               Mode=1:单轴比较，见例一
+               HW_PSWITCH2(1,opnum,opstate,tablestart,tableend[,direction])
+                  mode：1-启动比较器
+                  opnum：对应的输出口
+                  opstate：第一个比较点的输出状态
+                  tablestart：第一个比较点绝对坐标所在        TABLE  编号
+                  tableend：最后一个比较点绝对坐标所在           TABLE 编号
+                  direction：第一个点判断方向，0       坐标负向，1    坐标正向，-1    不使用方向
+
+               Mode=2:清除比较点
+
+
+                                         394
+===== PDF page 413 =====
+                                                                                                                                                           Zbasic编程手册 V3.3.0
+
+                HW_PSWITCH2(2)
+                    mode：2-停止并删除没完成的比较点
+
+                使用矢量距离比较时，             与   VECTOR_MOVED     进行比较，建议连续运动前设置
+                VECTOR_MOVED初始值
+
+                Mode=3:矢量比较方式，见例二
+                HW_PSWITCH2(3, opnum, opstate, tablestart, tableend)
+                    mode：3-启动比较器
+                    opnum：对应的输出口
+                    opstate：第一个比较点的输出状态
+                    tablestart：第一个比较点VECTOR_MOVED坐标所在TABLE编号
+                    tableend：最后一个比较点        VECTOR_MOVED     坐标所在    TABLE  编号
+
+                Mode=4:矢量比较方式,        单个比较点
+                HW_PSWITCH2(   4, opnum, opstate, vectstart)
+                    mode：4-启动比较器
+                    opnum：对应的输出口
+                    opstate：第一个比较点的输出状态
+                    vectstart：比较点   VECTOR_MOVED    当前运动距离
+
+                Mode=5:矢量比较方式,        周期脉冲模式，见例三
+                HW_PSWITCH2(5,opnum, opstate, vectstart, repes, cycledis, ondis)
+                    mode：5-启动比较器
+                    opnum：对应的输出口
+                    opstate：第一个比较点的输出状态，认为是有效状态，                    反之认为无效状态
+                    vectstart：比较点   VECTOR_MOVED    当前运动距离
+                    repes：重复周期，个周期内比较两次，先输出有效状态，再输出无效状态
+                    cycledis：周期距离，每隔这个距离输出             opstate, ondis后还原为无效状态
+                    ondis：输出有效状态的距离，(cycledis- ondis)为无效状态距离
+
+                Mode=6：矢量比较方式，周期模式，与                HW_TIMER    一起使用，见例四
+                HW_PSWITCH2(6, opnum, opstate, vectstart, repes, cycledis)
+                    mode：6-启动比较器
+                    opnum：对应的输出口
+                    opstate：第一个比较点的输出状态
+                    vectstart：比较点   VECTOR_MOVED    当前运动距离
+                    repes：重复周期，一个周期只比较一次
+                    cycledis：周期距离，每隔这个距离输出一次
+
+                Mode=7：与    HW_TIMER    一起使用
+                HW_PSWITCH2(7, opnum, opstate, tablestart, tableend [, optimeus, optimes, cyctimeus])
+                    mode：7-启动比较器，opstate       不翻转,   方便与    HW_TIMER   配合使用.
+                    opnum：对应的输出口
+
+
+                                             395
+===== PDF page 414 =====
+                                                                                                                                                           Zbasic编程手册 V3.3.0
+
+                     opstate：第一个比较点的输出状态
+                     tablestart：第一个比较点      VECTOR_MOVED     坐标所在     TABLE  编号
+                     tableend：最后一个比较点        VECTOR_MOVED      坐标所在     TABLE  编号
+                     [与 hwtimer 并用时，可以动态调整           hwtimer 参数]
+                     optimeus：动态调整      HW_TIMER   的有效时间
+                     optimes：动态调整      HW_TIMER   的触发脉冲数，0-不输出
+                     cyctimeus：动态调整     HW_TIMER    的脉冲周期时间
+
+                 HW_PSWITCH2     没有比较完所有点的话，一定要设置                          mode  值为    2，通过
+                 HW_PSWITCH2(2)指令停止并删除没有完成的比较点，否则后面此输出通道会工作不正
+                 常。
+
+                 以下为    2D，3D  比较模式
+                 4系列   170706 以后固件版本支持，运行轨迹必须顺序通过                     fifo的点。
+
+                 2D 比较：每     2个  table存储一个点
+                 多个点比较，每次输出翻转状态。
+                 HW_PSWITCH2(25,   opnum, opstate, maxerr, num, tablepos)
+                 注意：此模式下        maxerr偏差参数不能写        0。
+
+                 与 HW_TIMER    复用
+                 HW_PSWITCH2(26,    opnum,   opstate,   maxerr,   num,   tablepos,   [ophwtimeus,   ophwtimes,
+                 hwcyctimeus])
+
+                 3D 比较：每     3个  TABLE   存储一个点
+                 多个点比较，每次输出翻转状态。
+                 HW_PSWITCH2(35,   opnum, opstate, maxerr, num, tablepos)
+
+                 与 HW_TIMER    复用
+                 HW_PSWITCH2(36,    opnum,   opstate,   maxerr,   num,   tablepos,   [ophwtimeus,   ophwtimes,
+                 hwcyctimeus])
+
+                 参数：
+                     mode：25，26，35，36      多维的比较模式
+                     opnum：对应的输出口
+                     opstate：第一个比较点的输出状态
+                     maxerr：比较位置每个轴左右的脉冲偏差，进入偏差范围后开始比较
+                     num：table 里面存储的比较点个数
+                     tablepos：第一个比较点坐标所在           table编号
+                     [与 hwtimer 并用时，可以动态调整           hwtimer 参数]
+                     ophwtimeus：脉冲时间
+                     ophwtimes：脉冲个数
+                     hwcyctimeus：脉冲周期
+适用控制器            3系列部分、4      系列及以上产品，4          系列固件    20170704 及以上
+
+
+                                              396
+===== PDF page 415 =====
+                                                                                                                                                            Zbasic编程手册 V3.3.0
+
+例子                以下例程测试环境：ZMC432，固件：20170709（仿真器无法运行此指令）。
+
+                  例一    单轴比较
+                  总线轴使能过程省略，参考总线初始化例程。
+                  BASE(0)
+                  DPOS=0
+                  MPOS=0
+                  OP(0,OFF)
+                  TABLE(0,50,100,150,200)      '比较点坐标设置
+                  HW_PSWITCH2(2)    '停止并删除没有完成的比较点
+                  HW_PSWITCH2(1, 0, 1, 0, 3,1)      '比较  4个点，操作输出口           0
+                  TRIGGER        '触发示波器
+                  MOVE(500)
+
+                  比较输出图
+                  运动到    50 时，关闭      OUT0；位置      100 时，打开     OUT0；位置      150 时，关闭     OUT0；位置
+                  200 时，打开     OUT0。
+                  MPOS(0)垂直刻度       200
+                  OP(0)垂直刻度      2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                  例二    矢量单轴比较模式
+                  总线轴使能过程省略，参考总线初始化例程。
+                  BASE(0)
+                  DPOS=0
+                  MPOS=0
+                  OP(0,OFF)
+                  TABLE(0,50,100,150,200)      '比较点坐标设置
+                  VECTOR_MOVED=120        '   设置矢量起始位置，会影响比较点
+                  HW_PSWITCH2(2)    '停止并删除没有完成的比较点
+                  HW_PSWITCH2(3, 0, 1, 0, 3)      '比较  4 个点，操作输出口          0
+                  TRIGGER        '触发示波器
+                  MOVE(500)
+
+
+
+                                                  397
+===== PDF page 416 =====
+                                                                                                                                                             Zbasic编程手册 V3.3.0
+
+                   比较输出图
+                   MPOS(0)垂直刻度         200
+                   OP(0)垂直刻度       2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                   可以看出信号操作直接从例一的位置                       120 处开始，只比较了后面两个点，矢量比较模式
+                   就是将     MPOS(当前位置)+VECTOR_MOVED(之前的位移)与设置位置进行比较。
+
+                   例三    XY  加工模式的        PSO  应用
+                   RAPIDSTOP(2)
+                   WAIT IDLE(0)
+                   WAIT IDLE(1)
+                   BASE(0,1)
+                   ATYPE=1,1
+                   SPEED=100,100
+                   ACCEL=1000,1000
+                   DECEL=1000,1000
+                   SRAMP=100,100
+                   DPOS=0,0
+                   MPOS=0,0
+                   OP(0,OFF)
+                   TABLE(0,50,100,150,200)      '比较点坐标设置
+                   VECTOR_MOVED=0            '   设置矢量起始位置
+                   HW_PSWITCH2(2)              '停止并删除没有完成的比较点
+                   HW_PSWITCH2(3, 0, 1, 0, 3)      '比较     4 个点，操作输出口           0
+                   TRIGGER                    '触发示波器
+                   MOVE(300,400)
+                   END
+
+                   比较输出图：按           XY  轴插补位置比较
+                   VECTOR_MOVED(0)垂直刻度              200
+                   OP(0)垂直刻度       2
+
+
+
+
+
+
+
+                                                     398
+===== PDF page 417 =====
+                                                                                                                                                            Zbasic编程手册 V3.3.0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                  例四   周期比较模式，距离复位
+                  总线轴使能过程省略，参考总线初始化例程。
+                  BASE(0)
+                  DPOS=0
+                  MPOS=0
+                  OP(0,OFF)
+                  TABLE(0,50,100,150,200)      '比较点坐标设置
+                  VECTOR_MOVED=0      '设置矢量起始位置为              0，方便观察
+                  HW_PSWITCH2(2)  '停止并删除没有完成的比较点
+                  HW_PSWITCH2(5,0,1,100,3,150,50)  '位置      100开始比较，比较         3 次
+                  '周期距离    150，输出有效距离          50
+                  TRIGGER        '触发示波器
+                  MOVE(500)
+
+                  比较输出图
+                  位置   100 开始比较，比较        3次，一个和周期中前           50 输出有效状态，后         100 输出无效状态。
+                  MPOS(0)垂直刻度       200
+                  OP(0)垂直刻度     2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                  例四   周期比较模式，时间复位
+
+
+
+                                                 399
+===== PDF page 418 =====
+                                                                                                                                                             Zbasic编程手册 V3.3.0
+
+                   总线轴使能过程省略，参考总线初始化例程。
+                   BASE(0)
+                   DPOS=0
+                   MPOS=0
+                   OP(0,OFF)
+                   TABLE(0,50,100,150,200)      '比较点坐标设置
+                   VECTOR_MOVED=0      '设置矢量起始位置为                 0，方便观察
+                   HW_PSWITCH2(2)  '停止并删除没有完成的比较点
+                   HW_PSWITCH2(6,0,1,100,3,100)  '位置100开始比较，比较                   3 次周期距离       100，输出有
+                   效时间由      HW_TIMER     指令确定
+                   HW_TIMER(2,1000000,500000,1,off,0)      '输出变为on       后  500ms 变为    off
+                   TRIGGER
+                   MOVE(500)
+
+                   比较输出图
+                   位置   100 时开始比较，比较            3次，输出有效信号后             500ms  反转。
+                   MPOS(0)垂直刻度        100
+                   OP(0)垂直刻度       2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                   例五    二维硬件位置比较输出，模式                  25
+                   BASE(0,1)                    '选择XY轴
+                   UNITS=1000,1000
+                   SPEED=100,100
+                   ACCEL=10000,10000
+                   DECEL=10000,10000
+
+                   '将当前位置设置为           0点
+                   DPOS=0,0
+                   MPOS=0,0
+
+                   '提前写入位置比较点            XY  坐标到     table 10~49中
+                   TABLE(10,  10,0,12,0,  20,0,22,0,  30,0,32,0, 40,0,42,0,  50,0,52,0,  52,10,52,12,  52,20,52,22,
+                   52,30,52,32, 52,40,52,42, 52,50,52,52)
+                   GLOBAL pointNum        '比较点数
+
+                                                    400
+===== PDF page 419 =====
+                                                                                                                                                              Zbasic编程手册 V3.3.0
+
+                     pointNum=20
+
+                     GLOBAL startX,startY     '起点
+                     startX=0
+                     startY=0
+
+                     GLOBAL midX,midY         '中点
+                     midX=52
+                     midY=0
+
+                     GLOBAL endX,endY         '终点
+                     endX=52
+                     endY=52
+
+                     WHILE 1
+                             IF TABLE(0)=1 THEN    '比较脉冲位置,非精准输出
+                                    WAIT IDLE
+                                    ?"比较脉冲位置,非精准输出"
+                                    '设置参数
+                                    SYSTEM_ZSET=1
+                                    AXIS_ZSET=1,1
+
+                             ELSEIF TABLE(0)=2 THEN    '比较脉冲位置,精准输出
+                                    WAIT IDLE
+                                    ?"比较脉冲位置,精准输出"
+                                    '设置参数
+                                    SYSTEM_ZSET=3
+                                    AXIS_ZSET=3,3
+
+                             ELSEIF TABLE(0)=3 THEN    '比较编码器位置,非精准输出
+                                    WAIT IDLE
+                                    ?"比较编码器位置,非精准输出"
+                                    '设置参数
+                                    SYSTEM_ZSET=17
+                                    AXIS_ZSET=17,17
+
+                             ELSEIF TABLE(0)=4 THEN    '比较编码器位置,精准输出
+                                    WAIT IDLE
+                                    ?"比较编码器位置,精准输出"
+                                    '设置参数
+                                    SYSTEM_ZSET=19
+                                    AXIS_ZSET=19,19
+                             ENDIF
+
+
+
+                                                         401
+===== PDF page 420 =====
+                                                                                                                                                             Zbasic编程手册 V3.3.0
+
+                           IF TABLE(0)<>0 AND IDLE(0)=-1 THEN
+                                 TABLE(0)=0
+                                 ?"启动"
+
+                                 HW_PSWITCH2(2)                   '先清除所有的比较
+                                 HW_PSWITCH2(25,0,1,10,pointNum,10)             '写入比较，操作输出口             0
+
+                                 WA 10
+                                 TRIGGER            '启动示波器
+
+                                 MOVEABS(startX,startY)           '开始运动
+                                 MOVEABS(midX,midY)
+                                 MOVEABS(endX,endY)
+                           ENDIF
+                   WEND
+                   END
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+相关指令               PSWITCH，HW_PSWITCH，MOVEOP_DELAY，REG_IMPUTS
+
+
+HW_PS2AXISNUM --                 设置      PS2   轴号
+
+
+类型                轴参数
+描述                设置    HW_PSWITCH2指令实际操作的轴号，缺省-1                       表示不修改。
+                  用于把没有使用的轴的               HW_PSWITCH2       缓冲重复利用起来，指向当前运动的主轴,，可
+                  以对当前的主轴同时做多个比较。
+
+
+
+
+                                                    402
+===== PDF page 421 =====
+                                                                                                                                                              Zbasic编程手册 V3.3.0
+
+语法                  HW_PS2AXISNUM(axisnum1)=axisnum2
+                         axisnum1：缓冲轴号
+                         axisnum2：实际操作的轴号
+适用控制器               4 系列   170705   以后固件版本支持
+例子                  以下例程测试环境：ZMC432，固件：20170709（仿真器无法运行此指令）。
+
+                    RAPIDSTOP(2)
+                    WAIT IDLE(0)
+                    WAIT IDLE(1)
+                    BASE(0,1)
+                    ATYPE=1,1
+                    UNITS=100,100
+                    SPEED=100,100
+                    ACCEL=500,500
+                    DPOS=0,0
+                    TRIGGER
+                    OP(0, OFF)
+                    OP(1, OFF)
+
+                    HW_PS2AXISNUM(1)=0    '使用轴            1 的缓冲区，比较轴            0 的位置
+                    VECTOR_MOVED =0
+                    TABLE(0,50,100,150,200)      '第一个比较点坐标设置
+                    TABLE(10,30,80,150,220)      '第一个比较点坐标设置
+
+                    HW_PSWITCH2(1, 0, 1, 0, 3,1)                            '第1个比较
+                    HW_PSWITCH2(1, 1, 1, 10, 13,1)    AXIS(1)      '   第  2 个比较，使用          1 轴的比较缓冲，实际
+                    比较    0轴的位置
+                    MOVE(300)
+                    WAITIDLE(0)
+                    HW_PS2AXISNUM(1)=-1      '取消
+                    END
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                        403
+===== PDF page 422 =====
+                                                                                                                                                             Zbasic编程手册 V3.3.0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+相关指令              HW_PSWITCH2
+
+
+HW_PS2COUNTS -- PS2                  比较的点数
+
+
+类型                 轴状态
+描述                 HW_PSWITCH2       指令实际已经比较的点数，HW_PSWITCH2(2)时清                         0。
+语法                 HW_PS2AXISNUM(axisnum1)=axisnum2
+                        axisnum1：缓冲轴号
+                        axisnum2：实际操作的轴号
+适用控制器              4 系列   170706 以后固件版本支持
+例子                 以下例程测试环境：ZMC432，固件：20170711（仿真器无法运行此指令）。
+
+                   RAPIDSTOP(2)
+                   WAIT IDLE(0)
+
+                   BASE(0)
+                   ATYPE=1
+                   UNITS=100
+                   SPEED=100
+                   ACCEL=500
+                   DPOS=0
+                   MPOS=0
+                   OP(0,OFF)
+                   TABLE(0,50,100,150,200)      '比较点坐标设置
+
+                   HW_PSWITCH2(2)    '停止并删除没有完成的比较点
+                   HW_PSWITCH2(1, 0, 1, 0, 3,1)      '比较  4 个点，操作输出口           0
+
+
+                                                    404
+===== PDF page 423 =====
+                                                                                                                                                           Zbasic编程手册 V3.3.0
+
+                 TRIGGER        '触发示波器
+                 MOVE(300)
+                 ?HW_PS2COUNTS        '打印 0，还没到比较点
+                 WAIT IDLE(0)
+                 ?HW_PS2COUNTS        '打印 4，比较了     4 个点
+                 END
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+相关指令             HW_PSWITCH2
+
+
+12.4. PMW      控制指令
+
+
+PWM_FREQ -- PWM             频率
+
+
+类型               PWM  控制函数
+描述               PWM  频率设置或读取。
+                 PWM  只能通过设置占空比为           0来关闭，不能通过设置           PWM  频率为    0实现，不要将频率
+                 设为  0，PWM    频率一定要在      PWM   开关之前调整。
+语法               PWM_FREQ (index, freq) 或 PWM_FREQ (index)=freq
+                     index：编号，从     0开始
+                     freq：频率，硬件      PWM 1M，软件      PWM 2k
+适用控制器            支持  PWM   功能的控制器才支持此函数            。
+例子               PWM_FREQ (0)=1000      '1K频率
+                 ?PWM_FREQ (0)
+相关指令             PWM_DUTY，MOVE_PWM
+
+
+PWM_DUTY -- pwm            占空比
+
+
+类型               PWM  控制函数
+描述               PWM  占空比设置或读取。
+                 PWM  只能通过设置占空比为           0来关闭，不能通过设置           PWM   频率为   0 实现，PWM     频率
+
+
+                                              405
+===== PDF page 424 =====
+                                                                                                                                                           Zbasic编程手册 V3.3.0
+
+                 一定要在     PWM  开关之前调整。
+                 占空比指有效电平占整个周期的比例。
+                 一个周期中先输出有效电平，再输出无效电平。
+
+
+
+
+
+
+
+
+
+                 PWM  的实际输出受输出口的控制，必须输出口打开，PWM                         才能输出，否则输出被屏蔽
+                 掉。可以先开       PWM  功能，然后再开输出口，这样实现激光电源的首脉冲抑制功能。
+语法               PWM_DUTY(index, duty)     PWM_DUTY(index)=duty
+                     index：编号，从      0开始
+                     duty：占空比，0-1，当设置          0的时候，PWM       关闭
+适用控制器            支持   PWM  功能的控制器才支持此函数             。
+例子               PWM_DUTY(0)=0.5
+                 ?PWM_DUTY(0)
+                 打印结果     0.5
+相关指令             PWM_FREQ，MOVE_PWM
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                              406
+===== PDF page 425 =====
+                                                                                                                                                          Zbasic编程手册 V3.3.0
+
+
+第十三章 通讯相关指令
+
+13.1. 串口通讯指令
+
+
+SETCOM --      串口配置
+
+
+类型             系统指令
+描述             串口的配置。
+               控制器重新上电后，SETCOM           参数会还原成默认值，所以请在程序开头写                 SETCOM   设
+               置。
+               ZMC00x 系列不支持     MODBUS   主端。
+语法             SETCOM (baudrate,databits,stopbits,parity,port[,mode] [,variable] [,timeout])
+                   baudrate：串口波特率    9600 19200 4800 115200 38400(缺省) 57600 128000 256000
+                   databits：数据位数   8
+                   stopbits：停止位，只能设置0/1/2
+                   parity：是否校验：
+                    值          描述
+                    0（缺省）      无校验
+                    1          奇校验
+                    2          偶校验
+                   port：串口  PORT 编号   0-1，参见  PORT  描述，不同的控制器不一样
+                   mode：协议
+                    值         描述
+                    0         RAW  数据模式，无协议，此时可以使用GET #，PRITNT #
+                    4（缺省）     MODBUS   从端（16   位整数）
+                    14        MODBUS   主端（16   位整数)
+                    15        直接命令执行模式，此时可以直接从串口输入字符串命令                      (换行符
+                              结束)
+                   variable：寄存器选择，0-VR，1-TABLE，2-系统         MODBUS  寄存器
+                    值         描述
+                    0         VR，此时一个      VR 映射到一个     MODBUS_REG
+                              VR  是 32位浮点型，REG     是  16位整数型，从     VR 传递数据给     REG
+                              会丢失小数部分，当         VR 数据超过正负      15 位时，REG    数据会改
+                              变
+                              REG  传递数据给     VR 不会有问题
+                    1         TABLE，此时一个       TABLE 数据映射到一个       MODBUS_REG（不
+                              推荐）
+                              TABLE  是 32 位浮点型，REG     是  16位整数型，从     TABLE  传递数
+                              据给   REG 会丢失小数部分，当         TABLE  数据超过正负     15 位时，
+
+
+
+                                          407
+===== PDF page 426 =====
+                                                                                                                                                          Zbasic编程手册 V3.3.0
+
+                              REG 数据会改变
+                              REG 传递数据给     TABLE  不会有问题
+                    2（缺省）     系统  MODBUS   寄存器，此时     VR 与 MODBUS   寄存器是两片独立
+                              区间
+                    3         VR_INT 模式，此时一个       VR_INT 映射到两个     MODBUS_REG
+                   timeout：mode=14时为消息超时时间，毫秒单位，缺省值               1000。
+
+
+                  variable参数是全局的设置，所有的端口共一个。
+
+
+                  当设置为    VR 或 TABLE  时，没有用到的输出口与输入口会连在一起。
+
+                  当设置为    VR 或  TABLE 时，通用输出口会映射到          MODBUS_BIT(0)的位置，输入口
+
+               会映射到    MODBUS_BIT(1000) 的位置，因此此时不要使用           MODBUS_BIT   作为触摸屏的
+               按钮。
+适用控制器          通用
+例子             例一 mode0 RAW   模式
+               DIM char1                           '定义变量
+               SETCOM(38400,8,1,0,0,0)  '配置串口为RAW模式
+               WHILE 1
+                   GET #0, char1          '发送给通道0的字符保存到char1
+                   PRINT char1         '按ASCII码打印通道0接受的字符
+                   PUTCHAR #0, char1     '将接收的字符再发送回去
+               WEND
+               松下A6   伺服编码器读取参照第十三章简易例程
+
+               例二   MODBUS  通讯设置
+               SETCOM(38400,8,1,0,0,4,2) '设置串口    0为 modbus 从端，波特率      38400
+               SETCOM(38400,8,1,0,1,14,2,1000)     设置串口1为modbus 主端，波特率     38400
+               具体例程参照      MODBUSM_DES   指令例程
+
+               例三   直接字符命令方式
+               setcom(38400, 8,1,0,0,15) '设置串口0为直接字符串命令方式
+
+               此时在串口调试助手或其他设备，直接发送相关指令可直接操作控制器。
+
+
+
+
+               发送前
+               UNITS=10000
+               发送后
+               UNITS=100
+
+               一定要换行发送，否则控制器报错
+
+
+
+                                          408
+===== PDF page 427 =====
+                                                                                                                                                              Zbasic编程手册 V3.3.0
+
+
+
+
+
+                    例四 寄存器模式          0
+                    VR(0)=0                                       '初始化VR(0)和REG(0)为0
+                    MODBUS_REG(0)=0
+                    SETCOM(38400, 8,1,0,0,4,0)   '设置VR          映射到     MODBUS_REG
+                    VR(0)=100.345                             '设置VR(0)=100.345
+                    ?MODBUS_REG(0)                     '打印结果为       100，VR    已经映射到        REG，但是       REG  是整
+                    型，所以小数部分丢失
+                    MODBUS_REG(0)=200                 'REG(0)设为     200
+                    ?VR(0)                                           '打印结果为 200，REG变化也会改变       VR
+
+                    例五 寄存器模式          2
+                    VR(0)=0                                         '初始化VR(0)和REG(0)为0
+                    MODBUS_REG(0)=0
+                    SETCOM(38400,8,1,0,0,4,2)    '设置VR           与  MODBUS_REG       独立
+                    VR(0)=100.345                             设置VR(0)=100.345
+                    ?MODBUS_REG(0)                     '打印结果为       0，VR    不影响     REG
+                    MODBUS_REG(0)=200                 'REG(0)设为     200
+                    ?VR(0)                                           '打印结果为 100.345，REG也不影响    VR
+相关指令                ADDRESS，PROTOCOL，MODBUSM_DES，PORT
+
+
+ADDRESS --           控制器站号
+
+
+类型                  系统参数
+描述                  控制器的所有串口的              MODBUS      协议站号       1- 255，缺省=1。
+语法                  ADDRESS = value
+适用控制器               通用
+例子                  PRINT    ADDRESS                      '打印出协议站号
+                    打印结果：1
+相关指令                SETCOM，PORT，PROTOCOL
+
+
+COM_UNUSED               --  指定串口
+
+
+类型                  系统参数
+描述                  按位指定串口是否被              ZBASIC    使用。
+
+                    bit0：串口     1，值设置       1 表示   ZBASIC    不使用
+                    bit1：串口     2，值设置       1 表示   ZBASIC    不使用
+语法                  COM_UNUSED = value
+
+
+                                                       409
+===== PDF page 428 =====
+                                                                                                                                                           Zbasic编程手册 V3.3.0
+
+适用控制器           5 系列控制器以上
+例子              COM_UNUSED=1                 'ZBASIC不使用RS232 串口
+相关指令            SETCOM，PORT，PROTOCOL
+
+
+13.2. CAN     通讯指令
+
+
+CAN -- CAN      通讯
+
+
+类型              系统指令
+描述              直接通过     CAN 总线收发数据。
+
+                可以实现多个控制器通过             CAN  来通讯，但是同一个           CAN   网络上只能有一个主端
+                (CANIO_ADDRESS=32)。
+                较新的固件版本才支持这个功能，如不支持请联系厂家。
+
+                接线如下图所示：
+
+
+
+
+
+
+
+
+
+
+
+                CANL - CANL
+                CANH - CANH
+                CANL  和 CANH   的首尾两端分别连接         1个  120欧电阻用于阻抗匹配。连接带拨码开关的
+                扩展模块时，将拨码第八位拨为              ON  即表示接入     120 欧电阻，无需额外接电阻。
+语法              CAN(channel, function, tablenum)
+                    channel：CAN  通道，0   表示第一个通道，-1        表示缺省通道
+                    function：功能号
+                     值                 描述
+                     6                 接收，没有数据时，identifier<0
+                     7                 发送
+                     16                带扩展支持接收，没有数据时，identifier<0
+                     需要升级固件
+                     17                发送扩展数据，普通数据使用             7发送
+                     需要升级固件
+                    tablenum：数据存储的      TABLE  位置
+
+                6、7  模式时依次存储：
+
+
+                                            410
+===== PDF page 429 =====
+                                                                                                                                                            Zbasic编程手册 V3.3.0
+
+                       identifier：Can通讯对象(Cob-Id)，11       位，前    4 位是功能码，后         7位是节点      ID，ZCAN
+                   使用的高位数据预留，建议                0-511。接收时如果小于           0 则表明没有收到数据。bit11             表示
+                   是否远程帧。
+                       bytes：数据区域字节数，最多为                8。
+                       data：数据区域，字节（0-FF）。
+
+                   16、17  模式时依次存储：
+                       identifier：Can通讯对象(Cob-Id)，11       位，前    4 位是功能码，后         7位是节点      ID，ZCAN
+                   使用的高位数据预留，建议                0-511。接收时如果小于           0 则表明没有收到数据。bit11             表示
+                   是否远程帧。
+                       identifier extend：扩展   id，增加高     11 位与低    18 位，共同组成        CAN   的  29 位 ID，不
+                   存在填-1。
+                       bytes：数据区域字节数，最多为                8。
+                       data：数据区域，字节（0-FF）。
+
+                   29位扩展帧      ID 从左边非      0开始拆分为高         11 位和低    18 位，例子如下：
+                   扩展帧    ID 为  18EF1300
+                   对应二进制为        0001 1000 1110 1111 0001 0011 0000 0000
+                   高 11 位为   11000111011，对应      10 进制   1595
+                   低 18 位为   110001001100000000   ，对应    10 进制   201472
+                   所以使用     CAN17   模式时，identifier   =1595，Identifier extend =201472
+适用控制器              通用
+例子                 例一
+                   '发送端：
+                   TABLE(0,1,8,1,2,3,4,5,6,7,8) '发送 cobid=1，8  个字节，依次为          1-8
+                   CAN(0,7,0)                                '发送
+
+                   '接收端：
+                   CANIO_ADDRESS=1            '设置为非主控，此参数设置一次即可
+                   CAN(0,6,0)                                '接收
+                   ?TABLE(0)
+
+                   例二
+                   '发送端
+                   TABLE(0,1,10,8,1,2,3,4,5,6,7,8)    '发送cobid=1，扩展    id10，8  个字节，依次'为         1-8
+                   CAN(0,17,0)                                      '发送
+
+                   '接收端：
+                   CANIO_ADDRESS=1            '设置为非主控，此参数设置一次即可
+                   CAN(0,16,0)                                      '接收
+                   ?TABLE(0)
+相关指令               CANIO_ADDRESS     ，CANIO_STATUS，CANIO_ENABLE
+
+
+
+
+                                                   411
+===== PDF page 430 =====
+                                                                                                                                                           Zbasic编程手册 V3.3.0
+
+CANIO_ADDRESS -- CAN               通讯设置
+
+
+类型               系统参数
+描述               控制器上     CAN  的 CANID   和速度的设置。
+
+                 扩展板的     CAN  速度通过拨码开关设置。
+                 自动存储到      FLASH，重启后生效。
+                 低 8 位（位    0-7）表示   CANID，范围      0-32，缺省   32，32  表示为主控制器。
+                 高 8 位（位    8-15）表示   CAN  速度。
+                  高  8位值      CAN  速度
+                  0           500 KBPS（缺省值）
+                  1           250KBPS
+                  2           125KBPS
+                  3           1 MBPS
+                 一个网络中，不要配置多个主控制器。
+                 CAN  地址和速度设置必须重启后生效。
+语法               CANIO_ADDRESS     = value
+适用控制器            通用
+例子               CANIO_ADDRESS = 32                  '设置主端，CAN波特率    500KBPS
+                 CANIO_ADDRESS = 32+    256     '设置主端，CAN     波特率为    250KBPS
+                 CANIO_ADDRESS = 32+    512     '设置主端，CAN     波特率为    125KBPS
+                 CANIO_ADDRESS = 32+    768     '设置主端，CAN     波特率为    1MBPS
+
+                 CANIO_ADDRESS = 1      '设置  CANID  为  1，此时为从端，500 KBPS，不能连接              IO 板
+                 CANIO_ADDRESS = 1 +256      '设置  CANID  为  1，此时为从端，250 KBPS，作为           ZCAN
+                 从站使用
+                 CANIO_ADDRESS = 1 +512      '设置  CANID  为  1，此时为从端，125 KBPS，作为           ZCAN
+                 从站使用
+                 CANIO_ADDRESS = 1 +768      '设置   CANID  为 1，此时为从端，1 MBPS，作为             ZCAN
+                 从站使用
+
+                 CANIO_ADDRESS = 3        '设置  CANID  为 3，此时为从端，500 KBPS，作为            ZCAN   从
+                 站使用
+                 CANIO_ADDRESS = 8 +256      '设置  CAN ID  为 8，此时为从端，250 KBPS，作为           ZCAN
+                 从站使用
+                 CANIO_ADDRESS = 16 +512      '设置  CAN ID  为 16，此时为从端，125 KBPS，作为         ZCAN
+                 从站使用
+                 CANIO_ADDRESS = 31 +768      '设置  CAN ID  为 31，此时为从端，1MBPS，作为            ZCAN
+                 从站使用
+
+                 具体使用参考第十七章的            CAN  通讯例子
+相关指令             CANIO_ENABLE，CAN，CANIO_STATUS
+
+
+
+                                              412
+===== PDF page 431 =====
+                                                                                                                                                            Zbasic编程手册 V3.3.0
+
+CANIO_ENABLE -- CAN               使能
+
+
+类型               系统参数
+描述               使能或禁止内部         CAN  主端功能。
+                 当  CANIO_ADDRESS     设置   32时，缺省是使能的。
+语法               CANIO_ENABLE = ON/OFF
+适用控制器            通用
+例子               CANIO_ADDRESS = 32           '设置主端，CAN    波特率    500KBPS
+                 CANIO_ENABLE = ON        '打开   CAN  主端功能
+                 CANIO_ENABLE = OFF        '关闭  CAN  主端功能
+相关指令             CANIO_ADDRESS
+
+
+CANIO_STATUS -- CAN              扩展板状态
+
+
+类型               系统状态
+描述               获取当前的      IO 板的状态，返回         ON/OFF。
+                 20140325 以上的固件版本支持
+语法               CANIO_STATUS(cardnum)
+                     cardnum：该扩展模块的拨码            ID
+适用控制器            通用
+例子               例一
+                 ?*CANIO_STATUS                     '输出所有IO 板的状态
+                 打印结果如下图：表示接入了三个扩展模块，拨码                          ID的组合值分别为         1，3，4。
+
+
+
+
+
+
+
+
+
+
+
+                 例二
+                 IF CANIO_STATUS(1) =0 THEN    '判断     IO 板的连接状态
+                     PRINT    "扩展模块     1没有连接好"
+                 ENDIF
+相关指令             CAN，CANIO_ENABLE，CANIO_INFO_CANIO_ADDRESS -- CAN                通讯设置
+
+
+
+
+
+
+
+
+
+                                               413
+===== PDF page 432 =====
+                                                                                                                                                           Zbasic编程手册 V3.3.0
+
+CANIO_INFO -- CAN            扩展板信息
+
+
+类型               系统状态
+描述               读取当前的      IO 板的信息，返回参数值。
+                 4 系列控制器      170715 以上固件版本支持。
+语法               CANIO_INFO(canid, isel [, moduleid])
+                     canid：扩展模块的拨码         ID
+                     isel：读取的参数
+                       0             正运动
+                       1             DEVICE，设备编号
+                       2
+                       3
+                       4
+                        IO的个数        描述
+                       10            IN个数,   整体的
+                       11            OP 个数
+                       12            AIN 个数
+                       13            AOUT  个数
+                       增加
+                       16            模块数
+                       17            子模块的类型号，必须后面带               moduleid id
+                       预留
+                       20            子模块输入
+                       21            子模块输出
+                       22            子模块   AIN
+                       23            子模块   AOUT
+                     moduleid：ZMIO   子模块的信息，部分           isel 参数选择需要填这个参数
+适用控制器            通用
+例子               例一
+                 ?CANIO_INFO(1,1)                      '打印ID是1的扩展模块的设备编号
+相关指令             CAN，CANIO_ENABLE，CANIO_STATUS_CANIO_ADDRESS -- CAN                通讯设置
+
+
+
+13.3. 自定义通讯指令
+
+
+GET      # --  读取字符
+
+
+类型               系统指令
+描述               从  RAW  方式通讯或自定义网口通讯的通道里面读取一个字节，存入一个变量。
+语法               语法   1：GET #PORT, VARIABLE
+
+
+                                               414
+===== PDF page 433 =====
+                                                                                                                                                           Zbasic编程手册 V3.3.0
+
+                语法   2：GET #PORT, ARRAY[(startindex)] [,maxchares]
+                语法   3：charesget = GET #PORT, VARIABLE
+                语法   4：charesget = GET #PORT, ARRAY[(startindex)] [,maxchares]
+                    port：通道号
+                    variable：存放的变量名
+                    startindex：存放数组的起始地址
+                    maxchares：存放的最多数量
+
+                语法   1、2 没有读取到会阻塞，这个函数一般在多任务里面进行调用。
+                语法   3、4 会返回读取到的字节数。
+                20150522 版本以前只支持语法         1。
+
+                UDP  接收必须使用语法        4，采用数组来接收，数组长度不要比一次的UDP                     包长度小。
+                UDP  每次都是读取一整个包，如果数组长度不够，多余的会丢弃掉。
+                UDP_SERVER   模式时，每收到一个包，PORT_TARGET               自动变为包的发送方，因此可
+                以同时接收多个从端的数据。
+适用控制器           通用
+例子              例一
+                DIM VAR1
+                SETCOM(38400,8,1,0,0,0)     '开启  RAW  方式
+                GET #0, VAR1                              '从通道0读取数据
+                PRINT VAR1                              '打印读取数据
+
+                例二
+                DIM ARRAY1(101)
+                SETCOM(38400,8,1,0,0,0)        '开启RAW方式
+                CHARES = GET #0, ARRAY1, 100  '从通道0最多读取100个字符
+                If CHARES > 0 THEN
+                    ARRAY1(CHARES) = 0      '设置结束0
+                    PRINT ARRAY1            '字符串打印出来
+                ENDIF
+相关指令            PORT，_SETCOM，PRINT #
+
+
+OPEN    # --    打开自定义网口通讯
+
+
+类型              系统指令
+描述              开启自定义的以太网通讯。
+                新固件版本提供此功能。
+语法              OPEN #PORT, "mode", portnum [, ipaddress]
+                    port：通讯通道，参见        PORT 描述，选择自定义网络通道
+                    mode：讯主从，“TCP_CLIENT”-从，“TCP_SERVER”–主，“UDP_CLIENT                     ”
+                -UDP 从，“UDP_SERVER      ”–UDP   主
+
+
+
+                                            415
+===== PDF page 434 =====
+                                                                                                                                                         Zbasic编程手册 V3.3.0
+
+                  portnum：TCP或 UDP 端口号,  主端为本地端口号,       从端为对方端口号
+                  ipaddress：对方IP地址，字符串，从端的时候要提供
+
+              UDP_SERVER  必须先接收对方的数据，才能发送回数据(除非用              PORT_TARGET  先强制
+              指定对方)。
+              UDP_CLIENT 本地端口号随机，必须先发送给对方，对方才能知道端口号，此模式时不
+              是指定对方的包会丢弃掉。
+              UDP  自定义通讯需要      4 系列控制器      20170628以上固件版本；XPLC       系列控制器
+              20170702以上固件版本。
+适用控制器         通用
+例子            例一
+              OPEN #11, "TCP_SERVER", 10  '主端设置
+              OPEN #10, "TCP_CLIENT", 10,"192.168.1.112"  '从端设置
+
+              例二
+              OPEN #10, "UDP_SERVER", 1000  'UDP主端设置
+              OPEN #11, "UDP_CLIENT", 60000, "192.168.0.120"  'UDP从端设置
+
+              详细例程参考自定义网口通讯
+相关指令          PORT，PORT_TARGET，SETCOM，PRINT #
+
+
+PRINT    # -- 输出字符串
+
+
+类型            系统指令
+描述            从 RAW  方式通讯或自定义网口通讯的通道口里面输出字符串，碰到                    0结束。
+              每次调用都是一个      UDP 包发送。
+
+              PRINT #直接发送为字符串(""符号自动去除)，不需要            ASCII转码处理，一次只能发一个
+              数据，如下所示：
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                       416
+===== PDF page 435 =====
+                                                                                                                                                             Zbasic编程手册 V3.3.0
+
+
+
+
+
+
+
+
+
+
+
+
+
+                   PRINT #发送数组为          ASCII 码，遇     0 停止，如下所示：
+
+
+
+
+
+
+
+
+
+
+
+语法                 PRINT #PORT,    "字符串"
+                        port：通道号
+适用控制器              通用
+例子                 DIM VAR(10)                               '定义数组
+                   VAR = "AAAA"                           '数组赋值
+                   SETCOM(38400,8,1,0,0,0)'开启      RAW   方式
+                   PRINT #0,VAR                             '从通道0输出数组数据
+相关指令               PUTCHAR #，GET #，PORT，SETCOM
+
+
+PUTCHAR    # --           输出字符
+
+
+类型                 系统指令
+描述                 从  RAW    方式通讯或自定义网口通讯的通道口输出字符，数组可以代表多个字符。
+                   每次调用都是一个            UDP  包发送。
+
+                   PUTCHAR #发送数据为            ASCII  码，多个数据逗号隔开，不能直接发送字符串，如下所示：
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                     417
+===== PDF page 436 =====
+                                                                                                                                                             Zbasic编程手册 V3.3.0
+
+
+
+
+
+
+
+                   PUTCHAR #发送数组为          ASCII 码，遇     0输出为     0，会将整个数组完全发送，所以要确保
+                   数组数据正确，如下所示：
+
+
+
+
+
+
+
+
+
+
+
+语法                 PUTCHAR #PORT,     字符
+                       port：通道号
+
+                   PUTCHAR #PORT, ARRAY(INDEX, NUMES)
+                       port：通道号
+                       index：开始输出的位置
+                       numes：输出的字节个数,            二进制方式
+适用控制器              通用
+例子                 DIM VAR1, ARRAY1(10)                '定义数组
+                   VAR1 = $FE                                 '数组1赋值
+                   ARRAY1 = "ABCDEFGHIJ"          '数组   2 赋值
+                   SETCOM(38400,8,1,0,0,0)             '开启RAW 方式
+                   PUTCHAR #0, VAR1                    '从通道0 输出数组     1 数据
+                   PUTCHAR #0, ARRAY1              '从通道    0 输出数组     2 数据
+相关指令               PORT，SETCOM，GET #
+
+
+PORT_TARGET -- IP              和端口号配置
+
+
+类型                 字符串指令
+描述                 配置通讯对方的         IP 地址和端口号。
+                   4系列控制器       20170628  以上固件版本，XPLC           系列控制器       20170702  以上固件版本支持。
+语法                 命令语法：
+                   PORT_TARGET(port))="    ipaddress:portnum"或  PORT_TARGET(port))="    ipaddress"
+                       port：通道号
+                       ipaddress：对方    IP 地址
+                       portnum：端口号
+                   返回语法：VAR=PORT_TARGET(port))              返回   IP 地址字符串。
+
+
+                                                   418
+===== PDF page 437 =====
+                                                                                                                                                           Zbasic编程手册 V3.3.0
+
+适用控制器           通用
+例子              PORT_TARGET="192.168.0.12:502"
+                PORT_TARGET(port))="192.168.0.12"
+
+                ?PORT_TARGET(port)
+                DIM    IPSTRING(100)
+                IPSTRING = PORT_TARGET(port)
+                ?IPSTRING
+相关指令            OPEN #_CANIO_ADDRESS -- CAN    通讯设置
+
+
+13.4. 打印输出指令
+
+
+PRINT --    打印信息
+
+
+类型              打印输出函数
+描述              打印信息到      PC 端 ZDevelop 软件的输出窗口。
+                别名：?
+                通过*参数名可以打印参数值；*特殊字符串可以打印一些特殊的信息。
+语法              PRINT expression, "string" 或 ? expression,"string"
+                    Expression：有效表达式
+                    *SET：打印所有参数值
+                    *TASK：打印任务信息
+                            任务正常时只打印任务状态
+                            任务出错时还会打印出错误任务号，具体错误行
+                    *MAX：打印所有规格参数
+                    *FILE：打印程序文件信息
+                    *SETCOM：打印当前串口的配置信息
+                    *BASE：打印当前任务的          BASE 列表（140123    以后版本支持）
+                    *数组名：打印数组的所有元素，数组长度不能太长
+                    *参数名：打印一个所有轴的单个参数
+                    ?*ETHERCAT：打印      EtherCAT 总线连接设置状态
+                    ?*RTEX：打印     Rtex总线连接设置状态
+                    ?*FRAME：打印机械手参数，需要             161022 及以上固件支持
+                    ?*SLOT：打印出控制器槽位口信息（RTEX                口，EtherCAT  口）
+                    ?*PORT：打印所有       PORT 通讯口
+适用控制器           通用
+例子              例一
+                在线命令输入
+                >>PRINT 1+2
+                输出：3
+
+                例二
+
+                                            419
+===== PDF page 438 =====
+                                                                                                                                                            Zbasic编程手册 V3.3.0
+
+                  在线命令输入
+                  >>PRINT *task          '打印所有任务状态
+                  Task:0 Running. file:"hmi.bas" line:280:
+                  Task:1 Stopped.
+                  Task:2 Stopped.
+                  Task:3 Stopped.
+                  Task:4 Stopped.
+                  Task:5 Stopped.
+                  Task:6 Stopped.
+
+                  例三
+                  在线命令输入
+                  >> ?*mpos
+                  输出：21872.400 0 0 0 0 0 0 0 0 0 0 0
+相关指令              TRACE
+
+
+ERRSWITCH --           信息输出设置
+
+
+类型                系统参数
+描述                调试输出开关，控制           TRACE WARN ERROR        调试输出语句是否真的输出信息。
+语法                ERRSWITCH=switch
+                      switch：调试输出的开关
+                      值      描述
+                      0      TRACE WARN ERROR指令全部不输出
+                      1      只输出    ERROR   指令
+                      2      输出   WARN ERROR     指令
+                      3      TRACE WARN ERROR       指令全部输出
+                      4      TRACE WARN ERROR       指令全部输出，以及运动指令监控
+
+
+
+
+
+
+
+
+适用控制器             通用
+例子                例一
+                  ERRSWITCH = 3                      '打印全输出，此时   WARN（报警）、ERROR（错误）、
+                                              'TRACE   信息都会输出
+                  例二
+                  ERRSWITCH = 0                  '不输出，控制器错误信息和报警信息都不输出
+                  TRACE DPOS(0)                    '此时无法用trace打印出轴     0的  dpos
+                  ?DPOS(0)                                '可以用print打印，结果，0
+
+                  例三
+                  ERRSWITCH = 4    '输出所有信息，以及运动指令监控
+                  >>MOVE(111)
+                  MOVE(111)AXIS(0)TASK(23)    '打印当前操作的轴及运动的任务
+相关指令              TRACE，WARN，ERROR
+
+
+
+                                                 420
+===== PDF page 439 =====
+                                                                                                                                                          Zbasic编程手册 V3.3.0
+
+
+
+TRACE --     打印信息        2
+
+
+类型             打印输出函数
+描述             打印信息到      PC 端 ZDEVELOP   软件的输出窗口。
+               受  ERRSWITCH  开关的控制。
+语法             同  PRINT
+适用控制器          通用
+例子             ERRSWITCH = 3                      'trace打印全输出
+               DPOS(0) =0
+               TRACE  "DPOS(0) =" DPOS(0)
+               打印结果0
+相关指令           ERRSWITCH ，PRINT，WARN，ERROR
+
+
+WARN --     警告信息
+
+
+类型             打印输出函数
+描述             程序自动打印报警信息到PC            端  ZDEVELOP   软件的输出窗口。
+               也可手动打印信息。
+               受  ERRSWITCH  开关的控制。
+语法             程序报警时自动打印。
+               手动打印同      PRINT。
+适用控制器          通用
+例子             参考   TRACE  例子
+相关指令           ERRSWITCH    ，PRINT，TRACE，ERROR
+
+
+ERROR --     错误信息
+
+
+类型             打印输出函数
+描述             程序自动打印错误信息到           PC 端  ZDEVELOP   软件的输出窗口。
+               也可手动打印信息。
+               受  ERRSWITCH  开关的控制。
+语法             程序错误时自动打印。
+               手动打印同      PRINT。
+适用控制器          通用
+例子             参考   TRACE  例子
+相关指令           ERRSWITCH    ，PRINT，TRACE，WARN
+
+
+
+                                           421
+===== PDF page 440 =====
+                                                                                                                                                          Zbasic编程手册 V3.3.0
+
+13.5. 通道参数指令
+
+
+PORT --    通道编号
+
+
+类型              通道修正辅助指令
+描述              当访问通道参数时可以指定其他的通道。
+                其他指令需要选择通道时查看。
+语法              PORT (portnum)
+                   portnum：通道号
+
+                不同型号的控制器支持的通道数不同。在线命令?*port                   查看，见例程。
+                   ZMC00x系列
+                     通道号       协议
+                     0         串口   A
+                     1         串口   B
+                   ZMC1-2xx  系列，支持同时两个以太网连接，端口号为                       502，支持触摸屏的
+                MODBUS-TCP   协议连接。
+                     通道号       协议
+                     0         RS232 串口
+                     1         RS485 串口
+                     2         以太网接口，连接        1
+                     3         以太网接口，连接        2
+                     10        自定义网络通讯通道         1
+                     11        自定义网络通讯通道         2
+                   ZMC3xx  系列：带    3 个串口。
+                     通道号       协议
+                     0         RS232 串口
+                     1         RS485 串口
+                     2         RS422 串口
+                     3         以太网接口，连接        1
+                     4         以太网接口，连接        2
+                     10        自定义网络通讯通道         1
+                     11        自定义网络通讯通道         2
+                   ZMC4xx  系列：带    2 个串口。
+                     通道号        协议
+                     0          RS232串口
+                     1          RS485串口
+                     2          以太网接口，连接        1
+                     3          以太网接口，连接        2
+                     10         自定义网络通讯通道        1
+                     11         自定义网络通讯通道        2
+                     20         网络控制器互联通道，不支
+
+                                           422
+===== PDF page 441 =====
+                                                                                                                                                           Zbasic编程手册 V3.3.0
+
+                                 持  PORT_STATUS    查询。
+                     ECI系列：只有一个串口。
+                       通道号       协议
+                       0         RS232 串口
+                       1         以太网接口，连接         1
+                       2         以太网接口，连接         2
+
+
+
+
+
+
+
+
+适用控制器           通用
+例程              查看控制器通道
+                >>?*PORT
+                Port:0-COM.
+                Port:1-COM.
+                Port:2-ETH.
+                Port:3-ETH.
+                Port:4-ETH.
+                Port:5-ETH.
+                Port:6-ETH.
+                Port:7-ETH.
+                Port:10-ECUSTOM.
+                Port:11-ECUSTOM.
+                Port:12-ECUSTOM.
+                Port:13-ECUSTOM.
+                Port:14-ECUSTOM.
+                Port:15-ECUSTOM.
+                Port:20-CONNECT.
+
+                其中    COM  为串口通道，ETH        为网口通讯通道，ECUSTOM            为自定义网口通讯通道，
+                CONNNECT    为控制器互联通道。
+相关指令            FILE_PORT  ，PORT_STATUS，PROTOCOL
+
+
+PORT_STATUS --          通道状态
+
+
+类型              通道参数，只读
+描述              返回当前通道的状态，串口总是返回1。
+
+                MODBUS_TCP 链接上以后，PORT_STATUS会变为                 1。
+                当对应链接已经作为从端使用时, 控制器自动搜索没有使用的PORT作为
+                MODBUS_TCP主端链接，此时程序无法确定实际使用的是哪个PORT。
+                新固件版本提供此功能。
+语法              VAR1 = PORT_STATUS(port)
+                     port：通道号
+                       值    协议
+                       0    没有连接
+
+
+                                             423
+===== PDF page 442 =====
+                                                                                                                                                          Zbasic编程手册 V3.3.0
+
+                      1    有连接使用
+
+
+
+
+
+
+
+
+
+
+适用控制器           通用
+例子              ?PORT_STATUS(0)        '返回232串口通道状态，结果，1
+相关指令            PORT，SETCOM，ADDRESS
+
+
+FILE_PORT --       当前通道文件号
+
+
+类型              通道参数
+描述              返回或设置当前通道的缺省文件号。
+
+                设定后可以通过在线命令来访问对应文件的文件模块变量或数组。
+                ZDevelop集成开发环境会自动使用此参数，不要在使用                   ZDevelop 时修改此参数。
+语法              VAR1 = FILE_PORT，FILE_PORT = filenum
+适用控制器           通用
+例子              >>FILE_PORT = 0            '当前连接的通道的  FILE_PORT  参数
+相关指令            PORT
+
+
+PROTOCOL --        通道通讯协议
+
+
+类型              通道参数，只读
+描述              返回当前通道的通讯协议。
+语法              VAR1 = PROTOCOL(port)
+                    port：通道号
+                    返回值
+                      值      协议
+                      0      RAW  数据格式，无协议
+                      3      MODBUS  协议，控制器为从端（缺省）
+                      14     MODBUS  协议，控制器为主端
+                      15     直接命令执行方式
+
+
+
+
+
+
+
+
+适用控制器           通用
+相关指令            PORT，SETCOM，ADDRESS
+
+
+ETH_MODE --        网口模式设置
+
+
+类型              通道参数
+描述              网口模式设置，数组类型，每个网口独立设置。
+语法              ETH_MODE(isel) = imode
+
+
+
+                                           424
+===== PDF page 443 =====
+                                                                                                                                                           Zbasic编程手册 V3.3.0
+
+                    isel：0- 第一个网口，1-第二个网口(EtherCAT)
+                    imode：0 - 非 eth模式，传统模式，兼容性好，抗干扰稍差
+                           1 - eth模式，抗干扰性好，多个链接时需要配合PC                  上防掉线     DLL，标准
+                DLL 只能链接一个       (有极少数触摸屏或        EtherCAT驱动器不兼容此模式)
+                           2 - 自动模式(新固件缺省值)，如果有检测到网络没有连上，会自动在0/1
+                模式中切换
+
+                20170720以上带    ETH 的固件版本支持。
+适用控制器           通用
+相关指令            PORT
+
+
+13.6. MODBUS        通讯指令
+
+
+MODBUS_BIT --         位寄存器
+
+
+类型              MODBUS   位寄存器
+描述              修改或者读取      BIT 寄存器，布尔型，触摸屏一般叫              0x寄存器。
+
+                另：特殊的     modbus 0x寄存器，通过这些寄存器可以直接从触摸屏读取和设置                       IO，注意
+                读取的   IO 是原始的状态，INVERT_IN        不起作用。
+                 MODBUS_BIT   地址      意义
+                 0~7999               用户自定义使用
+                 8000~8099            PLC 编程的特殊     M 寄存器
+                 8100~8199            轴 0-99的  IDLE 标志
+                 8200~8299            轴 0-99的  BUFFER  剩余标志
+                 10000~14095          对应输入    IN 口
+                 20000~24095          对应输出    OUT 口
+                 30000~34095          对应  PLC 编程的    S寄存器
+
+
+
+
+
+
+
+
+
+
+语法              MODBUS_BIT(first,[last]) = value
+                    first：位寄存器编号，编号从         0开始
+                    last：位寄存器编号，编号从          0开始
+适用控制器           通用
+例子              DIM VAR
+                MODBUS_BIT(100)    =    1       'bit100赋值1
+                VAR = MODBUS_BIT(100)        '把bit100的值赋值到变量      VAR
+
+
+
+
+
+
+
+
+
+                                            425
+===== PDF page 444 =====
+                                                                                                                                                         Zbasic编程手册 V3.3.0
+
+MODBUS_IEEE --        字寄存器-32       位浮点型
+
+
+类型            MODBUS  字寄存器
+描述            修改或者读取字寄存器，32         位浮点型。触摸屏一般叫         4x寄存器。
+
+              ZMOTION  运动控制器专门具备       MODBUS  字寄存器，会占用两个寄存器的地址。
+              字寄存器间的关系查看“MODBUS           寄存器”。
+
+              控制器缺省使用系统        MODBUS  字寄存器，要修改时请设置          SETCOM 的第  7 个参数。
+              另：特殊的     MODBUS 4x 寄存器，通过这些寄存器可以直接从触摸屏读取一些状态。
+                   寄存器（zero based）   类型      意义
+                   10000-            IEEE    DPOS读取，每个轴占两个寄存器
+                   11000-            IEEE    MPOS读取，每个轴占两个寄存器
+                   12000-            IEEE    VP_SPEED读取，每个轴占两个寄存器
+
+
+
+
+
+
+
+
+
+
+语法            MODBUS_IEEE (regnum) = value
+                  regnum：寄存器编号，编号从0开始
+适用控制器         通用
+例子            DIM VAR
+              MODBUS_IEEE(100) = 100.10   'ieee100赋值100.10
+              VAR = MODEBUS_IEEE(100)      'ieee100赋值给变量VAR
+相关指令          MODBUS_REG，MODBUS_LONG，MODBUS_STRING
+
+
+MODBUS_LONG --         字寄存器-32       位整型
+
+
+类型            MODBUS  字寄存器
+描述            修改或者读取字寄存器，32         位整型。触摸屏一般叫        4x 寄存器。
+
+              ZMOTION  运动控制器专门具备       MODBUS  字寄存器，会占用两个寄存器的地址。
+              字寄存器间的关系查看“MODBUS           寄存器”。
+
+              控制器缺省使用系统        MODBUS  字寄存器，要修改时请设置          SETCOM 的第  7 个参数。
+语法            MODBUS_LONG(regnum) = value
+                  regnum：寄存器编号，编号从        0开始
+适用控制器         通用
+例子            DIM VAR
+              MODBUS_LONG   (100) = 100          'long100赋值100
+              VAR = MODEBUS_LONG   (100)      'long100赋值给VAR
+相关指令          MODBUS_REG  ，MODBUS_IEEE，MODBUS_STRING
+
+
+
+
+
+                                        426
+===== PDF page 445 =====
+                                                                                                                                                          Zbasic编程手册 V3.3.0
+
+MODBUS_REG --          字寄存器-16         位整型
+
+
+类型              MODBUS   字寄存器
+描述              修改或者读取字寄存器，16           位整型，触摸屏一般叫          4x寄存器。
+
+                ZMOTION  运动控制器专门具备         MODBUS   字寄存器。
+                不同型号控制器的字寄存器个数有区别。
+                字寄存器间的关系查看“MODBUS             寄存器”。
+
+                控制器缺省使用系统         MODBUS   字寄存器，要修改时请设置            SETCOM  的第  7 个参数。
+                另：特殊的     modbus 4x寄存器，通过这些寄存器可以直接从触摸屏读取一些状态。
+                        寄存器（zero based）       类型        意义
+                        13000-                16        DA 输出
+                        14000-                16        AD 读取
+
+
+
+
+
+
+
+
+语法              MODBUS_REG(regnum) = value
+                    regnum：寄存器编号，编号从          0开始
+适用控制器           通用
+例子              DIM VAR
+                MODBUS_REG(100) = 100      'reg100赋值100
+                VAR = MODBUS_REG    (100)    'reg100赋给变量VAR
+相关指令            MODBUS_IEEE，MODBUS_LONG，MODBUS_STRING
+
+
+MODBUS_STRING --            字寄存器-字节
+
+
+类型              MODBUS   字寄存器，字符串函数
+描述              读取  MODBUS   寄存器区域的字符串，按字节来读取。触摸屏一般叫                       4x寄存器。
+                字寄存器间的关系查看“MODBUS             寄存器”。
+语法              MODBUS_STRING(index, chares)
+                    index：起始的   MODBUS   寄存器编号，编号从         0 开始。不同型号控制器的字寄存器
+                个数有区别
+                    chares：读取的字符总数
+适用控制器           通用
+例子              DIM ARR(8)
+                MODBUS_STRING     (0, 8) = "abc"    'string0开始保存字符串，共 8 字节
+                print MODBUS_STRING  (0, 8)          '打印保存的字符串，打印结果，abc
+                ARR = MODBUS_STRING(0,8)        '字符换赋值给数组
+相关指令            MODBUS_REG，MODBUS_LONG，MODBUS_IEEE
+
+
+
+
+
+
+
+                                           427
+===== PDF page 446 =====
+                                                                                                                                                          Zbasic编程手册 V3.3.0
+
+MODBUSM_DES -- modbus             通讯连接
+
+
+类型             通讯指令
+描述             设置或读取     MODBUS   主端的对方。
+               通讯等待时只会阻塞当前这个任务，不影响其他任务。
+               使用   485串口与多个设备通讯时，建立通讯连接可加入等待或延时，等上一个设备连接
+               成功再连接下一个设备，防止出现通讯失败的情况。
+语法             MODBUSM_DES (address[,port],[timer],[resendset])
+               ADDRESS1 = MODBUSM_DES([port])
+                   address：对端的   modbus 协议站号
+                   port：当前  modbus 主通讯的    port号
+                   timer：消息超时时间设置，缺省           1000ms。
+                   resendset：超时消息重发设置，0-不重发，1-SEND          指令重发，2-SEND     与 MODBUSM
+               指令都重发。
+
+               MODBUSM    指令超时重发要注意，从控制器可能收到                2 次消息，对寄存器的扫描也可能
+               出现   2次。
+               SEND  指令超时重发对从控制器没有影响,              重要标志性变量可以通过          SEND 指令来修改。
+适用控制器          通用
+例子             例一 多主端-多从端通讯
+               SETCOM(38400,8,1,0,0,14,2,1000)      '设置串口0为modbus主端，通讯等待      1s
+               SETCOM(38400,8,1,0,1,14,2,1000)      '设置串口1为modbus主端，通讯等待      1s
+
+               WHILE 1
+                 IF IN(0)=1 THEN            'IN0高电平时使用串口0
+                   IF IN(1)=1 THEN
+                     MODBUSM_DES(1,0)      'IN1高电平时与从端站号1通讯
+                     MODBUSM_REGSET(0,10,0)        '本地寄存器复制到对端
+                     MODBUSM_REGGET(20,10,20)    '对端寄存器复制到本地
+                     WAIT UNTIL MODBUSM_STATE <> 1    ' 等待消息结束
+
+                   ELSE
+                     MODBUSM_DES    (2,0) 'IN1低电平时与从端站号        2 通讯
+                     MODBUSM_REGSET(30,10,30)        '本地寄存器复制到对端
+                     MODBUSM_REGGET(40,10,40)    '对端寄存器复制到本地
+                     WAIT UNTIL MODBUSM_STATE <> 1    ' 等待消息结束
+                   ENDIF
+                   ?"通道  0 状态=", MODBUSM_STATE      '打印通讯状态
+
+                 ELSE                     'IN0低电平时使用串口1
+                   IF IN(1)=1 THEN
+                     MODBUSM_DES(1,1)         'IN1高电平时与从端站号1通讯
+                     MODBUSM_REGSET(50,10,50)    '本地寄存器复制到对端
+
+
+                                          428
+===== PDF page 447 =====
+                                                                                                                                                         Zbasic编程手册 V3.3.0
+
+                    MODBUSM_REGGET(60,10,60)  '对端寄存器复制到本地
+                    WAIT UNTIL MODBUSM_STATE <> 1  '等待消息结束
+                  ELSE
+                    MODBUSM_DES(2,1) 'IN1低电平时与从端站号2通讯
+                    MODBUSM_REGSET(70,10,70)    '本地寄存器复制到对端
+                    MODBUSM_REGGET(80,10,80)  '对端寄存器复制到本地
+                    WAIT UNTIL MODBUSM_STATE <> 1  '等待消息结束
+                  ENDIF
+                  ?"通道 1状态=", MODBUSM_STATE      '打印通讯状态
+                ENDIF
+              WEND
+相关指令          SETCOM，PROTOCOL，PORT，MODBUSM_DES2
+
+
+MODBUSM_DES2 --         控制器间网口通讯
+
+
+类型            通讯指令
+描述            控制器间网口通讯，也可作为          MODBUS_TCP   主端通讯。
+              ?*PORT 可以显示出当前可用的网络链接通道。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+              作为  MODBUS_TCP  主端时：
+              选择一个   ETH 模式的   PORT 口作为   MODBUS_TCP  链接通道(不建议用第一个和最后一
+              个)。
+              当选择的通道已经作为从端被占用时,             控制器自动选择一个没有占用的             ETH 模式的
+              PORT口作为    MODBUS_TCP主端链接。
+
+              作为控制器互联使用时：
+              选择  CONNECT模式的PORT口作为控制器互联通道。
+语法            MODBUSM_DES2 (id,port,"desipaddress",[timer],[resendset])
+                  id：对方控制器的    MODBUS  从端  ID，缺省   1
+                  port：支持两种模式，?*PORT     确认通道号及模式
+                       ETH 时，作为   MODBUS_TCP  主端通道
+
+
+                                       429
+===== PDF page 448 =====
+                                                                                                                                                           Zbasic编程手册 V3.3.0
+
+                           CONNECT    时，做为控制器互联通道
+                     desipaddress：字符串，     对方控制器的       IP 地址
+                     timer：消息超时时间设置，缺省             1000ms
+                     resendset：超时消息重发设置，           0-不重发，1-SEND        指令超时重发，2-SEND           与
+                 MODBUSM    指令都超时重发。
+
+                 MODBUSM    指令超时重发要注意，从控制器可能收到                    2 次消息，对寄存器的扫描也可能
+                 出现   2次。
+                 SEND  指令超时重发对从控制器没有影响，重要标志性变量可以通过                             SEND  指令来修改。
+适用控制器            4 系列产品, 20170117    及以上固件版本支持
+例子               例一   MODBUS    主端通讯连接建立
+                 MODBUS_TCP    主端通讯不用考虑丢包。
+                 MODBUSM_DES2(1,4,"192.168.0.12")      '按站号和      IP 与从端通讯使用控制器通道
+                 4，?*port 确认
+                 WHILE 1
+                     LASTTICK=TICKS
+                     FOR i =0 TO 9999
+                         MODBUS_REG(0) = i
+                         MODBUSM_REGSET(0,10,0)      '设置对端寄存器
+                         MODBUS_REG(0) = 99
+                         MODBUSM_REGGET(0,10,0)      '读取对端寄存器
+
+                         IF MODBUS_REG(0) <> I THEN
+                         ?"REG(0)=" MODBUS_REG(0),"STATE=" MODBUSM_STATE
+                         '打印在第几次通讯时错误
+                         ENDIF
+                     NEXT
+                     ?LASTTICK-TICKS        '打印通讯时间
+                 WEND
+                 END
+
+                 例二   控制器间通讯连接建立
+                 网络环境不好时，互连通讯有很小的丢包可能。
+                 MODBUSM_DES2($fe,20,"192.168.0.25" ,10)      '控制器从端站号为       fe，控制器主端通道
+                 号为   20，?*port 确认设置     10ms 超时时间
+                 MODBUSM_REGSET(0,10,0)        '本地寄存器复制到对端
+                 WAIT UNTIL MODBUSM_STATE <> 1      '   等待消息结束
+                 IF MODBUSM_STATE<>0 THEN
+                     MODBUSM_REGSET(0,10,0)      ' 出错重发一次
+                     MODBUSM_REGGET(20,10,20)        ' 对端寄存器复制到本地
+                 ENDIF
+                 WAIT UNTIL MODBUSM_STATE <> 1        '  等待消息结束
+                 IF MODBUSM_STATE<>0 THEN
+                     MODBUSM_REGGET(20,10,20)      '  出错重发一次
+
+
+                                               430
+===== PDF page 449 =====
+                                                                                                                                                           Zbasic编程手册 V3.3.0
+
+                 ENDIF
+                 END
+相关指令             ADDRESS，PORT
+
+MODBUSM_STATE -- modbus                  通讯状态
+
+
+类型               通讯状态
+描述               MODBUS    主通讯状。
+                        值        描述
+                        0        状态正常
+                        1        等待应答中
+                        2        等待超时
+                        3        应答错误
+
+
+
+
+
+
+
+
+语法               VAR1 = MODBUSM_STATE
+                 当前   modbus 主端通讯状态
+适用控制器            通用
+例子               SETCOM(38400,8,2,0,1,14,2,1000)      '485口为modbus主端，消息超时时间'1s
+                 MODBUSM_DES(1,1)                    '与对端站号1通讯
+                 MODBUSM_REGGET(0,10,0)      ' 获取对端寄存器值
+                 WAIT UNTIL   MODBUSM_STATE <> 1    '等待消息结束，最多等待                1s，为消息超时时
+                 间，获取消息或超时后变为相应值
+                 ?MODBUSM_STATE                '打印通讯结果
+                 IF MODBUSM_STATE     =0 THEN
+                   ?"通讯正常"
+                 ELSEIF MODBUSM_STATE=2 THEN
+                   ?"通讯超时"
+                 ELSEIF MODBUSM_STATE=3 THEN
+                   ?"通讯错误"
+                 ENDIF
+相关指令             PROTOCOL，PORT，SETCOM
+
+
+MODBUSM_REGSET --                写对端保持寄存器
+
+
+类型               通讯指令
+描述               把本地    MODBUS   保存寄存器设置到对端。
+                 对应标准协议功能码           06或  16，写保持寄存器。
+语法               MODBUSM_REGSET (startreg, num, local_reg)
+                     startreg：对端的寄存器起始编号，从             0 开始
+                     num：寄存器个数
+                     local_reg：从本地系统      MODBUS   寄存器中取值，起始编号
+适用控制器            通用
+
+
+                                               431
+===== PDF page 450 =====
+                                                                                                                                                           Zbasic编程手册 V3.3.0
+
+例子               参考   MODBUSM_REGGET       例一
+相关指令             ADDRESS，PROTOCOL，PORT，SETCOM
+
+
+MODBUSM_REGGET                 -- 读对端保持寄存器
+
+
+类型               通讯指令
+描述               把对端的     MODBUS    保存寄存器复制到本地。
+                 对应标准协议功能码           03，读保持寄存器。
+语法               MODBUSM_REGGET (startreg, num, local_reg)
+                     startreg：对端的寄存器起始编号，从             0 开始
+                     num：寄存器个数
+                     local_reg：本地系统     MODBUS    寄存器起始编号
+适用控制器            通用
+例子               台达绝对值编码器读取
+                 GLOBAL DIM flag_abs          '编码器读取正确标志
+                 flag_abs = 0
+                 GLOBAL DIM total_pul          '读到个总脉冲个数
+                 SETCOM(38400,8,2,0,1,14)    '设置485口为MODBUS主端，波特率38400
+                 MODBUSM_DES(1,1)         '设置       485端口，对方站号         1    P3-00
+                 MODBUS_LONG(300) = 2          '用 300，301 传输数据
+                 MODBUSM_REGSET(98,2,300)      '设置  P0-49 = 2，更新参数
+                 MODBUSM_REGGET(98,2,300)
+                 TICKS = 1000
+
+                 WHILE (MODBUS_LONG(300) AND TICKS > 0)        '等到  P0-49 变成   0 或  1秒超时，即更
+                                                         新完成或者不成功
+                     MODBUSM_REGGET        (98,2,300)
+                 WEND
+
+                 IF TICKS < 0 THEN
+                   PRINT "伺服更新不成功"
+                   flag_abs = 1
+                   RETURN
+                 ENDIF
+
+                 MODBUSM_REGGET       (100,6,310)
+                 IF MODBUS_LONG(310) = 0 THEN             '编码器正常
+                   flag_abs = 0
+                   total_pul = MODBUS_LONG(314)
+                 ELSE
+                   PRINT "编码器出错"
+                   flag_abs = 2
+
+
+                                               432
+===== PDF page 451 =====
+                                                                                                                                                          Zbasic编程手册 V3.3.0
+
+               ENDIF
+
+               IF flag_abs = 0 THEN '正确
+                 dpos(0) = -total_pul/units(0)        '测试出来的脉冲个数值是反的，取反还原坐标
+               ENDIF
+               END
+相关指令           ADDRESS，PROTOCOL，PORT，SETCOM
+
+
+MODBUSM_3XGET --            读对端输入寄存器
+
+
+类型             通讯指令
+描述             把对端的    MODBUS   输入寄存器复制到本地。
+               对应标准协议功能码         04，读输入寄存器。
+语法             MODBUSM_3XGET (startreg, num, local_reg)
+                   startreg：对端的寄存器起始编号，从          0开始
+                   num：寄存器个数
+                   local_reg：从本地系统    MODBUS   寄存器中取值，起始编号
+适用控制器          通用
+例子             MODBUSM_3XGE     T(0,10,0)     '把对端输入寄存器   0-9复制到通讯本地寄存器         0-9
+相关指令           ADDRESS，PROTOCOL，PORT，SETCOM
+
+
+MODBUSM_BITSET            -- 写对端线圈
+
+
+类型             通讯指令
+描述             把本地    MODBUS  位寄存器设置到对端。
+               对应标准协议功能码         05 或 15，写线圈。
+语法             MODBUSM_BITSET (startreg, num, local_reg)
+                   startreg：对端的寄存器起始编号，从          0开始
+                   num：寄存器个数
+                   local_reg：从本地系统    MODBUS   寄存器中取值，起始编号
+适用控制器          通用
+例子             MODBUSM_BITSET     (0,10,0)  '把本地位寄存器0-9复制到通讯对端的寄存器0-9
+相关指令           ADDRESS，PROTOCOL，PORT，SETCOM
+
+MODBUSM_BITGET --             读对端线圈
+
+
+类型             通讯指令
+描述             把对端    MODBUS  位寄存器复制到本地。
+               对应标准协议功能码         01，读线圈。
+
+
+
+                                          433
+===== PDF page 452 =====
+                                                                                                                                                          Zbasic编程手册 V3.3.0
+
+语法             MODBUSM_BITGET (startreg, num, local_reg)
+                   startreg：对端的寄存器起始编号，从          0开始
+                   num：寄存器个数
+                   local_reg：本地系统   MODBUS  寄存器起始编号
+适用控制器          通用
+例子             MODBUSM_BITGET (0,10,0)    '把通讯对端的位寄存器        0-9复制到本地位寄存器         0-9
+相关指令           ADDRESS，PROTOCOL，PORT，SETCOM
+
+
+MODBUSM_1XGET --            读对端离散输入
+
+
+类型             通讯指令
+描述             把对端   MODBUS   位寄存器复制到本地。
+               对应标准协议功能码         02，读离散输入。
+语法             MODBUSM_1XGET (startreg, num, local_reg)
+                   startreg：对端的寄存器起始编号，从          0开始
+                   num：寄存器个数
+                   local_reg：本地系统   MODBUS  寄存器起始编号
+适用控制器          通用
+例子             MODBUSM_1XGET (0,10,0)     '把通讯对端的位寄存器        0-9复制到本地位寄存器         0-9
+相关指令           ADDRESS，PROTOCOL，PORT，SETCOM
+
+
+13.7. 控制器互联直接命令指令
+
+
+SEND_RESULT        -- 读取    send  结果
+
+
+类型             通讯指令
+描述             读取  send 指令的结果。
+               返回值：0-成功，其它为错误，包括从控制器返回的错误码。
+
+               MODBUSM   指令超时重发要注意，从控制器可能收到2                 次消息，对寄存器的扫描也可能
+               出现   2次。SEND    指令超时重发对从控制器没有影响,             重要标志性变量可以通过           SEND
+               指令来修改。
+语法             VAL=SEND_RESULT
+适用控制器          4 系列以上控制器支持，支持版本号20170618
+相关指令           SEND_CMD
+
+
+
+
+
+
+
+                                          434
+===== PDF page 453 =====
+                                                                                                                                                          Zbasic编程手册 V3.3.0
+
+SEND_CMD -- send       命令
+
+
+类型             通讯指令
+描述             主控制器给从控制器发送ZMC_DIRECTCOMMAND命令，结果通过                     SEND_RESULT
+               查看。
+               发送  BASIC 内容：cmdstring (参数列表)
+
+               MODBUSM   指令超时重发要注意，从控制器可能收到2               次消息，对寄存器的扫描也可能
+               出现  2次。SEND   指令超时重发对从控制器没有影响，重要标志性变量可以通过SEND
+               指令来修改。
+语法             SEND_CMD(cmdstring,可选参数列表)
+                  cmdstring：命令字符串
+                  可选参数列表：个数可变，不带参数的时候，不添加括号
+适用控制器          4系列以上控制器支持，支持版本号20170618
+例子             SEND_CMD("MOVE",DIS1,DIS2,DIS3)
+               SEND_CMD("MOVEABS",DIS1)
+相关指令           SEND_RESULT
+
+
+SEND_CMDAXIS -- send         命令
+
+
+类型             通讯指令
+描述             主控制器给从控制器发送         ZMC_DIRECTCOMMAND      命令，结果通过      SEND_RESULT
+               查看。
+               发送  BASIC 内容：cmdstring (参数列表)，AXIS(iaxis)
+
+               MODBUSM   指令超时重发要注意，从控制器可能收到               2次消息，对寄存器的扫描也可能
+               出现  2次。SEND   指令超时重发对从控制器没有影响，重要标志性变量可以通过                       SEND
+               指令来修改。
+语法             SEND_CMDAXIS (cmdstring,iaxis,可选参数列表)
+                  cmdstring：命令字符串
+                  iaxis：轴号
+                  可选参数列表：个数可变，不带参数的时候，不添加括号
+适用控制器          4系列以上控制器支持，支持版本号             20170618
+例子             SEND_CMDAXIS("MOVE",IAXIS,DIS1)
+相关指令           SEND_RESULT，SEND_CMD
+
+SEND_ASSIGN -- send       命令
+
+
+类型             通讯指令
+描述             主控制器给从控制器发送ZMC_DIRECTCOMMAND命令，结果通过                     SEND_RESULT
+
+
+                                         435
+===== PDF page 454 =====
+                                                                                                                                                         Zbasic编程手册 V3.3.0
+
+              查看。
+              发送 BASIC 内容：cmdstring (参数列表)=value
+
+              MODBUSM  指令超时重发要注意，从控制器可能收到            2 次消息，对寄存器的扫描也可能
+              出现  2次。SEND  指令超时重发对从控制器没有影响，重要标志性变量可以通过                    SEND
+              指令来修改。
+语法            SEND_ASSIGN (cmdstring,value,可选参数列表)
+                 cmdstring：命令字符串
+                 value：赋值的内容
+                 可选参数列表：个数可变，不带参数的时候，不添加括号
+适用控制器         4系列以上控制器支持，支持版本号20170618
+例子            SEND_ASSIGN("DPOS",0,0)    '生成DPOS(0)=0
+              SEND_ASSIGN("DPOS(1)",0)    '生成DPOS(1)=0
+相关指令          SEND_RESULT
+
+
+SEND_QUERY -- send      命令
+
+
+类型            通讯指令
+描述            主控制器给从控制器发送ZMC_DIRECTCOMMAND命令，结果通过                 SEND_RESULT
+              查看。
+              发送 BASIC 内容：cmdstring(参数列表)。
+              不带参数的时候，不添加括号。
+              接收的内容根据SEND_QUERYSET的设置填到          TABLE 里面。
+
+              MODBUSM  指令超时重发要注意，从控制器可能收到2             次消息，对寄存器的扫描也可能
+              出现  2次。SEND  指令超时重发对从控制器没有影响，重要标志性变量可以通过SEND
+              指令来修改。
+语法            SEND_QUERY (cmdstring,可选参数列表)
+                 cmdstring：命令字符串
+                 可选参数列表：个数可变，不带参数的时候，不添加括号
+适用控制器         4系列以上控制器支持，支持版本号20170618
+例子            SEND_QUERYSET(0,1)
+              SEND_QUERY("?dpos",0)        'table(0)保存控制器DPOS(0)的内容
+              SEND_QUERY("?REMAIN_BUFFER(1)AXIS(0)",0)   '发送字符串内容
+              (“?REMAIN_BUFFER(1) AXIS(0)”)
+              SEND_QUERYSET(0,2)
+              SEND_QUERY("?dpos(0),dpos(1)") '从控制器会返回两个数据
+相关指令          SEND_RESULT，SEND_QUERYSET
+
+
+
+
+
+
+
+                                      436
+===== PDF page 455 =====
+                                                                                                                                                          Zbasic编程手册 V3.3.0
+
+SEND_QUERYSET -- send         命令
+
+
+类型             通讯指令
+描述             主控制器给从控制器发送ZMC_DIRECTCOMMAND命令，结果通过                    SEND_RESULT
+               查看。
+               发送  BASIC内容：cmdstring (参数列表) AXIS(iaxis)
+
+               MODBUSM  指令超时重发要注意，从控制器可能收到               2次消息，对寄存器的扫描也可能
+               出现  2次。SEND   指令超时重发对从控制器没有影响，重要标志性变量可以通过SEND
+               指令来修改。
+语法             SEND_QUERYSET (dtindex, dtnumes)
+                  dtindex：接收内容存储的TABLE       编号
+                  dtnumes：接收最多存储的TABLE       个数
+适用控制器          4系列以上控制器支持，支持版本号20170618
+例子             SEND_QUERYSET (0,1)
+               SEND_QUERYSET (0,1)
+相关指令           SEND_RESULT，SEND_QUERY
+
+
+13.8. 控制器互联文件发送指令
+
+
+SEND_ZAR -- U      盘操作
+
+
+类型             通讯指令
+描述             通过主控制器的      U盘升级从控制器的程序，结果通过             MODBUSM_STATE    查看。
+
+               MODBUSM  指令超时重发要注意，从控制器可能收到               2次消息，对寄存器的扫描也可能
+               出现  2次。SEND   指令超时重发对从控制器没有影响，重要标志性变量可以通过                      SEND
+               指令来修改。
+语法             SEND_ZAR("ufilename")
+                  ufilename：U盘文件名，支持字符串的数组和其它字符串类型
+适用控制器          4系列以上控制器支持，支持版本号            20170618
+例子             SEND_ZAR("1.ZAR")
+相关指令           MODBUSM_STATE，SEND_PERCENT
+
+
+SEND_FLASH --数据拷贝
+
+
+类型             通讯指令
+描述             主控制器的    U 盘和从控制器的      FLASH 相互拷贝，结果通过        MODBUSM_STATE    查看。
+
+
+                                        437

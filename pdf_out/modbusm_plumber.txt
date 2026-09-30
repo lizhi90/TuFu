@@ -1,0 +1,814 @@
+===== PDF page 425 =====
+Zbasic编程手册 V3.3.0
+第十三章 通讯相关指令
+13.1. 串口通讯指令
+SETCOM -- 串口配置
+类型 系统指令
+描述 串口的配置。
+控制器重新上电后，SETCOM 参数会还原成默认值，所以请在程序开头写 SETCOM 设
+置。
+ZMC00x系列不支持MODBUS主端。
+语法 SETCOM (baudrate,databits,stopbits,parity,port[,mode] [,variable] [,timeout])
+baudrate：串口波特率9600 19200 4800 115200 38400(缺省) 57600 128000 256000
+databits：数据位数 8
+stopbits：停止位，只能设置0/1/2
+parity：是否校验：
+值 描述
+0（缺省） 无校验
+1 奇校验
+2 偶校验
+port：串口PORT编号0-1，参见PORT描述，不同的控制器不一样
+mode：协议
+值 描述
+0 RAW数据模式，无协议，此时可以使用GET #，PRITNT #
+4（缺省） MODBUS从端（16位整数）
+14 MODBUS主端（16位整数)
+15 直接命令执行模式，此时可以直接从串口输入字符串命令(换行符
+结束)
+variable：寄存器选择，0-VR，1-TABLE，2-系统MODBUS寄存器
+值 描述
+0 VR，此时一个VR映射到一个MODBUS_REG
+VR是32位浮点型，REG是16位整数型，从VR传递数据给REG
+会丢失小数部分，当 VR 数据超过正负 15 位时，REG 数据会改
+变
+REG传递数据给VR不会有问题
+1 TABLE，此时一个TABLE数据映射到一个MODBUS_REG（不
+推荐）
+TABLE是32位浮点型，REG是16位整数型，从TABLE传递数
+据给REG 会丢失小数部分，当 TABLE 数据超过正负 15 位时，
+4 07
+
+===== PDF page 426 =====
+Zbasic编程手册 V3.3.0
+REG数据会改变
+REG传递数据给TABLE不会有问题
+2（缺省） 系统MODBUS寄存器，此时VR与MODBUS寄存器是两片独立
+区间
+3 VR_INT模式，此时一个VR_INT映射到两个MODBUS_REG
+timeout：mode=14时为消息超时时间，毫秒单位，缺省值1000。
+variable参数是全局的设置，所有的端口共一个。
+当设置为VR或TABLE时，没有用到的输出口与输入口会连在一起。
+当设置为 VR 或TABLE 时，通用输出口会映射到MODBUS_BIT(0)的位置，输入口
+会映射到MODBUS_BIT(1000)的位置，因此此时不要使用MODBUS_BIT作为触摸屏的
+按钮。
+适用控制器 通用
+例子 例一 mode0 RAW模式
+DIM char1 '定义变量
+SETCOM(38400,8,1,0,0,0) '配置串口为RAW模式
+WHILE 1
+GET #0, char1 '发送给通道0的字符保存到char1
+PRINT char1 '按ASCII码打印通道0接受的字符
+PUTCHAR #0, char1 '将接收的字符再发送回去
+WEND
+松下A6伺服编码器读取参照第十三章简易例程
+例二 MODBUS通讯设置
+SETCOM(38400,8,1,0,0,4,2) '设置串口0为modbus从端，波特率38400
+SETCOM(38400,8,1,0,1,14,2,1000) 设置串口1为modbus主端，波特率38400
+具体例程参照MODBUSM_DES指令例程
+例三 直接字符命令方式
+setcom(38400, 8,1,0,0,15) '设置串口0为直接字符串命令方式
+此时在串口调试助手或其他设备，直接发送相关指令可直接操作控制器。
+发送前
+UNITS=10000
+发送后
+UNITS=100
+一定要换行发送，否则控制器报错
+4 08
+
+===== PDF page 427 =====
+Zbasic编程手册 V3.3.0
+例四 寄存器模式0
+VR(0)=0 '初始化VR(0)和REG(0)为0
+MODBUS_REG(0)=0
+SETCOM(38400, 8,1,0,0,4,0) '设置VR映射到MODBUS_REG
+VR(0)=100.345 '设置VR(0)=100.345
+?MODBUS_REG(0) '打印结果为100，VR已经映射到REG，但是REG是整
+型，所以小数部分丢失
+MODBUS_REG(0)=200 'REG(0)设为200
+?VR(0) '打印结果为 200，REG变化也会改变VR
+例五 寄存器模式2
+VR(0)=0 '初始化VR(0)和REG(0)为0
+MODBUS_REG(0)=0
+SETCOM(38400,8,1,0,0,4,2) '设置VR与MODBUS_REG独立
+VR(0)=100.345 设置VR(0)=100.345
+?MODBUS_REG(0) '打印结果为 0，VR不影响REG
+MODBUS_REG(0)=200 'REG(0)设为200
+?VR(0) '打印结果为 100.345，REG也不影响VR
+相关指令 ADDRESS，PROTOCOL，MODBUSM_DES，PORT
+ADDRESS -- 控制器站号
+类型 系统参数
+描述 控制器的所有串口的MODBUS协议站号 1- 255，缺省=1。
+语法 ADDRESS = value
+适用控制器 通用
+例子 PRINT ADDRESS '打印出协议站号
+打印结果：1
+相关指令 SETCOM，PORT，PROTOCOL
+COM_UNUSED -- 指定串口
+类型 系统参数
+描述 按位指定串口是否被ZBASIC使用。
+bit0：串口1，值设置1表示ZBASIC不使用
+bit1：串口2，值设置1表示ZBASIC不使用
+语法 COM_UNUSED = value
+4 09
+
+===== PDF page 428 =====
+Zbasic编程手册 V3.3.0
+适用控制器 5系列控制器以上
+例子 COM_UNUSED=1 'ZBASIC不使用RS232串口
+相关指令 SETCOM，PORT，PROTOCOL
+13.2. CAN 通讯指令
+CAN -- CAN 通讯
+类型 系统指令
+描述 直接通过CAN总线收发数据。
+可以实现多个控制器通过 CAN 来通讯，但是同一个 CAN 网络上只能有一个主端
+(CANIO_ADDRESS=32)。
+较新的固件版本才支持这个功能，如不支持请联系厂家。
+接线如下图所示：
+CANL - CANL
+CANH - CANH
+CANL和CANH的首尾两端分别连接1个120欧电阻用于阻抗匹配。连接带拨码开关的
+扩展模块时，将拨码第八位拨为ON即表示接入120欧电阻，无需额外接电阻。
+语法 CAN(channel, function, tablenum)
+channel：CAN通道，0表示第一个通道，-1表示缺省通道
+function：功能号
+值 描述
+6 接收，没有数据时，identifier<0
+7 发送
+16 带扩展支持接收，没有数据时，identifier<0
+需要升级固件
+17 发送扩展数据，普通数据使用7发送
+需要升级固件
+tablenum：数据存储的TABLE位置
+6、7模式时依次存储：
+4 10
+
+===== PDF page 440 =====
+Zbasic编程手册 V3.3.0
+13.5. 通道参数指令
+PORT -- 通道编号
+类型 通道修正辅助指令
+描述 当访问通道参数时可以指定其他的通道。
+其他指令需要选择通道时查看。
+语法 PORT (portnum)
+portnum：通道号
+不同型号的控制器支持的通道数不同。在线命令?*port查看，见例程。
+ZMC00x系列
+通道号 协议
+0 串口A
+1 串口B
+ZMC1-2xx 系列，支持同时两个以太网连接，端口号为 502，支持触摸屏的
+MODBUS-TCP协议连接。
+通道号 协议
+0 RS232串口
+1 RS485串口
+2 以太网接口，连接1
+3 以太网接口，连接2
+10 自定义网络通讯通道1
+11 自定义网络通讯通道2
+ZMC3xx系列：带3个串口。
+通道号 协议
+0 RS232串口
+1 RS485串口
+2 RS422串口
+3 以太网接口，连接1
+4 以太网接口，连接2
+10 自定义网络通讯通道1
+11 自定义网络通讯通道2
+ZMC4xx系列：带2个串口。
+通道号 协议
+0 RS232串口
+1 RS485串口
+2 以太网接口，连接1
+3 以太网接口，连接2
+10 自定义网络通讯通道1
+11 自定义网络通讯通道2
+20 网络控制器互联通道，不支
+4 22
+
+===== PDF page 441 =====
+Zbasic编程手册 V3.3.0
+持PORT_STATUS 查询。
+ECI系列：只有一个串口。
+通道号 协议
+0 RS232串口
+1 以太网接口，连接1
+2 以太网接口，连接2
+适用控制器 通用
+例程 查看控制器通道
+>>?*PORT
+Port:0-COM.
+Port:1-COM.
+Port:2-ETH.
+Port:3-ETH.
+Port:4-ETH.
+Port:5-ETH.
+Port:6-ETH.
+Port:7-ETH.
+Port:10-ECUSTOM.
+Port:11-ECUSTOM.
+Port:12-ECUSTOM.
+Port:13-ECUSTOM.
+Port:14-ECUSTOM.
+Port:15-ECUSTOM.
+Port:20-CONNECT.
+其中 COM 为串口通道，ETH 为网口通讯通道，ECUSTOM 为自定义网口通讯通道，
+CONNNECT为控制器互联通道。
+相关指令 FILE_PORT，PORT_STATUS，PROTOCOL
+PORT_STATUS -- 通道状态
+类型 通道参数，只读
+描述 返回当前通道的状态，串口总是返回1。
+MODBUS_TCP 链接上以后，PORT_STATUS会变为1。
+当对应链接已经作为从端使用时, 控制器自动搜索没有使用的 PORT 作为
+MODBUS_TCP主端链接，此时程序无法确定实际使用的是哪个PORT。
+新固件版本提供此功能。
+语法 VAR1 = PORT_STATUS(port)
+port：通道号
+值 协议
+0 没有连接
+4 23
+
+===== PDF page 442 =====
+Zbasic编程手册 V3.3.0
+1 有连接使用
+适用控制器 通用
+例子 ?PORT_STATUS(0) '返回232串口通道状态，结果，1
+相关指令 PORT，SETCOM，ADDRESS
+FILE_PORT -- 当前通道文件号
+类型 通道参数
+描述 返回或设置当前通道的缺省文件号。
+设定后可以通过在线命令来访问对应文件的文件模块变量或数组。
+ZDevelop集成开发环境会自动使用此参数，不要在使用ZDevelop时修改此参数。
+语法 VAR1 = FILE_PORT，FILE_PORT = filenum
+适用控制器 通用
+例子 >>FILE_PORT = 0 '当前连接的通道的FILE_PORT参数
+相关指令 PORT
+PROTOCOL -- 通道通讯协议
+类型 通道参数，只读
+描述 返回当前通道的通讯协议。
+语法 VAR1 = PROTOCOL(port)
+port：通道号
+返回值
+值 协议
+0 RAW数据格式，无协议
+3 MODBUS协议，控制器为从端（缺省）
+14 MODBUS协议，控制器为主端
+15 直接命令执行方式
+适用控制器 通用
+相关指令 PORT，SETCOM，ADDRESS
+ETH_MODE -- 网口模式设置
+类型 通道参数
+描述 网口模式设置，数组类型，每个网口独立设置。
+语法 ETH_MODE(isel) = imode
+4 24
+
+===== PDF page 443 =====
+Zbasic编程手册 V3.3.0
+isel：0- 第一个网口，1-第二个网口(EtherCAT)
+imode：0 - 非eth模式，传统模式，兼容性好，抗干扰稍差
+1 - eth 模式，抗干扰性好，多个链接时需要配合 PC 上防掉线 DLL，标准
+DLL只能链接一个 (有极少数触摸屏或EtherCAT驱动器不兼容此模式)
+2 - 自动模式(新固件缺省值)，如果有检测到网络没有连上，会自动在 0/1
+模式中切换
+20170720以上带ETH的固件版本支持。
+适用控制器 通用
+相关指令 PORT
+13.6. MODBUS 通讯指令
+MODBUS_BIT -- 位寄存器
+类型 MODBUS位寄存器
+描述 修改或者读取BIT寄存器，布尔型，触摸屏一般叫0x寄存器。
+另：特殊的modbus 0x寄存器，通过这些寄存器可以直接从触摸屏读取和设置IO，注意
+读取的IO是原始的状态，INVERT_IN不起作用。
+MODBUS_BIT地址 意义
+0~7999 用户自定义使用
+8000~8099 PLC编程的特殊M寄存器
+8100~8199 轴0-99的IDLE标志
+8200~8299 轴0-99的BUFFER剩余标志
+10000~14095 对应输入IN口
+20000~24095 对应输出OUT口
+30000~34095 对应PLC编程的S寄存器
+语法 MODBUS_BIT(first,[last]) = value
+first：位寄存器编号，编号从0开始
+last：位寄存器编号，编号从0开始
+适用控制器 通用
+例子 DIM VAR
+MODBUS_BIT(100) = 1 'bit100赋值1
+VAR = MODBUS_BIT(100) '把bit100的值赋值到变量VAR
+4 25
+
+===== PDF page 444 =====
+Zbasic编程手册 V3.3.0
+MODBUS_IEEE -- 字寄存器-32 位浮点型
+类型 MODBUS字寄存器
+描述 修改或者读取字寄存器，32位浮点型。触摸屏一般叫4x寄存器。
+ZMOTION运动控制器专门具备MODBUS字寄存器，会占用两个寄存器的地址。
+字寄存器间的关系查看“MODBUS寄存器”。
+控制器缺省使用系统MODBUS字寄存器，要修改时请设置SETCOM的第7个参数。
+另：特殊的MODBUS 4x寄存器，通过这些寄存器可以直接从触摸屏读取一些状态。
+寄存器（zero based） 类型 意义
+10000- IEEE DPOS读取，每个轴占两个寄存器
+11000- IEEE MPOS读取，每个轴占两个寄存器
+12000- IEEE VP_SPEED读取，每个轴占两个寄存器
+语法 MODBUS_IEEE (regnum) = value
+regnum：寄存器编号，编号从0开始
+适用控制器 通用
+例子 DIM VAR
+MODBUS_IEEE(100) = 100.10 'ieee100赋值100.10
+VAR = MODEBUS_IEEE(100) 'ieee100赋值给变量VAR
+相关指令 MODBUS_REG，MODBUS_LONG，MODBUS_STRING
+MODBUS_LONG -- 字寄存器-32 位整型
+类型 MODBUS字寄存器
+描述 修改或者读取字寄存器，32位整型。触摸屏一般叫4x寄存器。
+ZMOTION运动控制器专门具备MODBUS字寄存器，会占用两个寄存器的地址。
+字寄存器间的关系查看“MODBUS寄存器”。
+控制器缺省使用系统MODBUS字寄存器，要修改时请设置SETCOM的第7个参数。
+语法 MODBUS_LONG(regnum) = value
+regnum：寄存器编号，编号从0开始
+适用控制器 通用
+例子 DIM VAR
+MODBUS_LONG(100) = 100 'long100赋值100
+VAR = MODEBUS_LONG(100) 'long100赋值给VAR
+相关指令 MODBUS_REG，MODBUS_IEEE，MODBUS_STRING
+4 26
+
+===== PDF page 445 =====
+Zbasic编程手册 V3.3.0
+MODBUS_REG -- 字寄存器-16 位整型
+类型 MODBUS字寄存器
+描述 修改或者读取字寄存器，16位整型，触摸屏一般叫4x寄存器。
+ZMOTION运动控制器专门具备MODBUS字寄存器。
+不同型号控制器的字寄存器个数有区别。
+字寄存器间的关系查看“MODBUS寄存器”。
+控制器缺省使用系统MODBUS字寄存器，要修改时请设置SETCOM的第7个参数。
+另：特殊的modbus 4x寄存器，通过这些寄存器可以直接从触摸屏读取一些状态。
+寄存器（zero based） 类型 意义
+13000- 16 DA输出
+14000- 16 AD读取
+语法 MODBUS_REG(regnum) = value
+regnum：寄存器编号，编号从0开始
+适用控制器 通用
+例子 DIM VAR
+MODBUS_REG(100) = 100 'reg100赋值100
+VAR = MODBUS_REG(100) 'reg100赋给变量VAR
+相关指令 MODBUS_IEEE，MODBUS_LONG，MODBUS_STRING
+MODBUS_STRING -- 字寄存器-字节
+类型 MODBUS字寄存器，字符串函数
+描述 读取MODBUS寄存器区域的字符串，按字节来读取。触摸屏一般叫4x寄存器。
+字寄存器间的关系查看“MODBUS寄存器”。
+语法 MODBUS_STRING(index, chares)
+index：起始的MODBUS寄存器编号，编号从0开始。不同型号控制器的字寄存器
+个数有区别
+chares：读取的字符总数
+适用控制器 通用
+例子 DIM ARR(8)
+MODBUS_STRING (0, 8) = "abc" 'string0开始保存字符串，共8字节
+print MODBUS_STRING(0, 8) '打印保存的字符串，打印结果，abc
+ARR = MODBUS_STRING(0,8) '字符换赋值给数组
+相关指令 MODBUS_REG，MODBUS_LONG，MODBUS_IEEE
+4 27
+
+===== PDF page 446 =====
+Zbasic编程手册 V3.3.0
+MODBUSM_DES -- modbus 通讯连接
+类型 通讯指令
+描述 设置或读取MODBUS主端的对方。
+通讯等待时只会阻塞当前这个任务，不影响其他任务。
+使用485串口与多个设备通讯时，建立通讯连接可加入等待或延时，等上一个设备连接
+成功再连接下一个设备，防止出现通讯失败的情况。
+语法 MODBUSM_DES (address[,port],[timer],[resendset])
+ADDRESS1 = MODBUSM_DES([port])
+address：对端的modbus协议站号
+port：当前modbus主通讯的port号
+timer：消息超时时间设置，缺省1000ms。
+resendset：超时消息重发设置，0-不重发，1-SEND指令重发，2-SEND与MODBUSM
+指令都重发。
+MODBUSM指令超时重发要注意，从控制器可能收到2次消息，对寄存器的扫描也可能
+出现2次。
+SEND指令超时重发对从控制器没有影响, 重要标志性变量可以通过SEND指令来修改。
+适用控制器 通用
+例子 例一 多主端-多从端通讯
+SETCOM(38400,8,1,0,0,14,2,1000) '设置串口0为modbus主端，通讯等待1s
+SETCOM(38400,8,1,0,1,14,2,1000) '设置串口1为modbus主端，通讯等待1s
+WHILE 1
+IF IN(0)=1 THEN 'IN0高电平时使用串口0
+IF IN(1)=1 THEN
+MODBUSM_DES(1,0) 'IN1高电平时与从端站号1通讯
+MODBUSM_REGSET(0,10,0) '本地寄存器复制到对端
+MODBUSM_REGGET(20,10,20) '对端寄存器复制到本地
+WAIT UNTIL MODBUSM_STATE <> 1 '等待消息结束
+ELSE
+MODBUSM_DES(2,0) 'IN1低电平时与从端站号2通讯
+MODBUSM_REGSET(30,10,30) '本地寄存器复制到对端
+MODBUSM_REGGET(40,10,40) '对端寄存器复制到本地
+WAIT UNTIL MODBUSM_STATE <> 1 '等待消息结束
+ENDIF
+?"通道0状态=", MODBUSM_STATE '打印通讯状态
+ELSE 'IN0低电平时使用串口1
+IF IN(1)=1 THEN
+MODBUSM_DES(1,1) 'IN1高电平时与从端站号1通讯
+MODBUSM_REGSET(50,10,50) '本地寄存器复制到对端
+4 28
+
+===== PDF page 447 =====
+Zbasic编程手册 V3.3.0
+MODBUSM_REGGET(60,10,60) '对端寄存器复制到本地
+WAIT UNTIL MODBUSM_STATE <> 1 '等待消息结束
+ELSE
+MODBUSM_DES(2,1) 'IN1低电平时与从端站号2通讯
+MODBUSM_REGSET(70,10,70) '本地寄存器复制到对端
+MODBUSM_REGGET(80,10,80) '对端寄存器复制到本地
+WAIT UNTIL MODBUSM_STATE <> 1 '等待消息结束
+ENDIF
+?"通道1状态=", MODBUSM_STATE '打印通讯状态
+ENDIF
+WEND
+相关指令 SETCOM，PROTOCOL，PORT，MODBUSM_DES2
+MODBUSM_DES2 -- 控制器间网口通讯
+类型 通讯指令
+描述 控制器间网口通讯，也可作为MODBUS_TCP主端通讯。
+?*PORT可以显示出当前可用的网络链接通道。
+作为MODBUS_TCP主端时：
+选择一个ETH模式的PORT口作为MODBUS_TCP链接通道(不建议用第一个和最后一
+个)。
+当选择的通道已经作为从端被占用时, 控制器自动选择一个没有占用的 ETH 模式的
+PORT口作为MODBUS_TCP主端链接。
+作为控制器互联使用时：
+选择CONNECT模式的PORT口作为控制器互联通道。
+语法 MODBUSM_DES2 (id,port,"desipaddress",[timer],[resendset])
+id：对方控制器的MODBUS从端ID，缺省1
+port：支持两种模式，?*PORT确认通道号及模式
+ETH时，作为MODBUS_TCP主端通道
+4 29
+
+===== PDF page 448 =====
+Zbasic编程手册 V3.3.0
+CONNECT时，做为控制器互联通道
+desipaddress：字符串， 对方控制器的IP地址
+timer：消息超时时间设置，缺省1000ms
+resendset：超时消息重发设置，0-不重发，1-SEND 指令超时重发，2-SEND 与
+MODBUSM指令都超时重发。
+MODBUSM指令超时重发要注意，从控制器可能收到2次消息，对寄存器的扫描也可能
+出现2次。
+SEND指令超时重发对从控制器没有影响，重要标志性变量可以通过SEND指令来修改。
+适用控制器 4系列产品, 20170117及以上固件版本支持
+例子 例一 MODBUS主端通讯连接建立
+MODBUS_TCP主端通讯不用考虑丢包。
+MODBUSM_DES2(1,4,"192.168.0.12") '按站号和 IP 与从端通讯使用控制器通道
+4，?*port确认
+WHILE 1
+LASTTICK=TICKS
+FOR i =0 TO 9999
+MODBUS_REG(0) = i
+MODBUSM_REGSET(0,10,0) '设置对端寄存器
+MODBUS_REG(0) = 99
+MODBUSM_REGGET(0,10,0) '读取对端寄存器
+IF MODBUS_REG(0) <> I THEN
+?"REG(0)=" MODBUS_REG(0),"STATE=" MODBUSM_STATE
+'打印在第几次通讯时错误
+ENDIF
+NEXT
+?LASTTICK-TICKS '打印通讯时间
+WEND
+END
+例二 控制器间通讯连接建立
+网络环境不好时，互连通讯有很小的丢包可能。
+MODBUSM_DES2($fe,20,"192.168.0.25" ,10) '控制器从端站号为fe，控制器主端通道
+号为20，?*port确认设置10ms超时时间
+MODBUSM_REGSET(0,10,0) '本地寄存器复制到对端
+WAIT UNTIL MODBUSM_STATE <> 1 '等待消息结束
+IF MODBUSM_STATE<>0 THEN
+MODBUSM_REGSET(0,10,0) '出错重发一次
+MODBUSM_REGGET(20,10,20) '对端寄存器复制到本地
+ENDIF
+WAIT UNTIL MODBUSM_STATE <> 1 '等待消息结束
+IF MODBUSM_STATE<>0 THEN
+MODBUSM_REGGET(20,10,20) '出错重发一次
+4 30
+
+===== PDF page 449 =====
+Zbasic编程手册 V3.3.0
+ENDIF
+END
+相关指令 ADDRESS，PORT
+MODBUSM_STATE -- modbus 通讯状态
+类型 通讯状态
+描述 MODBUS主通讯状。
+值 描述
+0 状态正常
+1 等待应答中
+2 等待超时
+3 应答错误
+语法 VAR1 = MODBUSM_STATE
+当前modbus主端通讯状态
+适用控制器 通用
+例子 SETCOM(38400,8,2,0,1,14,2,1000) '485口为modbus主端，消息超时时间'1s
+MODBUSM_DES(1,1) '与对端站号1通讯
+MODBUSM_REGGET(0,10,0) '获取对端寄存器值
+WAIT UNTIL MODBUSM_STATE <> 1 '等待消息结束，最多等待1s，为消息超时时
+间，获取消息或超时后变为相应值
+?MODBUSM_STATE '打印通讯结果
+IF MODBUSM_STATE=0 THEN
+?"通讯正常"
+ELSEIF MODBUSM_STATE=2 THEN
+?"通讯超时"
+ELSEIF MODBUSM_STATE=3 THEN
+?"通讯错误"
+ENDIF
+相关指令 PROTOCOL，PORT，SETCOM
+MODBUSM_REGSET -- 写对端保持寄存器
+类型 通讯指令
+描述 把本地MODBUS保存寄存器设置到对端。
+对应标准协议功能码 06或16，写保持寄存器。
+语法 MODBUSM_REGSET (startreg, num, local_reg)
+startreg：对端的寄存器起始编号，从0开始
+num：寄存器个数
+local_reg：从本地系统MODBUS寄存器中取值，起始编号
+适用控制器 通用
+4 31
+
+===== PDF page 450 =====
+Zbasic编程手册 V3.3.0
+例子 参考MODBUSM_REGGET例一
+相关指令 ADDRESS，PROTOCOL，PORT，SETCOM
+MODBUSM_REGGET -- 读对端保持寄存器
+类型 通讯指令
+描述 把对端的MODBUS保存寄存器复制到本地。
+对应标准协议功能码03，读保持寄存器。
+语法 MODBUSM_REGGET (startreg, num, local_reg)
+startreg：对端的寄存器起始编号，从0开始
+num：寄存器个数
+local_reg：本地系统MODBUS寄存器起始编号
+适用控制器 通用
+例子 台达绝对值编码器读取
+GLOBAL DIM flag_abs '编码器读取正确标志
+flag_abs = 0
+GLOBAL DIM total_pul '读到个总脉冲个数
+SETCOM(38400,8,2,0,1,14) '设置485口为MODBUS主端，波特率38400
+MODBUSM_DES(1,1) '设置485端口，对方站号1 P3-00
+MODBUS_LONG(300) = 2 '用300，301传输数据
+MODBUSM_REGSET(98,2,300) '设置P0-49 = 2，更新参数
+MODBUSM_REGGET(98,2,300)
+TICKS = 1000
+WHILE (MODBUS_LONG(300) AND TICKS > 0) '等到P0-49变成0 或1秒超时，即更
+新完成或者不成功
+MODBUSM_REGGET(98,2,300)
+WEND
+IF TICKS < 0 THEN
+PRINT "伺服更新不成功"
+flag_abs = 1
+RETURN
+ENDIF
+MODBUSM_REGGET(100,6,310)
+IF MODBUS_LONG(310) = 0 THEN '编码器正常
+flag_abs = 0
+total_pul = MODBUS_LONG(314)
+ELSE
+PRINT "编码器出错"
+flag_abs = 2
+4 32
+
+===== PDF page 451 =====
+Zbasic编程手册 V3.3.0
+ENDIF
+IF flag_abs = 0 THEN '正确
+dpos(0) = -total_pul/units(0) '测试出来的脉冲个数值是反的，取反还原坐标
+ENDIF
+END
+相关指令 ADDRESS，PROTOCOL，PORT，SETCOM
+MODBUSM_3XGET -- 读对端输入寄存器
+类型 通讯指令
+描述 把对端的MODBUS输入寄存器复制到本地。
+对应标准协议功能码04，读输入寄存器。
+语法 MODBUSM_3XGET (startreg, num, local_reg)
+startreg：对端的寄存器起始编号，从0开始
+num：寄存器个数
+local_reg：从本地系统MODBUS寄存器中取值，起始编号
+适用控制器 通用
+例子 MODBUSM_3XGET(0,10,0) '把对端输入寄存器0-9复制到通讯本地寄存器0-9
+相关指令 ADDRESS，PROTOCOL，PORT，SETCOM
+MODBUSM_BITSET -- 写对端线圈
+类型 通讯指令
+描述 把本地MODBUS位寄存器设置到对端。
+对应标准协议功能码 05或15，写线圈。
+语法 MODBUSM_BITSET (startreg, num, local_reg)
+startreg：对端的寄存器起始编号，从0开始
+num：寄存器个数
+local_reg：从本地系统MODBUS寄存器中取值，起始编号
+适用控制器 通用
+例子 MODBUSM_BITSET (0,10,0) '把本地位寄存器0-9复制到通讯对端的寄存器0-9
+相关指令 ADDRESS，PROTOCOL，PORT，SETCOM
+MODBUSM_BITGET -- 读对端线圈
+类型 通讯指令
+描述 把对端MODBUS位寄存器复制到本地。
+对应标准协议功能码 01，读线圈。
+4 33
+
+===== PDF page 452 =====
+Zbasic编程手册 V3.3.0
+语法 MODBUSM_BITGET (startreg, num, local_reg)
+startreg：对端的寄存器起始编号，从0开始
+num：寄存器个数
+local_reg：本地系统MODBUS寄存器起始编号
+适用控制器 通用
+例子 MODBUSM_BITGET (0,10,0) '把通讯对端的位寄存器0-9复制到本地位寄存器0-9
+相关指令 ADDRESS，PROTOCOL，PORT，SETCOM
+MODBUSM_1XGET -- 读对端离散输入
+类型 通讯指令
+描述 把对端MODBUS位寄存器复制到本地。
+对应标准协议功能码 02，读离散输入。
+语法 MODBUSM_1XGET (startreg, num, local_reg)
+startreg：对端的寄存器起始编号，从0开始
+num：寄存器个数
+local_reg：本地系统MODBUS寄存器起始编号
+适用控制器 通用
+例子 MODBUSM_1XGET (0,10,0) '把通讯对端的位寄存器0-9复制到本地位寄存器0-9
+相关指令 ADDRESS，PROTOCOL，PORT，SETCOM
+13.7. 控制器互联直接命令指令
+SEND_RESULT -- 读取 send 结果
+类型 通讯指令
+描述 读取send指令的结果。
+返回值：0-成功，其它为错误，包括从控制器返回的错误码。
+MODBUSM指令超时重发要注意，从控制器可能收到2次消息，对寄存器的扫描也可能
+出现 2 次。SEND 指令超时重发对从控制器没有影响, 重要标志性变量可以通过 SEND
+指令来修改。
+语法 VAL=SEND_RESULT
+适用控制器 4系列以上控制器支持，支持版本号20170618
+相关指令 SEND_CMD
+4 34
+
+===== PDF page 453 =====
+Zbasic编程手册 V3.3.0
+SEND_CMD -- send 命令
+类型 通讯指令
+描述 主控制器给从控制器发送ZMC_DIRECTCOMMAND命令，结果通过SEND_RESULT
+查看。
+发送BASIC内容：cmdstring (参数列表)
+MODBUSM指令超时重发要注意，从控制器可能收到2次消息，对寄存器的扫描也可能
+出现 2 次。SEND 指令超时重发对从控制器没有影响，重要标志性变量可以通过 SEND
+指令来修改。
+语法 SEND_CMD(cmdstring,可选参数列表)
+cmdstring：命令字符串
+可选参数列表：个数可变，不带参数的时候，不添加括号
+适用控制器 4系列以上控制器支持，支持版本号20170618
+例子 SEND_CMD("MOVE",DIS1,DIS2,DIS3)
+SEND_CMD("MOVEABS",DIS1)
+相关指令 SEND_RESULT
+SEND_CMDAXIS -- send 命令
+类型 通讯指令
+描述 主控制器给从控制器发送ZMC_DIRECTCOMMAND命令，结果通过SEND_RESULT
+查看。
+发送BASIC内容：cmdstring (参数列表)，AXIS(iaxis)
+MODBUSM指令超时重发要注意，从控制器可能收到2次消息，对寄存器的扫描也可能
+出现 2 次。SEND 指令超时重发对从控制器没有影响，重要标志性变量可以通过 SEND
+指令来修改。
+语法 SEND_CMDAXIS (cmdstring,iaxis,可选参数列表)
+cmdstring：命令字符串
+iaxis：轴号
+可选参数列表：个数可变，不带参数的时候，不添加括号
+适用控制器 4系列以上控制器支持，支持版本号20170618
+例子 SEND_CMDAXIS("MOVE",IAXIS,DIS1)
+相关指令 SEND_RESULT，SEND_CMD
+SEND_ASSIGN -- send 命令
+类型 通讯指令
+描述 主控制器给从控制器发送ZMC_DIRECTCOMMAND命令，结果通过SEND_RESULT
+4 35
+
+===== PDF page 454 =====
+Zbasic编程手册 V3.3.0
+查看。
+发送BASIC内容：cmdstring (参数列表)=value
+MODBUSM指令超时重发要注意，从控制器可能收到2次消息，对寄存器的扫描也可能
+出现 2 次。SEND 指令超时重发对从控制器没有影响，重要标志性变量可以通过 SEND
+指令来修改。
+语法 SEND_ASSIGN (cmdstring,value,可选参数列表)
+cmdstring：命令字符串
+value：赋值的内容
+可选参数列表：个数可变，不带参数的时候，不添加括号
+适用控制器 4系列以上控制器支持，支持版本号20170618
+例子 SEND_ASSIGN("DPOS",0,0) '生成DPOS(0)=0
+SEND_ASSIGN("DPOS(1)",0) '生成DPOS(1)=0
+相关指令 SEND_RESULT
+SEND_QUERY -- send 命令
+类型 通讯指令
+描述 主控制器给从控制器发送ZMC_DIRECTCOMMAND命令，结果通过SEND_RESULT
+查看。
+发送BASIC内容：cmdstring(参数列表)。
+不带参数的时候，不添加括号。
+接收的内容根据SEND_QUERYSET的设置填到TABLE里面。
+MODBUSM指令超时重发要注意，从控制器可能收到2次消息，对寄存器的扫描也可能
+出现 2 次。SEND 指令超时重发对从控制器没有影响，重要标志性变量可以通过 SEND
+指令来修改。
+语法 SEND_QUERY (cmdstring,可选参数列表)
+cmdstring：命令字符串
+可选参数列表：个数可变，不带参数的时候，不添加括号
+适用控制器 4系列以上控制器支持，支持版本号20170618
+例子 SEND_QUERYSET(0,1)
+SEND_QUERY("?dpos",0) 'table(0)保存控制器DPOS(0)的内容
+SEND_QUERY("?REMAIN_BUFFER(1)AXIS(0)",0) ' 发 送 字 符 串 内 容
+(“?REMAIN_BUFFER(1) AXIS(0)”)
+SEND_QUERYSET(0,2)
+SEND_QUERY("?dpos(0),dpos(1)") '从控制器会返回两个数据
+相关指令 SEND_RESULT，SEND_QUERYSET
+4 36
+
+===== PDF page 455 =====
+Zbasic编程手册 V3.3.0
+SEND_QUERYSET -- send 命令
+类型 通讯指令
+描述 主控制器给从控制器发送ZMC_DIRECTCOMMAND命令，结果通过SEND_RESULT
+查看。
+发送BASIC内容：cmdstring (参数列表) AXIS(iaxis)
+MODBUSM指令超时重发要注意，从控制器可能收到2次消息，对寄存器的扫描也可能
+出现 2 次。SEND 指令超时重发对从控制器没有影响，重要标志性变量可以通过 SEND
+指令来修改。
+语法 SEND_QUERYSET (dtindex, dtnumes)
+dtindex：接收内容存储的TABLE编号
+dtnumes：接收最多存储的TABLE个数
+适用控制器 4系列以上控制器支持，支持版本号20170618
+例子 SEND_QUERYSET (0,1)
+SEND_QUERYSET (0,1)
+相关指令 SEND_RESULT，SEND_QUERY
+13.8. 控制器互联文件发送指令
+SEND_ZAR -- U 盘操作
+类型 通讯指令
+描述 通过主控制器的U盘升级从控制器的程序，结果通过MODBUSM_STATE查看。
+MODBUSM指令超时重发要注意，从控制器可能收到2次消息，对寄存器的扫描也可能
+出现 2 次。SEND 指令超时重发对从控制器没有影响，重要标志性变量可以通过 SEND
+指令来修改。
+语法 SEND_ZAR("ufilename")
+ufilename：U盘文件名，支持字符串的数组和其它字符串类型
+适用控制器 4系列以上控制器支持，支持版本号20170618
+例子 SEND_ZAR("1.ZAR")
+相关指令 MODBUSM_STATE，SEND_PERCENT
+SEND_FLASH --数据拷贝
+类型 通讯指令
+描述 主控制器的U盘和从控制器的FLASH相互拷贝，结果通过MODBUSM_STATE查看。
+4 37
+
+===== PDF page 456 =====
+Zbasic编程手册 V3.3.0
+MODBUSM指令超时重发要注意，从控制器可能收到2次消息，对寄存器的扫描也可能
+出现 2 次。SEND 指令超时重发对从控制器没有影响，重要标志性变量可以通过 SEND
+指令来修改。
+语法 SEND_FLASH (dir,uid,flashid)
+dir：1-U盘拷贝到控制器FLASH，0-控制器FLASH拷贝到U盘
+uid：U盘的文件编号，规则同U_WRITE
+flashid：控制器的FLASH编号
+适用控制器 4系列以上控制器支持，支持版本号20170618
+例子 SEND_FLASH (1,1,1)
+相关指令 MODBUSM_STATE，SEND_PERCENT
+SEND_FILE -- 拷贝 U 盘数据
+类型 通讯指令
+描述 主控制器的U盘和从控制器的文件相互拷贝，只支持BIN文件和Z3P文件，不支持文
+件功能的控制器会返回失败。
+MODBUSM指令超时重发要注意，从控制器可能收到2次消息，对寄存器的扫描也可能
+出现 2 次。SEND 指令超时重发对从控制器没有影响，重要标志性变量可以通过 SEND
+指令来修改。
+语法 SEND_FILE (dir, "ufile","contrfile")
+dir：1-U盘拷贝到控制器FLASH，0-控制器FLASH拷贝到U盘
+ufile：U盘的文件名
+contrfile：控制器的文件名
+适用控制器 4系列以上控制器支持，支持版本号20170618
+例子 SEND_FILE(1,"1.bin","1.bin")
+相关指令 MODBUSM_STATE，SEND_PERCENT
+SEND_IFLASH -- 拷贝 flash 数据
+类型 通讯指令
+描述 主控制器的FLASH和从控制器的FLASH相互拷贝，结果通过MODBUSM_STATE查
+看。
+MODBUSM指令超时重发要注意，从控制器可能收到2次消息，对寄存器的扫描也可能
+出现 2 次。SEND 指令超时重发对从控制器没有影响，重要标志性变量可以通过 SEND
+指令来修改。
+语法 SEND_IFLASH (dir,id,flashid)
+dir：1-主控制器 FLASH 拷贝到控制器 FLASH，0-控制器 FLASH 拷贝到主控制器
+4 38
+
+===== PDF page 457 =====
+Zbasic编程手册 V3.3.0
+FLASH
+id：主控制器的FLASH编号
+flashid：控制器的FLASH编号
+适用控制器 4系列以上控制器支持，支持版本号20170618
+例子 SEND_FLASH (1,1,1)
+相关指令 MODBUSM_STATE，SEND_PERCENT
+SEND_PERCENT -- 查询指令进度
+类型 通讯指令
+描述 SEND等需要长时间完成的指令返回百分比，可以用来显示进度条，范围0-100。
+MODBUSM指令超时重发要注意，从控制器可能收到2次消息，对寄存器的扫描也可能
+出现 2 次。SEND 指令超时重发对从控制器没有影响，重要标志性变量可以通过 SEND
+指令来修改。
+语法 percent = SEND_PERCENT ()
+适用控制器 4系列以上控制器支持，支持版本号20170618
+相关指令 SEND_ZAR，SEND_FLASH，SEND_FILE
+ZAR_CONTROL -- 查看控制器类型
+类型 U盘函数
+描述 查看主控制器 U 盘的 ZAR 程序文件的对应控制器类型，此类型在 ZDevelop 中设置，
+避免主控制器和从控制器的文件混淆。
+语法 id = ZAR_CONTROL ("ufilename")
+ufilename：U盘文件名，ZAR文件
+适用控制器 4系列以上控制器支持，支持版本号20170618
+例子 id = ZAR_CONTROL("1.ZAR")
+IF(id/3000=3) Then 'ZHD系列示教盒
+PRINT "zhd program"
+ENDIF
+相关指令 SEND_ZAR，CONTROL
+4 39
+

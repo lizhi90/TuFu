@@ -1,0 +1,15 @@
+{
+  "kine-x.host": "192.168.1.11",
+  "kine-x.debugPort": 5000,
+  "kine-x.engine": "basic",
+  "kine-x.showRawProtocol": false,
+  "kine-x.subscribeHz": 20,
+
+  "files.associations": {
+    "*.bas": "kx-basic",
+    "*.lua": "kx-lua"
+  },
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "editor.tabSize": 4
+}

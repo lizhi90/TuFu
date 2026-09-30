@@ -1,0 +1,545 @@
+{
+  "$comment": "自动生成，请勿手改。来源：src/script/command_table.h（node tools/gen-commands.mjs）",
+  "source": "src/script/command_table.h",
+  "count": 82,
+  "names": [
+    "EN",
+    "ENABLE",
+    "DIS",
+    "DISABLE",
+    "STOP",
+    "RAPIDSTOP",
+    "MOVE",
+    "MOVR",
+    "MOVEREL",
+    "MOVEABS",
+    "MOVE_ABS",
+    "JOG",
+    "VJOG",
+    "VMOVE",
+    "CANCEL",
+    "HOME",
+    "DATUM",
+    "MOTION_MODE",
+    "DELAY",
+    "SLEEP",
+    "WAIT",
+    "WAITIDLE",
+    "TICKS",
+    "BASE",
+    "AXIS",
+    "SPEED",
+    "ACCEL",
+    "DECEL",
+    "ATYPE",
+    "UNITS",
+    "DRIVE_PROFILE",
+    "AXIS_ADDRESS",
+    "DRIVE_CONTROLWORD",
+    "POS",
+    "MPOS",
+    "DPOS",
+    "AXISSTATUS",
+    "IDLE",
+    "ISIDLE",
+    "BUSY",
+    "BUS",
+    "BUSOK",
+    "ENABLED",
+    "ALARM",
+    "DISABLE_GROUP",
+    "SLOT_SCAN",
+    "SCAN",
+    "SLOT_START",
+    "SLOT_STOP",
+    "BUSSTOP",
+    "SCAN_EVENT",
+    "NODE_COUNT",
+    "NODE_AXIS_COUNT",
+    "NODE_STATUS",
+    "NODE_IO",
+    "NODE_AIO",
+    "NODE_INFO",
+    "ETHERCAT",
+    "ECUSTOM",
+    "ETH_MODE",
+    "OPEN",
+    "CLOSE",
+    "PRINT",
+    "PUTCHAR",
+    "GET",
+    "PORT_STATUS",
+    "PORT_CLIENTS",
+    "PORT_TARGET",
+    "PORT_MAX",
+    "PORT_INFO",
+    "JOGLEAD",
+    "SRAMP",
+    "FASTDEC",
+    "VP_SPEED",
+    "MODBUS_REG",
+    "MODBUS_IEEE",
+    "NVSET",
+    "NVGET",
+    "RUNTASK",
+    "STOPTASK",
+    "PROC_STATUS",
+    "SDO_WRITE"
+  ],
+  "groupList": [
+    {
+      "key": "运动 / 使能 / 回零",
+      "label": "运动 / 使能 / 回零",
+      "names": [
+        "EN",
+        "ENABLE",
+        "DIS",
+        "DISABLE",
+        "STOP",
+        "RAPIDSTOP",
+        "MOVE",
+        "MOVR",
+        "MOVEREL",
+        "MOVEABS",
+        "MOVE_ABS",
+        "JOG",
+        "VJOG",
+        "VMOVE",
+        "CANCEL",
+        "HOME",
+        "DATUM",
+        "MOTION_MODE",
+        "DELAY",
+        "SLEEP",
+        "WAIT",
+        "WAITIDLE",
+        "TICKS"
+      ]
+    },
+    {
+      "key": "轴 / 参数",
+      "label": "轴 / 参数",
+      "names": [
+        "BASE",
+        "AXIS",
+        "SPEED",
+        "ACCEL",
+        "DECEL",
+        "ATYPE",
+        "UNITS",
+        "DRIVE_PROFILE",
+        "AXIS_ADDRESS",
+        "DRIVE_CONTROLWORD"
+      ]
+    },
+    {
+      "key": "状态查询",
+      "label": "状态查询",
+      "names": [
+        "POS",
+        "MPOS",
+        "DPOS",
+        "AXISSTATUS",
+        "IDLE",
+        "ISIDLE",
+        "BUSY",
+        "BUS",
+        "BUSOK",
+        "ENABLED",
+        "ALARM",
+        "DISABLE_GROUP"
+      ]
+    },
+    {
+      "key": "总线",
+      "label": "总线",
+      "names": [
+        "SLOT_SCAN",
+        "SCAN",
+        "SLOT_START",
+        "SLOT_STOP",
+        "BUSSTOP",
+        "SCAN_EVENT",
+        "NODE_COUNT",
+        "NODE_AXIS_COUNT",
+        "NODE_STATUS",
+        "NODE_IO",
+        "NODE_AIO",
+        "NODE_INFO",
+        "ETHERCAT",
+        "ECUSTOM",
+        "ETH_MODE"
+      ]
+    },
+    {
+      "key": "端口",
+      "label": "端口",
+      "names": [
+        "OPEN",
+        "CLOSE",
+        "PRINT",
+        "PUTCHAR",
+        "GET",
+        "PORT_STATUS",
+        "PORT_CLIENTS",
+        "PORT_TARGET",
+        "PORT_MAX",
+        "PORT_INFO",
+        "JOGLEAD",
+        "SRAMP",
+        "FASTDEC",
+        "VP_SPEED"
+      ]
+    },
+    {
+      "key": "Modbus / 持久化 / 任务",
+      "label": "Modbus / 持久化 / 任务",
+      "names": [
+        "MODBUS_REG",
+        "MODBUS_IEEE",
+        "NVSET",
+        "NVGET",
+        "RUNTASK",
+        "STOPTASK",
+        "PROC_STATUS"
+      ]
+    },
+    {
+      "key": "明确不可用",
+      "label": "明确不可用",
+      "names": [
+        "SDO_WRITE"
+      ]
+    }
+  ],
+  "docs": {
+    "EN": {
+      "sig": "EN()",
+      "brief": "使能当前轴（BASE 选择），阻塞到使能成功或超时"
+    },
+    "ENABLE": {
+      "sig": "ENABLE([axis])",
+      "brief": "使能指定轴（缺省当前轴），阻塞到生效"
+    },
+    "DIS": {
+      "sig": "DIS()",
+      "brief": "去使能当前轴（阻塞到生效）"
+    },
+    "DISABLE": {
+      "sig": "DISABLE([axis])",
+      "brief": "去使能指定轴"
+    },
+    "STOP": {
+      "sig": "STOP([axis])",
+      "brief": "按参数减速停止（halt），立即返回"
+    },
+    "RAPIDSTOP": {
+      "sig": "RAPIDSTOP([axis])",
+      "brief": "立即停止；参数是**轴号**（非 ZBasic 的 mode）"
+    },
+    "MOVE": {
+      "sig": "MOVE(d[, spd[, acc[, wait]]])",
+      "brief": "相对定位（距离 mm）；wait=0 异步下发立即返回；BASE 多轴时 d_i 为各轴距离（直线插补）"
+    },
+    "MOVR": {
+      "sig": "MOVR(d[, spd[, acc[, wait]]])",
+      "brief": "同 MOVE（相对定位）"
+    },
+    "MOVEREL": {
+      "sig": "MOVEREL(d[, spd[, acc[, wait]]])",
+      "brief": "同 MOVE（相对定位）"
+    },
+    "MOVEABS": {
+      "sig": "MOVEABS(p[, spd[, acc]])",
+      "brief": "绝对定位（目标 mm）；BASE 多轴时 p_i 为各轴目标（M3 直线插补，阻塞，spd/acc 为主导轴参数）"
+    },
+    "MOVE_ABS": {
+      "sig": "MOVE_ABS(p[, spd[, acc[, wait]]])",
+      "brief": "同 MOVEABS（绝对定位）"
+    },
+    "JOG": {
+      "sig": "JOG(v)",
+      "brief": "点动（速度 mm/s），立即返回；用 CANCEL/STOP 停止"
+    },
+    "VJOG": {
+      "sig": "VJOG(dir)",
+      "brief": "方向点动（沿用当前 SPEED）；dir=1/-1"
+    },
+    "VMOVE": {
+      "sig": "VMOVE(dir)",
+      "brief": "速度模式持续运动（dir=1/-1）；立即返回"
+    },
+    "CANCEL": {
+      "sig": "CANCEL([mode])",
+      "brief": "停止当前轴运动并清命令队列"
+    },
+    "HOME": {
+      "sig": "HOME([axis])",
+      "brief": "回零，阻塞到完成/出错"
+    },
+    "DATUM": {
+      "sig": "DATUM([axis])",
+      "brief": "故障复位（6040h 0x80 脉冲）"
+    },
+    "MOTION_MODE": {
+      "sig": "MOTION_MODE([m])",
+      "brief": "M3 定位规划方式：0=PP（驱动器规划，默认）/ 1=CSP（控制器每拍规划，需 DC+UNITS）；缺省读当前值"
+    },
+    "DELAY": {
+      "sig": "DELAY(ms)",
+      "brief": "等待毫秒（可被中止打断）"
+    },
+    "SLEEP": {
+      "sig": "SLEEP(ms)",
+      "brief": "同 DELAY"
+    },
+    "WAIT": {
+      "sig": "WAIT(ms)",
+      "brief": "同 DELAY"
+    },
+    "WAITIDLE": {
+      "sig": "WAITIDLE()",
+      "brief": "等待到运动停止（超时报错）"
+    },
+    "TICKS": {
+      "sig": "TICKS()",
+      "brief": "毫秒倒数计时：两次差值=经过毫秒（Lua 侧唯一时间源）"
+    },
+    "BASE": {
+      "sig": "BASE([n1[, n2...]])",
+      "brief": "设置/读取当前轴号；M3：多参数=轴表（配合 MOVEABS/MOVE 多目标做直线插补）"
+    },
+    "AXIS": {
+      "sig": "AXIS([n])",
+      "brief": "同 BASE（轴选择，单轴）"
+    },
+    "SPEED": {
+      "sig": "SPEED(axis[, v])",
+      "brief": "读写定位速度（mm/s）；BASIC 亦可写 SPEED(axis)=v"
+    },
+    "ACCEL": {
+      "sig": "ACCEL(axis[, v])",
+      "brief": "读写加速度（mm/s^2）"
+    },
+    "DECEL": {
+      "sig": "DECEL(axis[, v])",
+      "brief": "读写减速度"
+    },
+    "ATYPE": {
+      "sig": "ATYPE(axis[, v])",
+      "brief": "轴类型（本控制器仅记录，不参与换算）"
+    },
+    "UNITS": {
+      "sig": "UNITS(axis[, v])",
+      "brief": "脉冲当量（仅记录；内部单位恒为 mm）"
+    },
+    "DRIVE_PROFILE": {
+      "sig": "DRIVE_PROFILE(axis[, v])",
+      "brief": "驱动器档案选择（仅记录）"
+    },
+    "AXIS_ADDRESS": {
+      "sig": "AXIS_ADDRESS(axis[, v])",
+      "brief": "从站地址（仅记录）"
+    },
+    "DRIVE_CONTROLWORD": {
+      "sig": "DRIVE_CONTROLWORD(axis, v)",
+      "brief": "直写控制字；仅允许 128(清错)/6(关机)/15(使能)"
+    },
+    "POS": {
+      "sig": "POS([axis])",
+      "brief": "实际位置（mm，=MPOS）"
+    },
+    "MPOS": {
+      "sig": "MPOS([axis])",
+      "brief": "测量/反馈位置（mm）"
+    },
+    "DPOS": {
+      "sig": "DPOS([axis])",
+      "brief": "指令位置（mm）"
+    },
+    "AXISSTATUS": {
+      "sig": "AXISSTATUS([axis])",
+      "brief": "轴状态字（位表见 docs/planA/08 §8.2）"
+    },
+    "IDLE": {
+      "sig": "IDLE([axis])",
+      "brief": "-1=到位 / 0=运动中"
+    },
+    "ISIDLE": {
+      "sig": "ISIDLE([axis])",
+      "brief": "同 IDLE"
+    },
+    "BUSY": {
+      "sig": "BUSY()",
+      "brief": "运动标志：1=运动中"
+    },
+    "BUS": {
+      "sig": "BUS()",
+      "brief": "总线快照（node_count / nodes 等）"
+    },
+    "BUSOK": {
+      "sig": "BUSOK()",
+      "brief": "总线是否就绪：1=就绪"
+    },
+    "ENABLED": {
+      "sig": "ENABLED([axis])",
+      "brief": "是否已使能：1=是"
+    },
+    "ALARM": {
+      "sig": "ALARM()",
+      "brief": "是否报警：1=有报警"
+    },
+    "DISABLE_GROUP": {
+      "sig": "DISABLE_GROUP(n)",
+      "brief": "分组去使能（单轴机型为空操作）"
+    },
+    "SLOT_SCAN": {
+      "sig": "SLOT_SCAN([slot])",
+      "brief": "扫描总线，返回从站数（0=未扫到）"
+    },
+    "SCAN": {
+      "sig": "SCAN()",
+      "brief": "请求重扫总线（软触发）"
+    },
+    "SLOT_START": {
+      "sig": "SLOT_START([slot])",
+      "brief": "启动总线：1=成功"
+    },
+    "SLOT_STOP": {
+      "sig": "SLOT_STOP([slot])",
+      "brief": "停止总线"
+    },
+    "BUSSTOP": {
+      "sig": "BUSSTOP()",
+      "brief": "总线软停"
+    },
+    "SCAN_EVENT": {
+      "sig": "SCAN_EVENT(...)",
+      "brief": "输入事件查询（本控制器无本地 IO，恒 0）"
+    },
+    "NODE_COUNT": {
+      "sig": "NODE_COUNT()",
+      "brief": "从站数量"
+    },
+    "NODE_AXIS_COUNT": {
+      "sig": "NODE_AXIS_COUNT(i)",
+      "brief": "第 i 个从站的轴数"
+    },
+    "NODE_STATUS": {
+      "sig": "NODE_STATUS(i)",
+      "brief": "第 i 个从站 AL 状态（1/2/3/4/8）"
+    },
+    "NODE_IO": {
+      "sig": "NODE_IO(i)",
+      "brief": "第 i 个从站数字量 IO"
+    },
+    "NODE_AIO": {
+      "sig": "NODE_AIO(i)",
+      "brief": "第 i 个从站模拟量"
+    },
+    "NODE_INFO": {
+      "sig": "NODE_INFO(i)",
+      "brief": "第 i 个从站信息"
+    },
+    "ETHERCAT": {
+      "sig": "ETHERCAT()",
+      "brief": "EtherCAT 状态查询"
+    },
+    "ECUSTOM": {
+      "sig": "ECUSTOM(...)",
+      "brief": "自定义总线设置（预留）"
+    },
+    "ETH_MODE": {
+      "sig": "ETH_MODE(...)",
+      "brief": "EtherCAT 模式（预留）"
+    },
+    "OPEN": {
+      "sig": "OPEN(id, type, ...)",
+      "brief": "打开端口：TCP_SERVER(端口) / TCP_CLIENT(端口, IP)"
+    },
+    "CLOSE": {
+      "sig": "CLOSE(id)",
+      "brief": "关闭端口"
+    },
+    "PRINT": {
+      "sig": "PRINT(id, s[, idx])",
+      "brief": "发送字节（不追加换行；协议自负）；idx=客户端下标（多客户端端口，省略=0）"
+    },
+    "PUTCHAR": {
+      "sig": "PUTCHAR(id, v)",
+      "brief": "发送单字节"
+    },
+    "GET": {
+      "sig": "GET(id[, n[, ...]])",
+      "brief": "非阻塞读取（返回收到的字节/数据）；第 5 参 idx=客户端下标（多客户端端口）"
+    },
+    "PORT_STATUS": {
+      "sig": "PORT_STATUS(id[, idx])",
+      "brief": "连接状态：1=已连接（先判断再收发）；idx=客户端下标（省略=任一客户端）"
+    },
+    "PORT_CLIENTS": {
+      "sig": "PORT_CLIENTS(id)",
+      "brief": "端口当前已连接客户端数（多客户端 502：触摸屏 + 机器人）"
+    },
+    "PORT_TARGET": {
+      "sig": "PORT_TARGET(id)",
+      "brief": "对端地址（字符串）"
+    },
+    "PORT_MAX": {
+      "sig": "PORT_MAX()",
+      "brief": "通道上限（16 通道：0..15）"
+    },
+    "PORT_INFO": {
+      "sig": "PORT_INFO(port, 用途[, 主从])",
+      "brief": "给端口打标签（D10 通讯状态面板；用途≤48字、主从≤24字）"
+    },
+    "JOGLEAD": {
+      "sig": "JOGLEAD(axis[, s])",
+      "brief": "点动 PP 跟随前视（秒；实际前视 = s + v²/(2a)，默认 0.5）"
+    },
+    "SRAMP": {
+      "sig": "SRAMP(axis[, ms])",
+      "brief": "S 曲线时间（0~250ms，0=梯形；CSP 生效，PP 模式下不生效并提示）"
+    },
+    "FASTDEC": {
+      "sig": "FASTDEC(axis[, v])",
+      "brief": "急停/停机减速度（mm/s²；0=未设置；CSP 规划减速、PP 写 6084）"
+    },
+    "VP_SPEED": {
+      "sig": "VP_SPEED(axis)",
+      "brief": "当前运动速度 mm/s（只读；内核实际位置差分估计）"
+    },
+    "NVSET": {
+      "sig": "NVSET(reg, value)",
+      "brief": "把 4x 寄存器值持久化到脚本目录 .nvram（立即落盘；掉电/重启后 NVGET 恢复）"
+    },
+    "NVGET": {
+      "sig": "NVGET(reg)",
+      "brief": "读回 .nvram 保存的寄存器值（无记录返回 0）；恢复由脚本 init 阶段完成"
+    },
+    "MODBUS_REG": {
+      "sig": "MODBUS_REG(i[, v])",
+      "brief": "读写 4x 寄存器镜像"
+    },
+    "MODBUS_IEEE": {
+      "sig": "MODBUS_IEEE(i[, v])",
+      "brief": "读写 32 位浮点镜像（低字在前）"
+    },
+    "RUNTASK": {
+      "sig": "RUNTASK(n, fn)",
+      "brief": "任务登记（单线程引擎：只登记状态，不并发执行）"
+    },
+    "STOPTASK": {
+      "sig": "STOPTASK(n)",
+      "brief": "停止任务（登记状态）"
+    },
+    "PROC_STATUS": {
+      "sig": "PROC_STATUS(n)",
+      "brief": "任务状态"
+    },
+    "SDO_WRITE": {
+      "sig": "SDO_WRITE(...)",
+      "brief": "明确不可用：调用即报 NOT_SUPPORTED（见 docs/planA/08 §8.4）"
+    }
+  }
+}

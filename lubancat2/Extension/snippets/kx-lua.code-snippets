@@ -1,0 +1,48 @@
+{
+  "包含子程序": {
+    "prefix": "include",
+    "body": ["include(\"${1:sub.lua}\")  -- 编译期展开（同目录、同语言）"],
+    "description": "Kine-X Lua：包含子程序文件（主文件多文件组织，见 planA/11）"
+  },
+  "绝对定位（异步）": {
+    "prefix": "moveabs",
+    "body": ["SPEED(${1:0}, ${2:50})", "ACCEL(${1:0}, ${3:500})", "MOVEABS(${4:100}, ${2:50}, ${3:500}, 0)  -- wait=0 异步，自行观察 BUSY()/IDLE()"],
+    "description": "Kine-X Lua：绝对定位（wait=0 异步，端口服务脚本用）"
+  },
+  "使能轴": {
+    "prefix": "en",
+    "body": ["BASE(${1:0})", "ENABLE()"],
+    "description": "Kine-X Lua：选择轴并使能（阻塞到生效）"
+  },
+  "计时起点": {
+    "prefix": "ticks",
+    "body": ["local t0 = TICKS()  -- 毫秒倒数：t0 - TICKS() = 经过毫秒"],
+    "description": "Kine-X Lua：取计时起点（沙箱无 os.time）"
+  },
+  "TCP 服务端骨架": {
+    "prefix": "server",
+    "body": [
+      "local CH = ${1:10}",
+      "OPEN(CH, \"TCP_SERVER\", ${2:4321})",
+      "while true do",
+      "\tif PORT_STATUS(CH) == 1 then",
+      "\t\tlocal buf = {}",
+      "\t\tlocal n = PORT_GET(CH, buf, 64)",
+      "\t\tif n > 0 then",
+      "\t\t\tlocal s = \"\"",
+      "\t\t\tfor i = 1, n do s = s .. string.char(buf[i]) end",
+      "\t\t\t-- TODO: 按结束符拆帧并处理；应答以字面 \"/n\" 结尾",
+      "\t\t\tPORT_PRINT(CH, \"OK/n\")",
+      "\t\tend",
+      "\tend",
+      "\tDELAY(2)",
+      "end"
+    ],
+    "description": "Kine-X Lua：协作式 TCP 服务端骨架（非阻塞收发 + DELAY 让出）"
+  },
+  "循环": {
+    "prefix": "while",
+    "body": ["while ${1:true} do", "\t${2:-- 循环体（长驻脚本请加 DELAY，避免忙等）}", "\tDELAY(2)", "end"],
+    "description": "Kine-X Lua：while 循环（带 DELAY 让出）"
+  }
+}

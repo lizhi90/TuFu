@@ -1,0 +1,9 @@
+# 构建产物
+out/
+node_modules/
+*.vsix
+
+# 编辑器/系统
+.DS_Store
+*.log
+.vscode-test/

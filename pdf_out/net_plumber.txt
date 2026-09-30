@@ -1,0 +1,384 @@
+===== PDF page 429 =====
+Zbasic编程手册 V3.3.0
+identifier：Can通讯对象(Cob-Id)，11位，前4位是功能码，后7位是节点ID，ZCAN
+使用的高位数据预留，建议0-511。接收时如果小于0 则表明没有收到数据。bit11表示
+是否远程帧。
+bytes：数据区域字节数，最多为8。
+data：数据区域，字节（0-FF）。
+16、17模式时依次存储：
+identifier：Can通讯对象(Cob-Id)，11位，前4位是功能码，后7位是节点ID，ZCAN
+使用的高位数据预留，建议0-511。接收时如果小于0 则表明没有收到数据。bit11表示
+是否远程帧。
+identifier extend：扩展id，增加高11位与低18位，共同组成CAN的29位ID，不
+存在填-1。
+bytes：数据区域字节数，最多为8。
+data：数据区域，字节（0-FF）。
+29位扩展帧ID从左边非0开始拆分为高11位和低18位，例子如下：
+扩展帧ID为18EF1300
+对应二进制为0001 1000 1110 1111 0001 0011 0000 0000
+高11位为11000111011，对应10进制1595
+低18位为110001001100000000，对应10进制201472
+所以使用CAN17模式时，identifier=1595，Identifier extend=201472
+适用控制器 通用
+例子 例一
+'发送端：
+TABLE(0,1,8,1,2,3,4,5,6,7,8) '发送cobid=1，8个字节，依次为1-8
+CAN(0,7,0) '发送
+'接收端：
+CANIO_ADDRESS=1 '设置为非主控，此参数设置一次即可
+CAN(0,6,0) '接收
+?TABLE(0)
+例二
+'发送端
+TABLE(0,1,10,8,1,2,3,4,5,6,7,8) '发送cobid=1，扩展id10，8个字节，依次'为1-8
+CAN(0,17,0) '发送
+'接收端：
+CANIO_ADDRESS=1 '设置为非主控，此参数设置一次即可
+CAN(0,16,0) '接收
+?TABLE(0)
+相关指令 CANIO_ADDRESS，CANIO_STATUS，CANIO_ENABLE
+4 11
+
+===== PDF page 430 =====
+Zbasic编程手册 V3.3.0
+CANIO_ADDRESS -- CAN 通讯设置
+类型 系统参数
+描述 控制器上CAN的CANID和速度的设置。
+扩展板的CAN速度通过拨码开关设置。
+自动存储到FLASH，重启后生效。
+低8位（位0-7）表示CANID，范围0-32，缺省32，32表示为主控制器。
+高8位（位8-15）表示CAN速度。
+高8位值 CAN速度
+0 500 KBPS（缺省值）
+1 250KBPS
+2 125KBPS
+3 1 MBPS
+一个网络中，不要配置多个主控制器。
+CAN地址和速度设置必须重启后生效。
+语法 CANIO_ADDRESS = value
+适用控制器 通用
+例子 CANIO_ADDRESS = 32 '设置主端，CAN波特率500KBPS
+CANIO_ADDRESS = 32+ 256 '设置主端，CAN波特率为250KBPS
+CANIO_ADDRESS = 32+ 512 '设置主端，CAN波特率为125KBPS
+CANIO_ADDRESS = 32+ 768 '设置主端，CAN波特率为1MBPS
+CANIO_ADDRESS = 1 '设置CANID为1，此时为从端，500 KBPS，不能连接IO板
+CANIO_ADDRESS = 1 +256 '设置CANID为1，此时为从端，250 KBPS，作为ZCAN
+从站使用
+CANIO_ADDRESS = 1 +512 '设置CANID为1，此时为从端，125 KBPS，作为ZCAN
+从站使用
+CANIO_ADDRESS = 1 +768 '设置CANID为1，此时为从端，1 MBPS，作为ZCAN
+从站使用
+CANIO_ADDRESS = 3 '设置CANID为3，此时为从端，500 KBPS，作为ZCAN从
+站使用
+CANIO_ADDRESS = 8 +256 '设置CAN ID为8，此时为从端，250 KBPS，作为ZCAN
+从站使用
+CANIO_ADDRESS = 16 +512 '设置CAN ID为16，此时为从端，125 KBPS，作为ZCAN
+从站使用
+CANIO_ADDRESS = 31 +768 '设置CAN ID为31，此时为从端，1MBPS，作为ZCAN
+从站使用
+具体使用参考第十七章的CAN通讯例子
+相关指令 CANIO_ENABLE，CAN，CANIO_STATUS
+4 12
+
+===== PDF page 431 =====
+Zbasic编程手册 V3.3.0
+CANIO_ENABLE -- CAN 使能
+类型 系统参数
+描述 使能或禁止内部CAN主端功能。
+当CANIO_ADDRESS设置32时，缺省是使能的。
+语法 CANIO_ENABLE = ON/OFF
+适用控制器 通用
+例子 CANIO_ADDRESS = 32 '设置主端，CAN波特率500KBPS
+CANIO_ENABLE = ON '打开CAN主端功能
+CANIO_ENABLE = OFF '关闭CAN主端功能
+相关指令 CANIO_ADDRESS
+CANIO_STATUS -- CAN 扩展板状态
+类型 系统状态
+描述 获取当前的IO板的状态，返回ON/OFF。
+20140325以上的固件版本支持
+语法 CANIO_STATUS(cardnum)
+cardnum：该扩展模块的拨码ID
+适用控制器 通用
+例子 例一
+?*CANIO_STATUS '输出所有IO板的状态
+打印结果如下图：表示接入了三个扩展模块，拨码ID的组合值分别为1，3，4。
+例二
+IF CANIO_STATUS(1) =0 THEN '判断IO板的连接状态
+PRINT "扩展模块1没有连接好"
+ENDIF
+相关指令 CAN，CANIO_ENABLE，CANIO_INFO_CANIO_ADDRESS -- CAN通讯设置
+4 13
+
+===== PDF page 432 =====
+Zbasic编程手册 V3.3.0
+CANIO_INFO -- CAN 扩展板信息
+类型 系统状态
+描述 读取当前的IO板的信息，返回参数值。
+4系列控制器 170715以上固件版本支持。
+语法 CANIO_INFO(canid, isel [, moduleid])
+canid：扩展模块的拨码ID
+isel：读取的参数
+0 正运动
+1 DEVICE，设备编号
+2
+3
+4
+IO的个数 描述
+10 IN个数, 整体的
+11 OP个数
+12 AIN个数
+13 AOUT个数
+增加
+16 模块数
+17 子模块的类型号，必须后面带moduleid id
+预留
+20 子模块输入
+21 子模块输出
+22 子模块AIN
+23 子模块AOUT
+moduleid：ZMIO子模块的信息，部分isel 参数选择需要填这个参数
+适用控制器 通用
+例子 例一
+?CANIO_INFO(1,1) '打印ID是1的扩展模块的设备编号
+相关指令 CAN，CANIO_ENABLE，CANIO_STATUS_CANIO_ADDRESS -- CAN通讯设置
+13.3. 自定义通讯指令
+GET # -- 读取字符
+类型 系统指令
+描述 从RAW方式通讯或自定义网口通讯的通道里面读取一个字节，存入一个变量。
+语法 语法1：GET #PORT, VARIABLE
+4 14
+
+===== PDF page 433 =====
+Zbasic编程手册 V3.3.0
+语法2：GET #PORT, ARRAY[(startindex)] [,maxchares]
+语法3：charesget = GET #PORT, VARIABLE
+语法4：charesget = GET #PORT, ARRAY[(startindex)] [,maxchares]
+port：通道号
+variable：存放的变量名
+startindex：存放数组的起始地址
+maxchares：存放的最多数量
+语法1、2没有读取到会阻塞，这个函数一般在多任务里面进行调用。
+语法3、4会返回读取到的字节数。
+20150522版本以前只支持语法1。
+UDP接收必须使用语法4，采用数组来接收，数组长度不要比一次的UDP包长度小。
+UDP每次都是读取一整个包，如果数组长度不够，多余的会丢弃掉。
+UDP_SERVER 模式时，每收到一个包，PORT_TARGET 自动变为包的发送方，因此可
+以同时接收多个从端的数据。
+适用控制器 通用
+例子 例一
+DIM VAR1
+SETCOM(38400,8,1,0,0,0) '开启RAW方式
+GET #0, VAR1 '从通道0读取数据
+PRINT VAR1 '打印读取数据
+例二
+DIM ARRAY1(101)
+SETCOM(38400,8,1,0,0,0) '开启RAW方式
+CHARES = GET #0, ARRAY1, 100 '从通道0最多读取100个字符
+If CHARES > 0 THEN
+ARRAY1(CHARES) = 0 '设置结束0
+PRINT ARRAY1 '字符串打印出来
+ENDIF
+相关指令 PORT，_SETCOM，PRINT #
+OPEN # -- 打开自定义网口通讯
+类型 系统指令
+描述 开启自定义的以太网通讯。
+新固件版本提供此功能。
+语法 OPEN #PORT, "mode", portnum [, ipaddress]
+port：通讯通道，参见PORT描述，选择自定义网络通道
+mode：讯主从，“TCP_CLIENT”-从，“TCP_SERVER”–主，“UDP_CLIENT”
+-UDP从，“UDP_SERVER”–UDP主
+4 15
+
+===== PDF page 434 =====
+Zbasic编程手册 V3.3.0
+portnum：TCP或UDP端口号, 主端为本地端口号, 从端为对方端口号
+ipaddress：对方IP地址，字符串，从端的时候要提供
+UDP_SERVER必须先接收对方的数据，才能发送回数据(除非用PORT_TARGET先强制
+指定对方)。
+UDP_CLIENT本地端口号随机，必须先发送给对方，对方才能知道端口号，此模式时不
+是指定对方的包会丢弃掉。
+UDP 自定义通讯需要 4 系列控制器 20170628 以上固件版本；XPLC 系列控制器
+20170702以上固件版本。
+适用控制器 通用
+例子 例一
+OPEN #11, "TCP_SERVER", 10 '主端设置
+OPEN #10, "TCP_CLIENT", 10,"192.168.1.112" '从端设置
+例二
+OPEN #10, "UDP_SERVER", 1000 'UDP主端设置
+OPEN #11, "UDP_CLIENT", 60000, "192.168.0.120" 'UDP从端设置
+详细例程参考自定义网口通讯
+相关指令 PORT，PORT_TARGET，SETCOM，PRINT #
+PRINT # -- 输出字符串
+类型 系统指令
+描述 从RAW方式通讯或自定义网口通讯的通道口里面输出字符串，碰到0结束。
+每次调用都是一个UDP包发送。
+PRINT #直接发送为字符串(""符号自动去除)，不需要ASCII转码处理，一次只能发一个
+数据，如下所示：
+4 16
+
+===== PDF page 435 =====
+Zbasic编程手册 V3.3.0
+PRINT #发送数组为ASCII码，遇0停止，如下所示：
+语法 PRINT #PORT, "字符串"
+port：通道号
+适用控制器 通用
+例子 DIM VAR(10) '定义数组
+VAR = "AAAA" '数组赋值
+SETCOM(38400,8,1,0,0,0)'开启RAW方式
+PRINT #0,VAR '从通道0输出数组数据
+相关指令 PUTCHAR #，GET #，PORT，SETCOM
+PUTCHAR # -- 输出字符
+类型 系统指令
+描述 从RAW方式通讯或自定义网口通讯的通道口输出字符，数组可以代表多个字符。
+每次调用都是一个UDP包发送。
+PUTCHAR #发送数据为ASCII码，多个数据逗号隔开，不能直接发送字符串，如下所示：
+4 17
+
+===== PDF page 436 =====
+Zbasic编程手册 V3.3.0
+PUTCHAR #发送数组为ASCII码，遇0输出为0，会将整个数组完全发送，所以要确保
+数组数据正确，如下所示：
+语法 PUTCHAR #PORT, 字符
+port：通道号
+PUTCHAR #PORT, ARRAY(INDEX, NUMES)
+port：通道号
+index：开始输出的位置
+numes：输出的字节个数, 二进制方式
+适用控制器 通用
+例子 DIM VAR1, ARRAY1(10) '定义数组
+VAR1 = $FE '数组1赋值
+ARRAY1 = "ABCDEFGHIJ" '数组2赋值
+SETCOM(38400,8,1,0,0,0) '开启RAW方式
+PUTCHAR #0, VAR1 '从通道0输出数组1数据
+PUTCHAR #0, ARRAY1 '从通道0输出数组2数据
+相关指令 PORT，SETCOM，GET #
+PORT_TARGET -- IP 和端口号配置
+类型 字符串指令
+描述 配置通讯对方的IP地址和端口号。
+4系列控制器20170628以上固件版本，XPLC系列控制器20170702以上固件版本支持。
+语法 命令语法：
+PORT_TARGET(port))="ipaddress:portnum"或PORT_TARGET(port))="ipaddress"
+port：通道号
+ipaddress：对方IP地址
+portnum：端口号
+返回语法：VAR=PORT_TARGET(port)) 返回IP地址字符串。
+4 18
+
+===== PDF page 437 =====
+Zbasic编程手册 V3.3.0
+适用控制器 通用
+例子 PORT_TARGET="192.168.0.12:502"
+PORT_TARGET(port))="192.168.0.12"
+?PORT_TARGET(port)
+DIM IPSTRING(100)
+IPSTRING = PORT_TARGET(port)
+?IPSTRING
+相关指令 OPEN #_CANIO_ADDRESS -- CAN通讯设置
+13.4. 打印输出指令
+PRINT -- 打印信息
+类型 打印输出函数
+描述 打印信息到PC端ZDevelop软件的输出窗口。
+别名：?
+通过*参数名可以打印参数值；*特殊字符串可以打印一些特殊的信息。
+语法 PRINT expression, "string" 或 ? expression,"string"
+Expression：有效表达式
+*SET：打印所有参数值
+*TASK：打印任务信息
+任务正常时只打印任务状态
+任务出错时还会打印出错误任务号，具体错误行
+*MAX：打印所有规格参数
+*FILE：打印程序文件信息
+*SETCOM：打印当前串口的配置信息
+*BASE：打印当前任务的BASE列表（140123以后版本支持）
+*数组名：打印数组的所有元素，数组长度不能太长
+*参数名：打印一个所有轴的单个参数
+?*ETHERCAT：打印EtherCAT总线连接设置状态
+?*RTEX：打印Rtex总线连接设置状态
+?*FRAME：打印机械手参数，需要161022及以上固件支持
+?*SLOT：打印出控制器槽位口信息（RTEX口，EtherCAT口）
+?*PORT：打印所有PORT通讯口
+适用控制器 通用
+例子 例一
+在线命令输入
+>>PRINT 1+2
+输出：3
+例二
+4 19
+
+===== PDF page 438 =====
+Zbasic编程手册 V3.3.0
+在线命令输入
+>>PRINT *task '打印所有任务状态
+Task:0 Running. file:"hmi.bas" line:280:
+Task:1 Stopped.
+Task:2 Stopped.
+Task:3 Stopped.
+Task:4 Stopped.
+Task:5 Stopped.
+Task:6 Stopped.
+例三
+在线命令输入
+>> ?*mpos
+输出：21872.400 0 0 0 0 0 0 0 0 0 0 0
+相关指令 TRACE
+ERRSWITCH -- 信息输出设置
+类型 系统参数
+描述 调试输出开关，控制TRACE WARN ERROR调试输出语句是否真的输出信息。
+语法 ERRSWITCH=switch
+switch：调试输出的开关
+值 描述
+0 TRACE WARN ERROR指令全部不输出
+1 只输出ERROR指令
+2 输出WARN ERROR指令
+3 TRACE WARN ERROR指令全部输出
+4 TRACE WARN ERROR指令全部输出，以及运动指令监控
+适用控制器 通用
+例子 例一
+ERRSWITCH = 3 '打印全输出，此时WARN（报警）、ERROR（错误）、
+'TRACE信息都会输出
+例二
+ERRSWITCH = 0 '不输出，控制器错误信息和报警信息都不输出
+TRACE DPOS(0) '此时无法用trace打印出轴0的dpos
+?DPOS(0) '可以用print打印，结果，0
+例三
+ERRSWITCH = 4 '输出所有信息，以及运动指令监控
+>>MOVE(111)
+MOVE(111)AXIS(0)TASK(23) '打印当前操作的轴及运动的任务
+相关指令 TRACE，WARN，ERROR
+4 20
+
+===== PDF page 439 =====
+Zbasic编程手册 V3.3.0
+TRACE -- 打印信息 2
+类型 打印输出函数
+描述 打印信息到PC端ZDEVELOP软件的输出窗口。
+受ERRSWITCH开关的控制。
+语法 同PRINT
+适用控制器 通用
+例子 ERRSWITCH = 3 'trace打印全输出
+DPOS(0) =0
+TRACE "DPOS(0) =" DPOS(0)
+打印结果0
+相关指令 ERRSWITCH ，PRINT，WARN，ERROR
+WARN -- 警告信息
+类型 打印输出函数
+描述 程序自动打印报警信息到PC端ZDEVELOP软件的输出窗口。
+也可手动打印信息。
+受ERRSWITCH开关的控制。
+语法 程序报警时自动打印。
+手动打印同PRINT。
+适用控制器 通用
+例子 参考TRACE例子
+相关指令 ERRSWITCH ，PRINT，TRACE，ERROR
+ERROR -- 错误信息
+类型 打印输出函数
+描述 程序自动打印错误信息到PC端ZDEVELOP软件的输出窗口。
+也可手动打印信息。
+受ERRSWITCH开关的控制。
+语法 程序错误时自动打印。
+手动打印同PRINT。
+适用控制器 通用
+例子 参考TRACE例子
+相关指令 ERRSWITCH ，PRINT，TRACE，WARN
+4 21
+

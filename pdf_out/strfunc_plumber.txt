@@ -1,0 +1,307 @@
+
+===== PDF page 309 =====
+Zbasic编程手册 V3.3.0
+DIM a,b
+a=3.333
+b=0
+b= CLEAR_BIT(0,a) '返回清除a的第0位和小数后的结果给b
+PRINT a,b '结果为3.333,2，a不变,b为2
+相关指令 SET_BIT，READ_BIT，READ_BIT2
+READ_BIT -- 按位读取
+类型 数学函数
+描述 位操作，只对整数，读取对应位状态。
+只能操作VR寄存器，非VR参考READ_BIT2。
+对VR寄存器可设置的位范围是0-24。
+语法 ret = READ_BIT(bit#, vr#)
+ret：读取结果：1或0
+bit#：位编号：0-24
+vr#：要操作的VR变量编号
+适用控制器 通用
+例子 VR(23)=3.333
+PRINT READ_BIT(0,23) '读取VR(23)的第0位，结果为1
+相关指令 SET_BIT，CLEAR_BIT，READ_BIT2
+READ_BIT2 -- 按位读取 2
+类型 数学函数
+描述 位操作，只对整数，读取对应位状态。
+语法 ret = READ_BIT2(bit#, int)
+ret：读取结果：1或0
+bit#：位编号：0-31
+int：要操作的表达式，取整数部分
+适用控制器 通用，20130813以后的固件版本提供了支持
+例子 DIM a,b
+b=1.64
+a=READ_BIT2(0,b) '读取b的第0位,赋值给a
+PRINT a '输出a值，结果为1
+相关指令 SET_BIT，_CLEAR_BIT -- 按位置0，READ_BIT
+2 91
+===== PDF page 310 =====
+Zbasic编程手册 V3.3.0
+FRAC -- 返回小数
+类型 数学函数
+描述 返回小数部分，总是大于0的部分。
+语法 FRAC(expression)
+expression：要操作的数
+适用控制器 通用
+例子 a=FRAC(1.235)
+PRINT a '结果是0.235
+INT -- 返回整数
+类型 数学函数
+描述 返回整数部分。
+语法 INT(expression)
+expression：任意有效的表达式
+适用控制器 通用
+例子 a=INT(1.235)
+PRINT a '结果是1
+?INT(-1.1) '打印结果，-2，因为小数部分总处理为正数。
+SGN -- 返回符号
+类型 数学函数
+描述 返回符号。
+1 大于0
+0 等于0
+-1 小于0
+语法 SGN(expression)
+expression：任意有效的表达式
+适用控制器 通用
+例子 a=SGN(-1.235)
+PRINT a '结果是-1
+IEEE_IN -- 组合浮点数
+类型 数学函数
+描述 把四个字节组合成一个单精度浮点数。
+2 92
+===== PDF page 311 =====
+Zbasic编程手册 V3.3.0
+语法 IEEE_IN(byte0,byte1,byte2,byte3)
+byte0–byte3：四个字节
+适用控制器 通用
+例子 VAR = IEEE_IN(VR(10),VR(11),VR(12),VR(13)) '将 VR(10)~VR(13)这四个数据合成
+一个单精度浮点数
+IEEE_OUT -- 提取单字节
+类型 数学函数
+描述 从一个单精度浮点数里面取一个字节。
+语法 byte_n = IEEE_OUT(var, n)
+var：单精度浮点数
+N：0-3，取第几个字节
+适用控制器 通用
+例子 例一
+VAR = IEEE_OUT(VR(1),2) '提取VR(1)的第二个字节
+例二
+GLOBAL VAR0,VAR1,VAR2,VAR3
+VAR0=0
+VAR1=0
+VAR2=0
+VAR3=0
+VR(1)=123.456
+VAR0 = IEEE_OUT(VR(1),0)
+VAR1 = IEEE_OUT(VR(1),1)
+VAR2 = IEEE_OUT(VR(1),2)
+VAR3 = IEEE_OUT(VR(1),3)
+VR(2)=0
+VR(2)=IEEE_IN(VAR0,VAR1,VAR2,VAR3)
+运行结果：
+2 93
+===== PDF page 312 =====
+Zbasic编程手册 V3.3.0
+$ -- 16 进制
+类型 特殊字符
+描述 表示紧接着的数据是16进制格式。
+语法 $hexnum
+适用控制器 通用
+例子 在线命令输入
+>>PRINT $F
+输出：15
+10.7. 字符串操作指令
+CHR -- ASCII 码打印
+类型 字符串函数
+描述 返回ASCII打印，只用于PRINT。
+语法 CHR(expression)
+expression：任意有效的表达式
+适用控制器 通用
+例子 在线命令输入
+>>PRINT CHR(66)
+输出：B
+HEX -- 16 进制打印
+类型 字符串函数
+描述 返回十六进制格式，只用于PRINT。
+语法 HEX(expression)
+expression：任意有效的表达式，只取整数部分
+适用控制器 通用
+例子 在线命令输入
+>>PRINT HEX(15)
+输出：f '十六进制
+2 94
+===== PDF page 313 =====
+Zbasic编程手册 V3.3.0
+STRLEN -- 返回字符串长度
+类型 字符串函数
+描述 返回字符串长度。
+语法 len=STRLEN(str)
+str：字符串
+适用控制器 通用
+例子 DIM str_a(20)
+str_a="len123"
+?STRLEN(str_a)
+打印结果：6
+TOSTR -- 格式化输出
+类型 字符串函数
+描述 格式化输出函数，变量转换成字符串。
+语法 TOSTR(VAR1, [N],[DOT])
+VAR1：任意有效的表达式
+N：输出数据总位数，包括小数点和符号位。当N设置负数时，表示右对齐
+DOT：输出的小数个数，当N太小没有小数位置时，不输出小数
+输出的是字符串类型。只有第一个参数默认打印到小数点后四位。
+适用控制器 通用
+例子 例一
+在线命令输入
+>> PRINT TOSTR(2-100,6,2)
+输出：-98.00
+例二
+DIM aa(20)
+aa="asd13"+TOSTR(354)
+?aa '打印结果asd13354.0000
+STRCOMP -- 字符串比较
+类型 字符串函数
+描述 字符串比较函数，根据两个字符串的情况返回>0、=0、<0。
+比较长度在500字节内，否则返回值出错误。
+语法 STRCOMP(str1, str2)
+str1：字符串1
+2 95
+===== PDF page 314 =====
+Zbasic编程手册 V3.3.0
+str2：字符串2
+适用控制器 通用
+例子 DIM AAA(10)
+AAA = "abc"
+在线命令输入
+>>PRINT STRCOMP(AAA, "abc")
+输出：0
+STRFIND -- 字符串搜索
+类型 字符串函数
+描述 字符串搜索函数。
+语法 STRFIND(str1, str2 [, firstindex])
+str1：待搜索的字符串
+str2：搜索模板字符串
+firstindex：从哪个位置开始搜索，缺省0
+返回：>= 0，返还查找到的index；< 0，没有找到
+适用控制器 通用
+例子 DIM AAA(10),BBB(3)
+AAA="AD23GF41"
+BBB="23G"
+?STRFIND(AAA,BBB) '打印搜索到的索引位置，2
+VAL -- 字符转数值
+类型 字符串函数
+描述 字符串转换为数值。
+只能转换数字字符，遇到字母、符号字符停止。
+语法 VAL(str1)
+str1：字符串
+适用控制器 通用
+例子 例一
+VAR1 = VAL("123")
+?VAR1 '打印结果，123
+例二
+VAR2 = VAL("123QWE23")
+?VAR2 '打印结果，123
+2 96
+===== PDF page 315 =====
+Zbasic编程手册 V3.3.0
+10.8. 常数指令
+PI -- 圆周率
+类型 常数
+值 3.14159
+适用控制器 通用
+TRUE -- 真值
+类型 常数
+值 -1
+适用控制器 通用
+FALSE -- 假值
+类型 常数
+值 0
+适用控制器 通用
+ON -- 开启
+类型 常数
+值 1
+适用控制器 通用
+OFF -- 关闭
+类型 常数
+值 0
+适用控制器 通用
+2 97
+===== PDF page 316 =====
+Zbasic编程手册 V3.3.0
+10.9. 高级运算指令
+CRC16 -- CRC 检验计算
+类型 数学函数
+描述 CRC16 CCITT计算。
+语法 CRC16(arrayname, index, size[, initial] [, poly])
+arrayname：数据存储所在的数组，一个字节占一个位置
+index：数据存储所在的数组起始索引
+size：计算字节数
+initial：CRC计算初始值，缺省$FFFF
+poly：多项式，暂时只支持modbus的$A001和CCITT的$1021，缺省$A001
+适用控制器 通用
+例子 TABLE(0, $FE, $48 , $06 , $00 , $6D , $00 , $00 , $00) '8个数据存储在TABLE
+CRCVALUE = CRC16(TABLE, 0, 8) '计算CRC，结果$1A0D
+TABLE(8)= CRCVALUE\256 '计算的CRC加在数据的后面，大端模式
+TABLE(9)= CRCVALUE AND $FF
+DTSMOOTH -- table 平滑
+类型 数学函数
+描述 对TABLE存储的点坐标进行平滑调整。
+语法 DTSMOOTH (axis, dtfirst, space, points, imode, referradius)
+axis：轴数
+dtfirst：第一个点的TABLE索引
+space：两个点之间的索引间隔(就是一个点存储占用的空间)
+points：总点个数
+imode：0- 绝对方式, 对曲率半径小于参考值的进行调整
+referradius：参考曲率半径, 可以根据 半径=(速度平方)/拐弯加速度来计算参考
+适用控制器 3X系列 20161206 以上固件支持
+4系列 20170508以上固件支持
+例子 TABLE(0, 0,0)
+TABLE(5, 99,0)
+TABLE(10, 100,0)
+TABLE(15, 100, 1)
+TABLE(20, 101, 1)
+TABLE(25, 200, 1)
+DTSMOOTH(2, 0, 5, 6, 0, 5)
+?*TABLE(0, 2)
+?*TABLE(5, 2)
+2 98
+===== PDF page 317 =====
+Zbasic编程手册 V3.3.0
+?*TABLE(10, 2)
+?*TABLE(15, 2)
+?*TABLE(20, 2)
+?*TABLE(25, 2)
+B_SPLINE -- B 样条平滑
+类型 数学函数
+描述 将TABLE中的数据进行B样条平滑。
+语法 B_SPLINE(type, data_start, points, data_out, ratio)
+type：类型，目前只支持1-B样条
+data_start：图形数据在TABLE中的起始位置
+points：图形数据的个数
+data_out：平滑后的图形数据在TABLE中起始位置
+ratio：B_SPLINE 函数的平滑比率，平滑后的个数为points * ratio
+新增加样条控制点的自动计算功能，此功能配合 MOVESPLINE 样条曲线运动使用，4
+系列以上产品支持，4系列控制器固件版本20170621
+B_SPLINE(type, axises, dtstartpos, dtendpos, dtlastpos, dtnexpos, dtoutcontrol1,
+dtoutcontrol2)
+type：
+1 兼容原来的功能
+11 为连续线段的第一条线段计算样条拟合的控制点.
+12 为连续线段的中间线段计算样条拟合的控制点.
+13 为连续线段的最后一条线段计算样条拟合的控制点.
+axises：参与样条插补的轴数
+dtstartpos：线段起点坐标位于的table数组索引，多个轴连续存储不同的table，下同
+dtendpos：线段终点坐标位于的table数组索引
+dtlastpos：线段起点的前面点的坐标索引，用于计算参考，第一条线段此参数无用
+dtnexpos：线段终点的后面点的坐标索引，用于计算参考,最后一天线段此参数无用
+dtoutcontrol1：输出样条的控制点数据，贝塞尔的第 1 个控制点(起点也作为控制点
+除外)
+dtoutcontrol2：输出样条的控制点数据，贝塞尔的第2个控制点
+起点、dtoutcontrol1、dtoutcontrol2、终点一起构成贝塞尔的4个控制点。
+适用控制器 通用
+例子 例一 type1
+B_SPLINE(1,0,10,100,10) '平滑一个10点的图形数据，源图形点在table的位置为从
+0到9，平滑为100点的数据，并且平滑后的数据从table地址100开始存放
+例二 新增模式
+TABLE(0,0,0,0,100,100,100,200,100) 'XY两轴连续4点的坐标数据
+B_SPLINE(11, 2, 0, 2, -1, 4, 100,200) '第1条线段
+2 99

@@ -1,0 +1,417 @@
+===== PAGE 323 =====
+15 RL指令
+counter = 2
+counter = 3
+counter = 4
+……
+注意：当需要输出字符串时可以使用双引号“”来包含想要显示的字符，但不支持在双引号中嵌套双
+引号。
+15.4.17.6 PoseMult
+说明 PoseMult用于计算两个位姿变换的乘积
+pose3 = PoseMult(pose1，pose2)
+pose1，数据类型，pose，位姿1。
+定义
+pose2，数据类型，pose，位姿2。
+pose3，返回值，数据类型：pose，表示位姿乘积结果。
+示例
+pose1代表坐标系1相对坐标系0的位姿，pose2代表坐标系2相对坐标系1的位姿，坐标系2相
+对坐标系0的位姿pose3可以通过以下方式计算：
+VAR pose pose1
+VAR pose pose2
+VAR pose pose3
+...
+pose3 = PoseMult(pose1, pose2)
+15.4.17.7 PoseInv
+说明 PoseInv用于计算一个位姿变换的逆。
+pose2 = PoseInv(pose1)
+定义 pose1，数据类型：pose，输入位姿；
+pose2，数据类型：pose，返回值。
+pose1代表坐标系1相对坐标系0的位姿，pose2代表坐标系0相对坐标系1的位姿。
+如果已知pose1，pose2可以通过以下方式计算：
+VAR pose pose1
+示例
+VAR pose pose2
+...
+pose2 = PoseInv(pose1)
+xCore控制系统使用手册 309
+===== PAGE 324 =====
+15 RL指令
+15.4.17.8 GetRobABC
+获取笛卡尔空间点 P 的欧拉角姿态 ABC；旋转顺序定义为，初始坐标系（运动指令中选定的工件
+说明
+坐标系）首先绕自身X轴旋转后，再绕初始坐标系的Y轴旋转，最后绕初始坐标系的Z轴旋转
+double db_arr[3] = GetRobABC(Point [, A, B, C])
+Point，数据类型： robtarget，计算位置时使用的笛卡尔点位。
+定义
+A, B, C，数据类型： double，笛卡尔点位欧拉角姿态的返回值。
+返回值，数据类型： double三维数组，笛卡尔点位欧拉角姿态的返回值。
+示例1
+point0是一个笛卡尔点位变量，将变量的欧拉角姿态转换成RL的Double变量，可以使用下面的
+RL指令
+VAR double Rob_A
+VAR double Rob_B
+VAR double Rob_C
+示例 // 将point0的欧拉角赋值到Rob_A|B|C
+GetRobABC(point0, Rob_A, Rob_B, Rob_C)
+示例2
+point0是一个笛卡尔点位变量，生成一个临时变量数组来存储笛卡尔点位的欧拉角信息，可以使用
+下面的RL指令
+double db_arr[3] = GetRobAbc(point0)
+15.4.17.9 SetRobABC
+根据输入的欧拉角ABC，设置笛卡尔空间点P的姿态；旋转顺序定义为，初始坐标系（运动指令中
+说明 选定的工件坐标系）首先绕自身X轴旋转后，再绕初始坐标系的Y轴旋转，最后绕初始坐标系的Z
+轴旋转。
+SetRobABC(Point , A, B, C)
+定义 Point，数据类型： 笛卡尔点位，将要被修改姿态的笛卡尔点位。
+A, B, C，数据类型： double，设置笛卡尔点位的欧拉角姿态，单位°（度）。
+示例1
+示例 point0是一个笛卡尔点位变量，点位绕定轴X,Y,Z轴依次旋转30°，60°，90°。
+SetRobABC(point0, 30, 60, 90)
+15.4.17.10 RotRobABC
+说明 根据输入的欧拉角 ABC，在笛卡尔空间 P 的已有的姿态前提下，再进行欧拉角的旋转；旋转顺序
+310 xCore控制系统使用手册
+===== PAGE 325 =====
+15 RL指令
+定义为，初始坐标系（P自身的姿态）首先绕自身X轴旋转后，再绕初始坐标系的Y轴旋转，最后
+绕初始坐标系的Z轴旋转。表现为已有的欧拉角跟输入的ABC相加。
+RotRobABC(Point , A, B, C)
+定义 Point，数据类型： 笛卡尔点位，将要被修改姿态的笛卡尔点位。
+A, B, C，数据类型： double，设置笛卡尔点位旋转的欧拉角姿态，单位°（度）。
+示例1
+示例 point0是一个笛卡尔点位变量，将点位绕X,Y,Z再旋为30°, 60°, 90°
+RotRobABC(point0, 30, 60, 90)
+15.4.17.11 OpMode
+说明 用于获取机器人当前的运行模式
+ret = OpMode()
+定义
+ret，返回值，数据类型： int，0为未定义模式，1为自动模式，2为手动模式。
+示例1
+int mode = OpMode()
+示例
+print(mode)
+若当前为自动模式则返回1，手动模式则返回2。
+15.4.18 寄存器指令
+15.4.18.1 ReadRegByName
+说明 根据寄存器的名字，读取对应寄存器的变量值
+ReadRegByName(RegData，Value)
+RegData，数据类型：可读的寄存器变量 ，设置>通信>寄存器界面功能，寄存器变量。
+定义
+Value ，数据类型：bool/int/double ，寄存器数据将写入Value，如果寄存器的变量类型和解释器
+变量不一致，将自动进行格式转换
+例 1
+int tmp_int
+示例
+ReadRegByName(modbus_int_read[6], tmp_int)
+将名为modbus_int_read 的下标为6的数据，读取到tmp_int变量中
+15.4.18.2 WriteRegByName
+根据寄存器的名字，读取对应寄存器的变量值 ，该指令如果放在运动指令之后使用，不会打断转
+说明
+弯区，在运动指令轨迹终点触发，或在转弯区起点触发，具体使用可参考SetDO例2。
+WriteRegByName(RegData，Value)
+RegData，数据类型：可写的寄存器变量 ，设置>通信>寄存器界面功能，寄存器变量。
+定义
+Value，数据类型：bool/int/double ，将Value数据写入寄存器中，如果寄存器的变量类型和解释
+器变量不一致，将自动进行格式转换。
+例 1
+示例 WriteRegByName(modbus_int_write[6], 200)
+将INT 200 的数据，写入modbus_int_write[6] 对应的寄存器中。
+15.4.18.3 ReadRegByteByName
+xCore控制系统使用手册 311
+===== PAGE 326 =====
+15 RL指令
+说明 根据寄存器的名字，读取寄存器对应字节的值
+ReadRegByteByName(RegData，Value，byteFlag)
+RegData，数据类型：可读或可写的int16/int32类型寄存器，通信>寄存器界面功能，寄存器变量。
+定义 Value ，数据类型：byte 类型变量，读取寄存器对应字节值到Value中，Value必须为byte类型
+变量。
+byteFlag ，字节标志位。取值范围1-4，1为低字节，4为高字节。
+例 1
+byte tmp_value
+示例
+ReadRegByteByName(modbus_reg, tmp_value,1)
+将名为modbus_reg寄存器的第一个字节，读取到tmp_value变量中
+15.4.18.4 WriteRegByteByName
+根据寄存器的名字，写对应寄存器字节的值 ，该指令如果放在运动指令之后使用，不会打断转弯
+说明
+区，在运动指令轨迹终点触发，或在转弯区起点触发，具体使用可参考SetDO例2。
+WriteRegByteByName(RegData，Value，byteFlag)
+RegData，数据类型：可写的int16/int32类型寄存器变量 ，通信>寄存器界面功能，寄存器变量。
+定义
+Value ，数据类型：byte，将Value数据写入寄存器对应字节中
+byteFlag ，字节标志位。取值范围1-4，1为低字节，4为高字节。
+例 1
+示例 WriteRegByteByName(modbus_reg, 200,2)
+将200 的数据，写入modbus_reg 的第2个字节中。
+15.4.19 末端工具指令
+15.4.19.1 JodellGripInit
+说明 钧舵电爪的初始化指令
+JodellGripInit ID,wait_time
+定义 ID，数据类型：Int变量 ，建立通信，初始化钧舵电爪，参数ID。
+Wait_time，数据类型：Int变量 ，等待初始化完成，等待时间阈值，超时报错；单位：s。
+示例
+15.4.19.2 JodellGripMove
+说明 钧舵电爪的运动指令
+JodellGripMove ID,Pos,Vel,Trq
+ID，数据类型：Int变量 ，控制电爪运动的电爪ID。
+定义 Pos，数据类型：Int变量 ，目标位置，无单位，设置范围0-255。
+Vel，数据类型：Int变量 ，电爪运行的速度，无单位，设置范围0-255。
+Trq，数据类型：Int变量 ，电爪运行检测的力，无单位，设置范围0-255。
+示例
+15.4.19.3 JodellGripStatus
+说明 获取钧舵电爪的状态
+定义 JodellGripStatus ID,Pos,Vel,Trq,Contact
+312 xCore控制系统使用手册
+===== PAGE 327 =====
+15 RL指令
+ID，数据类型：Int变量 ，获取电爪运动状态的电爪ID。
+Pos，数据类型：Int变量 ，获取电爪当前位置，无单位，数据范围0-255。
+Vel，数据类型：Int变量 ，获取电爪运行的速度，无单位，数据范围0-255。
+Trq，数据类型：Int变量 ，获取电爪运行的力矩，无单位，数据范围0-255。
+Contact，数据类型：Int变量 ，获取电爪运行的状态字，无单位，数据范围0-255，其中bit6-7表
+示电爪是否检测到物体的状态。
+Bit 名称 值/说明
+0 gAct 0表示电动夹爪复位中，1表示电动夹爪处于使能状态
+2 gMode 0表示处于参数控制模式，1表示处于无参数控制模式
+3 gGTO 0表示停止，1表示正在向目标位置运动
+0电动夹爪处于复位或巡检状态，1表示正在激活，2表示未使用，3
+4-5 gSTA
+表示激活完成
+0表示手指正在指定位置移动；1表示手指在张开达到指定位置时，由
+6-7 gOBJ 于接触到物体停止；2表示手指在闭合达到指定位置时，由于接触到物
+体停止；3手指到达指定的位置，但没有检测到对象。
+示例
+15.4.19.4 JodellSuckInit
+说明 钧舵吸盘的初始化指令
+JodellSuckInit ID
+定义
+ID，数据类型：Int变量 ，初始化此ID的吸盘，检测是否正确连接此ID的吸盘。
+示例
+15.4.19.5 JodellSuckSet
+说明 钧舵吸盘工作的指令 ，下发此指令后，吸盘立刻按照设定参数开始工作
+JodellSuckSet ID,CH1_enable,CH1_VacMin, CH1_VacMax, CH1_Waittime, CH2_enable,
+CH2_VacMin, CH2_VacMax, CH2_Waittime
+ID，数据类型：Int变量 ，控制吸盘工作的吸盘ID。
+CH1_enable，数据类型：Int变量 ，吸盘第一个通道是否工作，1表示工作，0表示不工作。
+CH1_VacMin，数据类型：Int变量 ，吸盘第一个通道最小真空度设置值，范围0-255，0表示纯真
+空，大于100表示吸盘释放；当实际真空度低于此阈值时停止抽气；
+CH1_VacMax，数据类型：Int变量 ，吸盘第一个通道最大真空度设置值，范围0-255，0表示纯真
+定义 空，大于100表示吸盘释放；当实际真空度高于此阈值时开始抽气；
+CH1_Waittime，数据类型：Double变量 ，吸盘第一个通道超时设置值；
+CH2_enable，数据类型：Int变量 ，吸盘第二个通道是否工作，1表示工作，0表示不工作。
+CH2_VacMin，数据类型：Int变量 ，吸盘第二个通道最小真空度设置值，范围0-255，0表示纯真
+空，大于100表示吸盘释放；当实际真空度低于此阈值时停止抽气；
+CH2_VacMax，数据类型：Int变量 ，吸盘第二个通道最大真空度设置值，范围0-255，0表示纯
+真空，大于100表示吸盘释放；当实际真空度高于此阈值时开始抽气；
+CH2_Waittime，数据类型：Double变量 ，吸盘第二个通道超时设置值；
+示例
+15.4.19.6 JodellSuckStatus
+xCore控制系统使用手册 313
+===== PAGE 328 =====
+15 RL指令
+说明 获取钧舵吸盘的状态
+JodellSuckStatus ID,Vac1,Contact1,Time_Err1,Vac2,Contact2,Time_Err2
+ID，数据类型：Int变量 ，获取吸盘状态的吸盘ID。
+Vac1，数据类型：Int变量 ，获取的吸盘通道一当前的实际真空度，数据范围0-100。
+Contact1，数据类型：Int变量 ，获取的吸盘通道一当前的状态信息数据，数据范围0-255，其中
+bit6-7表示是否检测到物体，具体的状态信息含义见下表。
+Bit 名称 值/说明
+0 gAct 0表示电动吸盘未使能，1表示电动吸盘已使能
+2 gMode 0表示处于自动控制模式，1表示处于高级控制模式
+3 gGTO 0表示停止调节，1表示正在调节压力或真空度
+定义
+4-5 gSTA 0电动吸盘处于未激活状态，1和2未使用，3表示吸盘已激活
+0表示气压已低于最低气压；1表示检测到工件，最低压力值已经
+6-7 gOBJ 达到；2表示检测到工件，最高压力值已达到；3表示没有检测到
+对象，物体已丢失或脱落。
+Time_Err1，数据类型：Int变量，获取的吸盘通道一是否超时报警。
+Vac2，数据类型：Int变量，获取的吸盘通道二当前的实际真空度，数据范围0-100。
+Contact2，数据类型：Int 变量，获取的吸盘通道二当前的状态信息数据，数据范围 0-255，其中
+bit6-7表示是否检测到物体，具体的状态信息含义与上表相同。
+Time_Err2，数据类型：Int变量，获取的吸盘通道二是否超时报警。
+示例
+15.4.19.7 RMRGMGripInit
+说明 增广电爪RM-RGM系列的初始化指令
+RMRGMGripInit ID
+定义
+ID，数据类型：Int变量 ，控制电爪运动的电爪ID。
+示例
+15.4.19.8 RMCGripInit
+说明 增广电爪RM-C系列的初始化指令
+RMCGripInit ID
+定义
+ID，数据类型：Int变量，控制电爪运动的电爪ID。
+示例
+15.4.19.9 RMRGMGripPosMove
+说明 增广电爪RMRGM系列的位置模式的运动指令
+RMRGMGripPosMove ID,Pos,Vel,Acc,PCheck
+ID，数据类型：Int变量 ，控制电爪运动的电爪ID。
+Pos，数据类型：Double变量 ，目标位置，单位mm，设置范围-2000.0-2000.0。
+定义
+Vel，数据类型：Double变量 ，电爪运行的速度，单位mm/s，设置范围0.01-1000.0。
+Acc，数据类型：Double变量 ，电爪运行加速度，单位mm/s^2，设置范围0.01-2000.0。
+PCheck，数据类型：Double变量 ，定位范围，单位mm，设置范围0.01-10.0。
+示例
+314 xCore控制系统使用手册
+===== PAGE 329 =====
+15 RL指令
+15.4.19.10 RMCGripPosMove
+说明 增广电爪RMC系列的位置模式的运动指令
+RMCGripPosMove ID,Pos,Vel,Acc,PCheck
+ID，数据类型：Int变量 ，控制电爪运动的电爪ID。
+Pos，数据类型：Double变量 ，目标位置，单位mm，设置范围-2000.0-2000.0。
+定义
+Vel，数据类型：Double变量 ，电爪运行的速度，单位mm/s，设置范围0.01-1000.0。
+Acc，数据类型：Double变量 ，电爪运行加速度，单位mm/s2，设置范围0.01-2000.0。
+PCheck，数据类型：Double变量 ，定位范围，单位mm，设置范围0.01-10.0。
+示例
+15.4.19.11 RMRGMGripTrqMove
+说明 增广电爪RMRGM系列的力矩模式的运动指令
+RMRGMGripTrqMove ID,Pos,Vel,Acc,Trq,PCheck,TCheck
+ID，数据类型：Int变量 ，控制电爪运动的电爪ID。
+Pos，数据类型：Double变量 ，目标距离，单位mm，设置范围-2000.0-2000.0。
+Vel，数据类型：Double变量 ，电爪运行的速度，单位mm/s，设置范围0.01-1000.0。
+定义
+Acc，数据类型：Double变量 ，电爪运行加速度，单位mm/s2，设置范围0.01-2000.0。
+Trq，数据类型：Double变量 ，定位范围，单位Nm，设置范围0.01-100.0。
+PCheck，数据类型：Double变量 ，定位范围，单位mm，设置范围0.01-10.0。
+TCheck，数据类型：Double变量 ，时间范围，单位mm，设置范围0.01-1000.0。
+示例
+15.4.19.12 RMCGripTrqMove
+说明 增广电爪RMC系列的力矩模式的运动指令
+RMCGripTrqMove ID,Pos,Vel,Acc,Trq,PCheck,TCheck
+ID，数据类型：Int变量 ，控制电爪运动的电爪ID。
+Pos，数据类型：Double变量 ，目标距离，单位mm，设置范围-2000.0-2000.0。
+Vel，数据类型：Double变量 ，电爪运行的速度，单位mm/s，设置范围0.01-1000.0。
+定义
+Acc，数据类型：Double变量 ，电爪运行加速度，单位mm/s2，设置范围0.01-2000.0。
+Trq，数据类型：Double变量 ，定位范围，单位Nm，设置范围0.01-100.0。
+PCheck，数据类型：Double变量 ，定位范围，单位mm，设置范围0.01-10.0。
+TCheck，数据类型：Double变量 ，时间范围，单位mm，设置范围0.01-1000.0。
+示例
+15.4.19.13 RMRGMGripStatus
+说明 增广电爪RMRGM系列的获取状态指令
+RMRGMGripStatus ID,Pos,Vel,Trq,Reach,Err
+ID，数据类型：Int变量 ，控制电爪运动的电爪ID。
+Pos，数据类型：Double变量 ，电爪位置，单位mm。
+定义 Vel，数据类型：Double变量 ，电爪运行的速度，单位mm/s。
+Trq，数据类型：Double变量 ，电爪出力力矩，单位%。
+Reach，数据类型：Bool变量 ，电爪是否到位。
+Err，数据类型：Int变量 ，电爪的错误代码。
+xCore控制系统使用手册 315
+===== PAGE 330 =====
+15 RL指令
+示例
+15.4.19.14 RMCGripStatus
+说明 增广电爪RMC系列的获取状态指令
+RMCGripStatus ID,Pos,Vel,Trq,Reach,Err
+ID，数据类型：Int变量 ，控制电爪运动的电爪ID。
+Pos，数据类型：Double变量 ，电爪位置，单位mm。
+定义 Vel，数据类型：Double变量 ，电爪运行的速度，单位mm/s。
+Trq，数据类型：Double变量 ，电爪出力力矩，单位%。
+Reach，数据类型：Bool变量 ，电爪是否到位。
+Err，数据类型：Int变量 ，电爪的错误代码。
+示例
+15.4.19.15 RMRGMResetErr
+说明 增广电爪RMRGM系列的复位电爪错误指令
+RMRGMResetErr ID
+定义
+ID，数据类型：Int变量 ，需要复位电爪的ID。
+示例
+15.4.19.16 RMCResetErr
+说明 增广电爪RMC系列的复位电爪错误指令
+RMCResetErr ID
+定义
+ID，数据类型：Int变量 ，需要复位电爪的ID。
+示例
+316 xCore控制系统使用手册
+===== PAGE 331 =====
+16 附录
+16 附录
+16.1 用户权限明细
+类别 功能 操作员 示教员 编程员 管理员 超级管理员
+工程配置
+（新建、导入、导出、加载、恢复、另 N N Y Y Y
+存为、设置默认工程）
+查看工程
+（包括程序和IO、变量、预定义参数等 Y Y Y Y Y
+工程相关与
+对象数据）
+程序编辑
+编辑工程
+N N Y Y Y
+（包括程序编辑和工具等对象设置）
+示教点位
+（包括RL编辑器界面、变量列表的点位 N Y Y Y Y
+类型、点位列表）
+切换手/自动模式 Y Y Y Y Y
+上/下电 Y Y Y Y Y
+启动/停止程序 Y Y Y Y Y
+机器人运动
+切换程序循环模式 Y Y Y Y Y
+与程序运行
+调整程序运行速度 N Y Y Y Y
+单步调试程序 N Y Y Y Y
+Jog/拖动机器人 N Y Y Y Y
+查看运行数据 Y Y Y Y Y
+设置IO信号 N Y Y Y Y
+状态监控
+设置寄存器值 N Y Y Y Y
+设置PERS变量值 N Y Y Y Y
+控制器设置-基本设置 N N Y Y Y
+控制器设置-高级设置 N N Y Y Y
+控制器设置-授权设置 N N N Y Y
+HMI设置-基本设置 N N N Y Y
+HMI设置-示教器模式 N N Y Y Y
+用户组 Y Y Y Y Y
+零点标定 N N Y Y Y
+基坐标系标定 N N Y Y Y
+设置
+动力学设置 N N Y Y Y
+本体参数 N N Y Y Y
+运动参数 N N Y Y Y
+力控参数 N N Y Y Y
+快速调整 N Y Y Y Y
+电子铭牌 N N Y Y Y
+错误码报警过滤 N N Y Y Y
+自定义按键 N N Y Y Y
+系统IO N N Y Y Y
+通信
+外部通信 N N Y Y Y
+xCore控制系统使用手册 317
+===== PAGE 332 =====
+16 附录
+IO设备 N N Y Y Y
+总线设备 N N Y Y Y
+寄存器 N N Y Y Y
+末端工具 N N Y Y Y
+RCI设置 N N Y Y Y
+xPanel配置 N N Y Y Y
+电爪吸盘 N N Y Y Y
+串口设置 N N Y Y Y
+编码器 N N Y Y Y
+OPC-UA N N Y Y Y
+软限位 N N Y Y Y
+虚拟墙 N N Y Y Y
+碰撞检测 N N Y Y Y
+安全 安全区域 N Y Y Y Y
+安全监视器 N N Y Y Y
+协作模式 N N Y Y Y
+安全位置 N Y Y Y Y
+传送带 N N Y Y Y
+工艺包
+导轨 N N Y Y Y
+日志查询 Y Y Y Y Y
+日志
+诊断设置 N N N N Y
+连接/关于/演示 Y Y Y Y Y
+软件升级-控制器升级/其他设置 N N N Y Y
+软件升级-HMI升级/控制器备份 Y Y Y Y Y
+选项
+导出 Y Y Y Y Y
+导入 N N N Y Y
+文件管理器 N N N Y Y
+16.2 协作机器人末端把手介绍
+16.2.1 ER系列
+xMate ER系列机器人末端集成智能交互面板Pilot把手，在拖动模式下，通过手柄上按键可快
+速进行点位示教、连续轨迹示教，实现更好的人机交互。
+318 xCore控制系统使用手册

@@ -1,0 +1,32 @@
+{
+  "_comment": "T-23 定制 VSCodium：合并进 Code-OSS 的 vscode/product.json（见 docs/planA/15 §8.6）。仅含品牌 + 扩展市场 + 预置设置，不改动任何微软专有资产。",
+
+  "nameShort": "Kine-X",
+  "nameLong": "Kine-X Studio",
+  "applicationName": "kinex-studio",
+  "dataFolderName": ".kinex-studio",
+  "linuxIconName": "kinex-studio",
+  "serverApplicationName": "kinex-studio-server",
+  "serverDataFolderName": ".kinex-studio-server",
+  "win32DirName": "Kine-X Studio",
+  "win32MutexName": "kinexstudio",
+  "win32NameVersion": "Kine-X Studio",
+  "darwinBundleIdentifier": "ai.kinex.studio",
+  "licenseName": "MIT",
+  "licenseUrl": "https://github.com/VSCodium/vscodium/blob/master/LICENSE",
+
+  "extensionsGallery": {
+    "serviceUrl": "https://open-vsx.org/vscode/gallery",
+    "itemUrl": "https://open-vsx.org/vscode/item",
+    "resourceUrlTemplate": "https://open-vsx.org/vscode/unpkg/{publisher}/{name}/{version}/{path}",
+    "controlUrl": "",
+    "nlsBaseUrl": ""
+  },
+
+  "configurationDefaults": {
+    "kine-x.host": "192.168.1.11",
+    "kine-x.debugPort": 5000,
+    "kine-x.engine": "basic",
+    "kine-x.showRawProtocol": false
+  }
+}

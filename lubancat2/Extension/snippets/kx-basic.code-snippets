@@ -1,0 +1,32 @@
+{
+  "包含子程序": {
+    "prefix": "include",
+    "body": ["INCLUDE \"${1:sub.bas}\"  ' 编译期展开（同目录、同语言）"],
+    "description": "Kine-X BASIC：包含子程序文件（主文件多文件组织，见 planA/10 §7.5）"
+  },
+  "绝对定位": {
+    "prefix": "moveabs",
+    "body": ["SPEED(${1:0}) = ${2:50}", "ACCEL(${1:0}) = ${3:500}", "MOVEABS(${4:100}, ${2:50}, ${3:500}, ${5:1})"],
+    "description": "Kine-X BASIC：绝对定位（第 5 参 wait=1 阻塞 / 0 异步）"
+  },
+  "使能轴": {
+    "prefix": "en",
+    "body": ["BASE(${1:0})", "EN"],
+    "description": "Kine-X BASIC：选择轴并使能（阻塞到生效）"
+  },
+  "等待到位": {
+    "prefix": "waitidle",
+    "body": ["WAITIDLE()  ' 阻塞到运动结束（超时报错）"],
+    "description": "Kine-X BASIC：等待运动到位"
+  },
+  "子程序": {
+    "prefix": "sub",
+    "body": ["SUB ${1:name}(${2:x})", "\t${3:' 子程序体（全局变量通信）}", "END SUB"],
+    "description": "Kine-X BASIC：定义子程序"
+  },
+  "循环": {
+    "prefix": "while",
+    "body": ["WHILE ${1:cond}", "\t${2:' 循环体（长驻脚本请加 DELAY，避免忙等）}", "WEND"],
+    "description": "Kine-X BASIC：WHILE 循环"
+  }
+}

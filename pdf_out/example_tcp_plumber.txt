@@ -1,0 +1,613 @@
+
+===== PDF page 533 =====
+Zbasic编程手册 V3.3.0
+ENDIF
+MOVEABS(xdis,ydis,zdis,udis) '绝对位置
+ENDIF
+END SUB
+'绝对位置模式
+GLOBAL GSUB G90()
+TRACE "G90 entered"
+coor_rel = 0
+END SUB
+'相对
+GLOBAL GSUB G91()
+TRACE "G91 entered"
+coor_rel = 1
+END SUB
+'延时
+GLOBAL GSUB G04(P)
+TRACE "G04 entered"
+IF sub_ifpara(0) THEN
+DELAY (sub_para(0))
+ELSE
+ENDIF
+END SUB
+GLOBAL GSUB G00(X Y Z U)
+TRACE "G00 entered, distance:" sub_para(0),sub_para(1),sub_para(2),sub_para(3)'调试输出
+IF coor_rel THEN
+MOVE(sub_para(0),sub_para(1),sub_para(2),sub_para(3))
+ELSE
+LOCAL xdis, ydis, zdis, udis
+IF sub_ifpara(0) THEN
+xdis = sub_para(0)
+ELSE
+xdis = ENDMOVE_BUFFER(0)
+ENDIF
+IF sub_ifpara(1) then
+ydis = sub_para(1)
+ELSE
+ydis = ENDMOVE_BUFFER(1)
+ENDIF
+IF sub_ifpara(2) THEN
+zdis = sub_para(2)
+ELSE
+zdis = ENDMOVE_BUFFER(2)
+ENDIF
+IF sub_ifpara(3) THEN
+udis = sub_para(3)
+ELSE
+udis = ENDMOVE_BUFFER(3)
+ENDIF
+MOVEABS(xdis,ydis,zdis,udis)
+ENDIF
+END SUB
+5 15
+===== PDF page 534 =====
+Zbasic编程手册 V3.3.0
+18.2. 模块通讯
+CAN 通讯
+控制器间接线
+CANL - CANL
+CANH - CANH
+在控制器主端CANL和CANH间各连接一个120欧电阻。
+主端程序
+CANIO_ADDRESS = 32 '主端
+STOPTASK 1
+RUNTASK 1,task_canget '启动接受任务
+GLOBAL if_send
+if_send = 1
+WHILE 1
+IF if_send = 1 THEN
+TABLE(0,0,8,1,2,3,4,5,6,7,8) '向can cob id为0的控制器发送8个字节依次为1-8
+CAN(0,7,0) '0 - CAN通道号、7 - 发送、0-数据table起始地址
+if_send = 0
+ENDIF
+WEND
+END
+GLOBAL SUB task_canget() '接受任务
+WHILE 1
+CAN(0,6,10) '数据接受，存放在table(10)之后，table(10)表示发送端CANID，<0时表示没有数据
+'table(11)表示接受到到数据个数, table(12)...表示数据
+IF(table(10) >= 0 ) THEN '有接受到数据
+?"数据发送端ID:",table(10)
+?"数据字节数:",table(11)
+?"数据："table(12),table(13),table(14),table(15),table(16),table(17),table(18)
+ENDIF '0 - CAN通道号、7 - 发送、0-数据table起始地址
+WEND
+END SUB
+从端程序
+CANIO_ADDRESS = 0 '从端
+STOPTASK 1
+5 16
+===== PDF page 535 =====
+Zbasic编程手册 V3.3.0
+RUNTASK 1,task_canget '启动接受任务
+GLOBAL if_send
+if_send = 0
+WHILE 1
+WAIT UNTIL if_send = 1 '等待有数据发送过来
+TABLE(0,32,1,$ff) '向can cob id为32的控制器器发送1个字节，依次为FF
+CAN(0,7,0) '0 - CAN通道号、7 - 发送、0-数据table起始地址
+if_send = 0
+WEND
+END
+GLOBAL SUB task_canget() '接受任务
+WHILE 1
+CAN(0,6,10) '数据接受，存放在table(10)之后，table(10)表示发送端CANID，<0时表示没有数据
+'table(11)表示接受到到数据个数, table(12)...表示数据
+IF(table(10) >= 0 ) THEN '有接受到数据
+?"数据发送端ID:",table(10)
+?"数据字节数:",table(11)
+?"数据："table(12),table(13),table(14),table(15),table(16),table(17),table(18)
+if_send = 1
+ENDIF
+WEND
+END SUB
+触摸屏通讯
+该例程触摸屏地址从 0 开始，也有部分触摸屏地址是从 1 开始的，地址从 1 开始的触摸屏上的 1 对应程序
+中的0。
+'**********初始化模块*********
+ERRSWITCH = 3 '全部信息输出
+RAPIDSTOP(2)
+WAIT IDLE
+5 17
+===== PDF page 536 =====
+Zbasic编程手册 V3.3.0
+BASE(0,1) '选定 X Y轴
+DPOS=0,0
+ATYPE=1,1
+UNITS = 100,100
+SPEED = 100,100
+ACCEL = 1000,1000
+DECEL = 1000,1000
+SRAMP = 100,100
+DIM run_state '运行状态
+run_state = 0 '0 停止，1 运行，2 回零
+MODBUS_REG(0) = run_state '显示运行状态
+DIM radius,length '半径,长度
+radius = 100 '缺省半径大小
+length = 300 '缺省长度
+FLASH_READ 0,radius,length
+MODBUS_IEEE(2) = radius '显示半径大小
+MODBUS_IEEE(4) = length '显示长度
+DIM home_done '回零完成的标志位 0 未回零,1 已回零
+home_done = 0 '上电进入未回零状态
+MODBUS_BIT(0) = 0 '启动 按钮复归
+MODBUS_BIT(1) = 0 '停止 按钮复归
+MODBUS_BIT(4) = 0 '回零 按钮复归
+MODBUS_BIT(5) = 0 '保存数据 按钮复归
+MODBUS_BIT(1000)=0 'X轴 回零标志为0
+MODBUS_BIT(1001)=0 'Y轴 回零标志为0
+STOPTASK 2
+RUNTASK 2, guidetask '启动手动运行任务
+'**********按键扫描模块*********
+WHILE 1 '扫描触摸屏端按钮输入
+IF MODBUS_BIT(0)= 1 THEN '启动按钮按下
+MODBUS_BIT(0) = 0 '按钮复归
+IF run_state = 0 THEN '待机停止状态
+IF home_done = 0 THEN '未回零时不启动运动
+TRACE "before move need home"
+ELSEIF home_done = 1 THEN '已回零启动任务运行
+TRACE "move start"
+STOPTASK 1 '软件安全，停止任务0
+RUNTASK 1, movetask '启动运行加工任务1
+ENDIF
+ENDIF
+ELSEIF MODBUS_BIT(1) = 1 THEN '停止按钮按下
+TRACE "move stop"
+MODBUS_BIT(1) = 0 '按钮复归
+5 18
+===== PDF page 537 =====
+Zbasic编程手册 V3.3.0
+RAPIDSTOP(2)
+STOPTASK 1
+RAPIDSTOP(2)
+run_state = 0 '停止标志
+MODBUS_REG(0) = run_state '显示状态
+ENDIF
+IF MODBUS_BIT(4) = 1 THEN '回零按钮按下
+MODBUS_BIT(4) = 0 '回零复归
+IF run_state= 0 THEN
+stoptask 1
+runtask 1, home_task '启动回零任务
+ENDIF
+ENDIF
+'''保存数据处理
+IF MODBUS_BIT(5) = 1 THEN '保存数据 按钮按下
+MODBUS_BIT(5) = 0 '保存数据 按钮复归
+print "写入数据到FLASH"
+radius = MODBUS_IEEE(2)
+length = MODBUS_IEEE(4)
+FLASH_WRITE 0,radius,length '往扇区0写入数据
+ENDIF
+WEND
+END
+'**********加工运动模块*********
+movetask: '运行画圆弧+跑道的任务
+run_state =1 '进入运行状态
+MODBUS_REG(0) = run_state
+radius = MODBUS_IEEE(2) '读取半径
+length = MODBUS_IEEE(4) '读取长度
+TRIGGER
+BASE(0,1) '选定 X Y轴
+MOVEABS(0,0)
+MOVE(length,0) '从原点开始走跑道轨迹
+MOVECIRC(0,radius*2,0,radius,0)
+MOVE(-length,0)
+MOVECIRC(0,-radius*2,0,-radius,0)
+WAIT IDLE(0)
+run_state = 0 '进入待机状态
+MODBUS_REG(0) = run_state
+END
+'**********回零任务*********
+home_task:
+TRACE "enter home task"
+5 19
+===== PDF page 538 =====
+Zbasic编程手册 V3.3.0
+run_state = 2 '回零标志
+MODBUS_REG(0) = run_state '显示状态
+TRIGGER
+BASE(0,1)
+CANCEL(2) AXIS(0) '先轴0,轴1停止
+CANCEL(2) AXIS(1)
+WAIT IDLE(0)
+WAIT IDLE(1)
+'DATUM(3) AXIS(0) '实际设备轴0的归零
+'DATUM(3) AXIS(1) '实际设备轴1的归零
+MOVEABS(0) AXIS(0) '虚拟设备轴0的归零
+MOVEABS(0) AXIS(1) '虚拟设备轴1的归零
+WAIT IDLE(0)
+MODBUS_BIT(1000)=1 '设置轴0已归零的标志
+WAIT IDLE(1)
+MODBUS_BIT(1001)=1 '设置轴1已归零的标志
+home_done = 1
+TRACE "home task done"
+run_state = 0 '回到待机状态
+MODBUS_REG(0) = run_state
+END
+'**********手动运动*********
+guidetask:
+WHILE 1
+IF run_state = 0 THEN '判断是否处于停止状态
+BASE(0)
+IF MODBUS_BIT(10) = 1 THEN '左
+MODBUS_BIT(10) = 0
+VMOVE(-1)
+ELSEIF MODBUS_BIT(11) = 1 THEN '右
+MODBUS_BIT(11) = 0
+VMOVE(1)
+ELSEIF MTYPE = 10 OR MTYPE = 11 THEN '非VMOVE运动
+CANCEL(2)
+ENDIF
+BASE(1)
+IF MODBUS_BIT(20) = 1 THEN '左
+MODBUS_BIT(20) = 0
+VMOVE(-1)
+ELSEIF MODBUS_BIT(21) = 1 THEN '右
+MODBUS_BIT(21) = 0
+VMOVE(1)
+ELSEIF MTYPE = 10 OR MTYPE = 11 THEN '非VMOVE运动
+CANCEL(2)
+ENDIF
+ENDIF
+5 20
+===== PDF page 539 =====
+Zbasic编程手册 V3.3.0
+DELAY(100)
+WEND
+END
+自定义网口通讯
+OPEN #11, "TCP_SERVER",10 '使用自定义网口通道2，作为主端，端口号10
+GLOBAL DIM tempchar
+GLOBAL CONST datamax=20
+GLOBAL DIM datanum
+datanum=0
+GLOBAL DIM DATA(datamax)
+STOPTASK 1
+RUNTASK 1,aaa
+WHILE 1
+tempchar = 0 '清除之前的字符
+GET #11,tempchar '获取单个字符到 tempchar
+PRINT tempchar '打印出字符的ASCII码
+DATA(datanum) = tempchar '保存到数组
+datanum = datanum + 1
+IF datanum = datamax THEN '超过数组空间
+datanum = 0
+FOR i = 0 TO datamax-1 '清除数组空间内容
+DATA(i) = 0
+NEXT
+ENDIF
+IF tempchar = 59 THEN '号终止位
+PRINT #11,"ok1245"
+ENDIF
+DELAY(10)
+WEND
+END
+SUB aaa()
+WHILE 1
+tempchar = 0 '清除之前的字符
+GET #10,tempchar '获取单个字符到 tempchar
+PRINT tempchar '打印出字符的ASCII码
+DATA(datanum) = tempchar '保存到数组
+datanum = datanum + 1
+IF datanum = datamax THEN '超过数组空间
+datanum = 0
+FOR i = 0 TO datamax-1 '清除数组空间内容
+DATA(i) = 0
+NEXT
+ENDIF
+IF tempchar = 59 THEN '号终止位
+PRINT #10,"aaaaaaaaaa"
+ENDIF
+WEND
+5 21
+===== PDF page 540 =====
+Zbasic编程手册 V3.3.0
+END SUB
+控制器之间通讯
+最新固件支持此功能，将主端和从端程序分别下载到不同的控制器中，用网线连接控制器的网口（可通过
+交换机）。
+''''''''''''''''''''''''主端控制器
+DIM i,j,lasttick
+MODBUS_REG(j)=0
+MODBUSM_DES2($1 , 20, "192.168.0.11") '控制器IP不能相同
+WHILE 1
+lasttick=TICKS
+FOR i =0 TO 9999
+MODBUS_REG(0) = i
+MODBUSM_REGSET(0,1,0)
+MODBUS_REG(0) = 99
+MODBUSM_REGGET(0,1,0)
+IF MODBUS_REG(0) <> i THEN PRINT "MODBUS_REG(0)=" MODBUS_REG(0),
+"MODBUSM_STATE=" MODBUSM_STATE
+NEXT
+?lasttick-TICKS
+WEND
+END
+''''''''''''''''''''''''从端控制器
+DIM j
+ADDRESS=1
+MODBUS_REG(j)=0
+WHILE 1
+IF MODBUS_REG(0) <> 0 then
+SPEAKOUT(100)
+ENDIF
+WEND
+END
+自定义串口通讯和字符串使用
+SETCOM(38400,8,1,0,0,0) '配置串口为RAM模式
+DIM TEMPVAR '定义变量
+DIM VALUE
+DIM CHLIST(10) '定义数组
+FOR i=0 TO 9
+GET #0, TEMPVAR '从通道0读取数据
+CHLIST(i)=TEMPVAR '读取的数据依次存储到数组
+NEXT
+TRACE CHLIST '调试
+VALUE = VAL(CHLIST) '转成变量
+PRINT #0, TOSTR(VALUE) '转成字符串输出
+5 22
+===== PDF page 541 =====
+Zbasic编程手册 V3.3.0
+18.3. 总线初始化
+EtherCAT 初始化程序
+使用要求：控制器带EtherCAT接口，伺服驱动器必须支持EtherCAT总线，ZDevelop需要2.5以上版本。
+此初始化程序只进行了总线使能操作，轴的脉冲当量、轴速度、运动轨迹需要在上位机进行设置。
+''''''''''''''''''''''''初始化准备
+RAPIDSTOP(2)
+WAIT IDLE
+FOR i=0 to 10 '取消原来的总线轴设置
+ATYPE(i)=0
+NEXT
+''''''''''''''''''''''''EtherCAT总线初始化
+SLOT_SCAN(0) '开始扫描
+IF RETURN THEN
+?"总线扫描成功","连接设备数："NODE_COUNT(0)
+?
+?"开始映射轴号"
+AXIS_ADDRESS(0)=0+1 '映射轴号
+ATYPE(0)=65 'EtherCAT类型
+'65位置控制，66速度控制，67力矩控制
+DRIVE_PROFILE(0)= -1 '伺服PDO功能
+'ATYPE=66时设置DRIVE_PROFILE=20
+'ATYPE=67时设置DRIVE_PROFILE=30
+DISABLE_GROUP(0) '每轴单独分组
+?"轴号映射完成"
+DELAY (100)
+SLOT_START(0) '总线开启
+IF RETURN THEN
+?"总线开启成功"
+?"开始清除驱动器错误(根据驱动器数据字典设置)"
+DRIVE_CONTROLWORD(0)=0 '配合伺服清除错误
+DELAY (10)
+DRIVE_CONTROLWORD(0)=128 'bit7=1强制伺服清除错误
+DELAY (10)
+DRIVE_CONTROLWORD(0)=0 '配合伺服清除错误
+DELAY (10)
+DATUM(0) '清除控制器所有轴错误
+DELAY (100)
+?"轴使能准备"
+AXIS_ENABLE(0)=1 '轴0使能
+WDOG=1 '使能总开关
+?"轴使能完成"
+ELSE
+?"总线开启失败"
+ENDIF
+5 23
+===== PDF page 542 =====
+Zbasic编程手册 V3.3.0
+ELSE
+?"总线扫描失败"
+ENDIF
+END
+Rtex 初始化程序
+使用要求：控制器带RTEX接口，采用松下RTEX伺服驱动器。
+RAPIDSTOP(2)
+WAIT IDLE
+FOR i=0 TO 10 '取消原来的总线轴设置
+ATYPE(i)=0
+NEXT
+SLOT_SCAN(0) '开始扫描
+IF RETURN THEN
+?"总线扫描成功","连接设备数："NODE_COUNT(0)
+?"开始映射轴号"
+AXIS_ADDRESS(0)=0+1 '映射轴号
+ATYPE(0)=50 'Rtex类型，50位置控制，51速度控制，52力矩控制
+DRIVE_PROFILE(0)=1 '伺服带IO映射
+DISABLE_GROUP(0) '每轴单独分组
+?"轴号映射完成"
+DELAY (100)
+SLOT_START(0) '总线开启
+IF RETURN THEN
+?"总线开启成功"
+DRIVE_CLEAR(0) '清除RTEX总线远程轴错误
+DATUM(0) '清除控制器错误
+DELAY (100)
+?"轴使能准备"
+AXIS_ENABLE(0)=1 '轴0使能
+WDOG=1 '使能总开关
+?"轴使能完成"
+ELSE
+?"总线开启失败"
+ENDIF
+ELSE
+?"总线扫描失败"
+ENDIF
+END
+5 24
+===== PDF page 543 =====
+Zbasic编程手册 V3.3.0
+第十九章 错误与调试
+控制器在使用过程中，因为接线不对、程序逻辑问题、指令使用错误等各种原因，会出现电机没有按
+照设定轨迹运行、控制器报错等各种问题。
+如何来排查原因和解决问题，第一原则是关闭其他软件，使用ZDevelop软件排查，需要熟练使用以下
+功能：手动运动调试、断点调试、示波器抓取、寄存器查看、在线命令发送、程序打印信息、IO 口快速检
+测。
+19.1. 常见问题列表
+现象 排查方法
+电机不动 手动运动调试
+触摸屏寄存器数据值不对 寄存器查看
+没有按照程序预期运行 断点调试+打印程序信息
+输入输出口不起作用 IO口快速检测
+机台抖动大 示波器抓取
+问题排查
+程序报错先排查程序问题：
+当程序运动出错后，ZDevelop 软件会显示出错信息，如果出错信息没有看到，可以通过命令行输
+入?*task再次查看出错信息，双击出错信息可以自动切换到程序出错位置。下表中未找到对应代码的，请查
+看“错误码列表”章节。
+问题 可能原因
+2043:Unknown function is met 不认识的标识符，控制器不支持的功能
+stop of error:2049 ①部分命令必须占用一整行
+Line not ended. ②GSUB调用不需要括号()
+stop of error:2033 ①未定义的变量或数组
+Unknown label is met ②未定义的SUB过程
+③有定义数组，但是定义的语句没有执行到，可能是对
+应文件没有设置自动运行
+2048:Function can only be used in expression 函数必须返回值，不用在一行的开头地方
+2064:Param few 函数参数过少
+2063:Param too many 函数参数过多
+2072:Need = sign 未写“=”号
+2060:Syntax format error 指令语法错误
+error:1010 重复暂停
+error:1011 没有运动，无法暂停
+程序运行错误解决后，仍然不能正常运行，若电机不动，再检查以下设置。
+5 25
+===== PDF page 544 =====
+Zbasic编程手册 V3.3.0
+1．驱动器原因：
+驱动器的出厂设置一般没有反转IO电平，会导致驱动器限位报警，要根据驱动器手册设置限位电平反
+转。比如松下伺服要将Pr4.01、Pr4.02的参数分别设置为010101h（65793）、020202h（131586）。其他品
+牌驱动器请根据相关驱动器手册操作。
+位置控制/全闭环控制
+对应参数 出厂设置值（10进制）
+信号名称 逻辑
+Pr4.00 00323232h（3289650） SI-MON5 常开（ON）
+Pr4.01 00818181h（8487297） POT 常闭（NC）
+Pr4.02 00828282h（8553090） NOT 常闭（NC）
+设定值
+信号名称 记号
+常开（ON） 常闭（NC）
+无效 - 00h 设定不可
+正方向驱动禁止输入 POT 01h 81h
+负方向驱动禁止输入 NOT 02h 82h
+2．程序可能原因：
+1）UNITS设置过小，电机运动极为缓慢。肉眼无法分辨。
+2）电机处于异常状态（限位、报警…），无法运动，打印AXISSTATUS的值判断。
+3）电机接线错误，发出脉冲无法正确传递。
+4）轴使能OP口未打开（伺服电机才需要打开）。
+5）程序处理使得电机无法运动，下载空程序确认。
+6）驱动器报警。
+以下原因为总线轴才会出现：
+7）总线扫描、开启失败，打印返回值确认。
+8）未打开WDOG总使能、AXIS_ENABLE轴使能指令。
+9）驱动器状态设置错误，具体查看驱动器手册。
+3．问题排查步骤：
+1）使用ZDevelop软件进行问题排查。
+2）关闭除ZDevelop的其他连接控制器的软件、程序等，避免外部因素影响。
+3）使用ZDevelop下载一个空程序到控制器，避免内部因素影响。
+4）打开ZDevelop的“视图”-“手动运动”和“视图”-“轴参数”，便于操作和查看。
+5）脉冲轴按照下方步骤进行排查。
+5 26
+===== PDF page 545 =====
+Zbasic编程手册 V3.3.0
+手动运动
+轴ATYPE改为1 问题出在程序中。重新
+或7，重新排查 电机是否转动 转动 选择程序到控制器，进
+入调试状态，单步调试
+为0 不转
+轴AXISSTATUS 不变 改变 轴对应使能OP口是否 打开后重新
+轴DPOS是否改变 未打开
+是否为0 已发出脉冲 已发出脉冲 打开（伺服才用） 排除
+不为0 已打开
+Zbasic文档查看 电机是否有
+AXISSTATUS指令，根 检查电机接线 无 编码器
+据轴状态确定问题并
+处理，然后用在线命
+令输入DATUM(0)清除
+是 有
+错误后重新排查
+电机轴对应编码器轴
+不变
+轴ATTYPE是否为1或7 MPOS是否改变（编码器轴
+电机未动
+ATYPE设为3或6）
+否 改变，电机在运动
+ATYPE设成1或7 此时电机运动极为缓慢，肉眼无
+重新排查 法分辨，将轴UNITS设大即可
+电机只能单向运动，可能原因：
+1．电机处于限位状态，查看AXISSTATUS确认。
+2．电机控制模式不对，INVERT_STEP设置为相应模式（双脉冲或脉冲+方向）。
+3．电机接线问题，确认接线。
+19.2. 解决办法
+手动运动调试
+手动运动可以排查电机接线问题。
+关闭所有除ZDevelop的软件，同时使用ZDevelop连接控制器，下载空程序，并在“视图”-“轴参数”
+中选择轴号，手动设置好轴类型ATYPE、脉冲当量UNITS、、加速度ACCEL、减速度DECEL、速度SPEED，
+然后打开“视图”-“手动运动”，手动操作电机。（下图为ZDevelop V3.00.01版本）
+5 27
+===== PDF page 546 =====
+Zbasic编程手册 V3.3.0
+操作方法：按住“左”/“右”不放，电机持续运动，松开停止。“指令位置”显示当前发出的脉冲DPOS
+（单位为 UNITS）。填写“距离”参数，点击“运动”，勾选“绝对”时，电机运动到距离参数位置；不
+勾选“绝对”时，电机按距离参数继续运动。
+“左”“右”操作时可能会出现的问题及解决办法：
+1．电机不动，但DPOS改变。
+此时控制器脉冲已发出，检查驱动器有无报警、电机接线。
+也可能是UNITS设置过小，电机在转动，但是转动不明显。
+2．电机只往一个方向转动。
+查看电机控制方式，目前控制器脉冲轴只能用双脉冲和脉冲+方向两轴控制模式，不可使用正交脉冲控
+制。
+3．只操作某一边时电机才转动。
+检查电机接线。
+电机当前控制模式与控制器当前控制模式不同，控制器默认为脉冲+方向控制，使用INVERT_STEP指
+令可以修改。
+4．电机不动，DPOS也不改变。
+检查轴参数AXISSTATUS是否报警。
+断点调试
+断点调试可以查看程序运行的具体过程，主要用于判断程序逻辑错误。配合监视内容可以查看程序每
+执行一步对寄存器、变量、数组等的影响。调试程序和控制器程序必须一致。
+断点快捷键F9添加，可以添加多个，调试完毕后将所有断点移除后再次下载程序到控制器运行。
+对于使用ZDevelop软件开发的程序，连接好控制器，点击“调试”-“启动/停止调试”进入调试状态。
+详情参见“程序调试”章节。
+此时可以查看个任务运行情况、监视内容、子函数调用过程、子函数局部变量值。
+5 28
+===== PDF page 547 =====
+Zbasic编程手册 V3.3.0
+示波器抓取
+示波器可以抓取各类数据，数据具体种类查看“视图”-“示波器”-“数据源”。
+示波器抓取一般用来判断电机实际运行速度和实际位置。
+XY模式可以查看二维的路径轨迹，需要将前两个通道的“数据源”设置为DPOS或MPOS。具体使用
+方法查看“示波器的使用”章节。
+机台实际运行抖动大时，可以用示波器抓取编码器 MSPEED，查看波形是否光滑；如果光滑说明脉冲
+发送平稳，此时查看速度曲线加减速过程是否过陡，匀速时速度值是否过大。
+寄存器查看
+使用Zdevelop软件可以方便的查看寄存器的数据，点击“视图”-“寄存器”查看。寄存器种类有IN、
+OP、MODBUS_4X、MODBUS_0X、TABLE、VR、AIN、AOUT。
+5 29
+===== PDF page 548 =====
+Zbasic编程手册 V3.3.0
+必须支持PLC功能的控制器才能使用。
+比如出现触摸屏某个寄存器参数没有按照预期变化时，此时可直接查看触摸屏对应的寄存器类型及编
+号，确认控制器中此寄存器数值有无变化。如果变化，说明控制器与触摸屏通讯出现问题，检查接线和通
+讯参数设置；如果无变化，说明程序执行有问题，断点调试检查程序执行是否正确。
+在线发送命令
+在线命令可以实时执行发送的指令，一般用于直接判断控制器指令功能是否正常。
+比如程序已经执行，但实际电机没有按照程序预设功能运行，无法确定是否是程序中其他任务或流程
+影响，还是控制器功能错误。此时就可以下载空程序到控制器，然后直接在线命令发送功能指令，观察现
+象即可判断问题原因。
+打印程序信息
+在各段程序间打印信息，可以方便的查看程序段是否执行，执行了几次，执行时对应的参数是什么。
+打印指令为PRINT，也可以使用简写“?”（注意是英文符号）。
+5 30

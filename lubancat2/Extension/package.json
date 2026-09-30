@@ -1,0 +1,636 @@
+{
+  "name": "kinex-debug",
+  "displayName": "Kine-X 调试",
+  "description": "Kine-X 控制器在线调试上位机：脚本下载/运行、变量监视、状态面板（对接 docs/planA/13 调试通道）",
+  "version": "0.8.17",
+  "publisher": "kine-x",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Debuggers",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "kine-x",
+    "zmc",
+    "zbasic",
+    "ethercat",
+    "controller",
+    "debug"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:kx-basic",
+    "onLanguage:kx-lua",
+    "onCommand:kine-x.connect",
+    "onCommand:kine-x.disconnect",
+    "onCommand:kine-x.sync.local",
+    "onCommand:kine-x.sync",
+    "onCommand:kine-x.ip.set",
+    "onCommand:kine-x.sysInfo",
+    "onCommand:kine-x.cmd",
+    "onCommand:kine-x.download",
+    "onCommand:kine-x.downloadAndRun",
+    "onCommand:kine-x.run",
+    "onCommand:kine-x.stop",
+    "onCommand:kine-x.panel.refresh",
+    "onCommand:kine-x.curve.open",
+    "onCommand:kine-x.axis.open",
+    "onCommand:kine-x.modbus.open",
+    "onDebugResolve:kine-x",
+    "onDebugDynamicConfigurations:kine-x",
+    "onView:kine-x.console",
+    "onView:kine-x.files",
+    "onCommand:kine-x.files.refresh",
+    "onCommand:kine-x.files.pullAll",
+    "onCommand:kine-x.files.pull",
+    "onCommand:kine-x.files.delete",
+    "onCommand:kine-x.files.setMain",
+    "onCommand:kine-x.files.clearMain",
+    "onCommand:kine-x.restart",
+    "onCommand:kine-x.portMax",
+    "onCommand:kine-x.comm.open"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "kx-basic",
+        "aliases": [
+          "Kine-X BASIC",
+          "kx-basic"
+        ],
+        "extensions": [
+          ".bas"
+        ],
+        "configuration": "./language-configuration/kx-basic.json"
+      },
+      {
+        "id": "kx-lua",
+        "aliases": [
+          "Kine-X Lua",
+          "kx-lua"
+        ],
+        "extensions": [
+          ".lua"
+        ],
+        "configuration": "./language-configuration/kx-lua.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "kx-basic",
+        "scopeName": "source.kx-basic",
+        "path": "./syntaxes/kx-basic.tmLanguage.json"
+      },
+      {
+        "language": "kx-lua",
+        "scopeName": "source.kx-lua",
+        "path": "./syntaxes/kx-lua.tmLanguage.json"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "kine-x",
+          "title": "Kine-X",
+          "icon": "media/kine-x.svg"
+        }
+      ]
+    },
+    "views": {
+      "kine-x": [
+        {
+          "id": "kine-x.console",
+          "name": "控制台",
+          "contextualTitle": "Kine-X 控制台",
+          "type": "webview"
+        },
+        {
+          "id": "kine-x.files",
+          "name": "控制器文件",
+          "contextualTitle": "Kine-X 控制器文件"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "kine-x.connect",
+        "title": "连接控制器",
+        "category": "Kine-X 控制器",
+        "icon": "$(plug)"
+      },
+      {
+        "command": "kine-x.disconnect",
+        "title": "断开连接",
+        "category": "Kine-X 控制器",
+        "icon": "$(debug-disconnect)"
+      },
+      {
+        "command": "kine-x.sync.local",
+        "title": "本地同步（旧版，已由「同步」取代）",
+        "category": "Kine-X 控制器",
+        "icon": "$(repo-sync)"
+      },
+      {
+        "command": "kine-x.sync",
+        "title": "同步：控制器文件拉取到工作区",
+        "category": "Kine-X 控制器",
+        "icon": "$(repo-sync)"
+      },
+      {
+        "command": "kine-x.download",
+        "title": "下载到控制器",
+        "category": "Kine-X 控制器",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "kine-x.ip.set",
+        "title": "修改IP地址（含端口）",
+        "category": "Kine-X 控制器",
+        "icon": "$(globe)"
+      },
+      {
+        "command": "kine-x.downloadAndRun",
+        "title": "下载并运行",
+        "category": "Kine-X 调试",
+        "icon": "$(play)"
+      },
+      {
+        "command": "kine-x.run",
+        "title": "运行脚本",
+        "category": "Kine-X 调试",
+        "icon": "$(debug-start)"
+      },
+      {
+        "command": "kine-x.stop",
+        "title": "停止脚本",
+        "category": "Kine-X 调试",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "kine-x.engine.basic",
+        "title": "脚本语言环境：Basic",
+        "category": "Kine-X 控制器",
+        "icon": "$(symbol-variable)"
+      },
+      {
+        "command": "kine-x.engine.lua",
+        "title": "脚本语言环境：Lua",
+        "category": "Kine-X 控制器",
+        "icon": "$(symbol-variable)"
+      },
+      {
+        "command": "kine-x.curve.open",
+        "title": "打开实时曲线",
+        "category": "Kine-X 调试",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "kine-x.axis.open",
+        "title": "打开轴状态面板",
+        "category": "Kine-X 调试",
+        "icon": "$(table)"
+      },
+      {
+        "command": "kine-x.modbus.open",
+        "title": "打开 Modbus 寄存器面板",
+        "category": "Kine-X 调试",
+        "icon": "$(book)"
+      },
+      {
+        "command": "kine-x.comm.open",
+        "title": "通讯状态",
+        "category": "Kine-X 控制器",
+        "icon": "$(radio-tower)"
+      },
+      {
+        "command": "kine-x.sysInfo",
+        "title": "显示控制器信息",
+        "category": "Kine-X 调试",
+        "icon": "$(info)"
+      },
+      {
+        "command": "kine-x.cmd",
+        "title": "执行设备命令",
+        "category": "Kine-X 调试",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "kine-x.panel.refresh",
+        "title": "刷新状态面板",
+        "category": "Kine-X 调试",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "kine-x.files.refresh",
+        "title": "刷新控制器文件",
+        "category": "Kine-X 调试",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "kine-x.files.pullAll",
+        "title": "全部拉取到工作区",
+        "category": "Kine-X 调试",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "kine-x.files.pull",
+        "title": "拉取到工作区",
+        "category": "Kine-X 调试",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "kine-x.files.delete",
+        "title": "删除控制器文件",
+        "category": "Kine-X 调试",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "kine-x.restart",
+        "title": "重启控制器",
+        "category": "Kine-X 调试",
+        "icon": "$(debug-restart)"
+      },
+      {
+        "command": "kine-x.portMax",
+        "title": "修改端口数量",
+        "category": "Kine-X 控制器",
+        "icon": "$(server-process)"
+      },
+      {
+        "command": "kine-x.files.setMain",
+        "title": "设为主文件（开机运行）",
+        "category": "Kine-X 调试",
+        "icon": "$(star-full)"
+      },
+      {
+        "command": "kine-x.files.clearMain",
+        "title": "取消主文件",
+        "category": "Kine-X 调试",
+        "icon": "$(star-empty)"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "kine-x.connect"
+        },
+        {
+          "command": "kine-x.disconnect"
+        },
+        {
+          "command": "kine-x.sync.local"
+        },
+        {
+          "command": "kine-x.sync"
+        },
+        {
+          "command": "kine-x.download"
+        },
+        {
+          "command": "kine-x.ip.set"
+        },
+        {
+          "command": "kine-x.downloadAndRun"
+        },
+        {
+          "command": "kine-x.run"
+        },
+        {
+          "command": "kine-x.stop"
+        },
+        {
+          "command": "kine-x.engine.basic"
+        },
+        {
+          "command": "kine-x.engine.lua"
+        },
+        {
+          "command": "kine-x.curve.open"
+        },
+        {
+          "command": "kine-x.axis.open"
+        },
+        {
+          "command": "kine-x.modbus.open"
+        },
+        {
+          "command": "kine-x.comm.open"
+        },
+        {
+          "command": "kine-x.sysInfo"
+        },
+        {
+          "command": "kine-x.cmd"
+        },
+        {
+          "command": "kine-x.panel.refresh"
+        },
+        {
+          "command": "kine-x.restart"
+        },
+        {
+          "command": "kine-x.portMax"
+        },
+        {
+          "command": "kine-x.files.refresh"
+        },
+        {
+          "command": "kine-x.files.pullAll"
+        },
+        {
+          "command": "kine-x.files.pull",
+          "when": "false"
+        },
+        {
+          "command": "kine-x.files.delete",
+          "when": "false"
+        },
+        {
+          "command": "kine-x.files.setMain",
+          "when": "false"
+        },
+        {
+          "command": "kine-x.files.clearMain",
+          "when": "false"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "kine-x.files.refresh",
+          "when": "view == kine-x.files",
+          "group": "navigation@1"
+        },
+        {
+          "command": "kine-x.files.pullAll",
+          "when": "view == kine-x.files",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "kine-x.files.pull",
+          "when": "view == kine-x.files && (viewItem == kxFile || viewItem == kxMainFile)",
+          "group": "inline@1"
+        },
+        {
+          "command": "kine-x.files.setMain",
+          "when": "view == kine-x.files && viewItem == kxFile",
+          "group": "inline@2"
+        },
+        {
+          "command": "kine-x.files.clearMain",
+          "when": "view == kine-x.files && viewItem == kxMainFile",
+          "group": "inline@2"
+        },
+        {
+          "command": "kine-x.files.delete",
+          "when": "view == kine-x.files && (viewItem == kxFile || viewItem == kxMainFile)",
+          "group": "inline@3"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "kine-x.downloadAndRun",
+          "when": "resourceLangId == kx-basic || resourceLangId == kx-lua",
+          "group": "navigation@1"
+        },
+        {
+          "command": "kine-x.download",
+          "when": "resourceLangId == kx-basic || resourceLangId == kx-lua",
+          "group": "navigation@2"
+        },
+        {
+          "command": "kine-x.stop",
+          "when": "resourceLangId == kx-basic || resourceLangId == kx-lua",
+          "group": "navigation@3"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "kine-x.downloadAndRun",
+          "when": "resourceLangId == kx-basic || resourceLangId == kx-lua",
+          "group": "kine-x@1"
+        },
+        {
+          "command": "kine-x.download",
+          "when": "resourceLangId == kx-basic || resourceLangId == kx-lua",
+          "group": "kine-x@2"
+        }
+      ]
+    },
+    "breakpoints": [
+      {
+        "language": "kx-basic"
+      },
+      {
+        "language": "kx-lua"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "kine-x",
+        "label": "Kine-X 控制器（调试通道）",
+        "languages": [
+          "kx-basic",
+          "kx-lua"
+        ],
+        "configurationAttributes": {
+          "launch": {
+            "required": [],
+            "properties": {
+              "host": {
+                "type": "string",
+                "default": "192.168.1.11",
+                "description": "控制器调试通道地址（覆盖 kine-x.host）。"
+              },
+              "port": {
+                "type": "number",
+                "default": 5000,
+                "description": "调试通道端口（对应控制器 DEBUG_PORT）。"
+              },
+              "token": {
+                "type": "string",
+                "default": "",
+                "description": "可选首帧鉴权 token（docs/planA/13 §4.5）。"
+              },
+              "engine": {
+                "type": "string",
+                "enum": [
+                  "basic",
+                  "lua"
+                ],
+                "description": "脚本引擎；缺省按 program 扩展名推断（D-03）。"
+              },
+              "program": {
+                "type": "string",
+                "default": "",
+                "description": "要运行的脚本文件（.bas / .lua）。留空则用当前打开的脚本文件。"
+              },
+              "stopOnEntry": {
+                "type": "boolean",
+                "default": true,
+                "description": "启动前先停在入口，便于在变量视图查看/预置变量；关掉则直接运行。"
+              },
+              "waitBus": {
+                "type": "boolean",
+                "default": true,
+                "description": "运行前等待总线就绪（对应 SCRIPT_WAIT_BUS）。"
+              },
+              "maxSteps": {
+                "type": "number",
+                "default": 5000000,
+                "description": "步数预算（对应 SCRIPT_MAX_STEPS）。"
+              },
+              "trace": {
+                "type": "boolean",
+                "default": false,
+                "description": "跟踪打印（对应 SCRIPT_TRACE）。"
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "kine-x",
+            "request": "launch",
+            "name": "Kine-X 控制器调试",
+            "host": "192.168.1.11",
+            "port": 5000,
+            "engine": "basic",
+            "program": "${workspaceFolder}/demo.bas",
+            "stopOnEntry": true,
+            "waitBus": true,
+            "maxSteps": 5000000,
+            "trace": false
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "Kine-X: 启动调试（调试通道）",
+            "description": "经调试通道连接控制器并运行脚本",
+            "body": {
+              "type": "kine-x",
+              "request": "launch",
+              "name": "Kine-X 控制器调试",
+              "host": "^\"\\${1:192.168.1.11}\"",
+              "port": 5000,
+              "engine": "basic",
+              "program": "^\"\\${workspaceFolder}/${2:demo.bas}\"",
+              "stopOnEntry": true,
+              "waitBus": true,
+              "maxSteps": 5000000,
+              "trace": false
+            }
+          }
+        ]
+      }
+    ],
+    "configuration": {
+      "title": "Kine-X 调试",
+      "properties": {
+        "kine-x.host": {
+          "type": "string",
+          "default": "192.168.1.11",
+          "order": 1,
+          "description": "调试通道地址（控制器业务网 IP，DebugServer 是板端服务端；见 docs/planA/13 §4.5）。"
+        },
+        "kine-x.debugPort": {
+          "type": "number",
+          "default": 5000,
+          "order": 2,
+          "description": "调试通道端口（对应控制器 config/app.conf 的 DEBUG_PORT）。"
+        },
+        "kine-x.token": {
+          "type": "string",
+          "default": "",
+          "order": 3,
+          "description": "可选鉴权 token（连接首帧校验，见 docs/planA/13 §4.5）。留空则不鉴权。"
+        },
+        "kine-x.engine": {
+          "type": "string",
+          "enum": [
+            "basic",
+            "lua"
+          ],
+          "default": "basic",
+          "order": 4,
+          "description": "脚本引擎（basic | lua）。控制器同一时刻只加载一种语言，见 engine_rule.h。"
+        },
+        "kine-x.sshForward": {
+          "type": "boolean",
+          "default": false,
+          "order": 5,
+          "description": "启用 SSH 端口转发提示（远程访问时生成 ssh -L 命令）。"
+        },
+        "kine-x.subscribeHz": {
+          "type": "number",
+          "default": 20,
+          "order": 6,
+          "description": "状态订阅频率（Hz）。默认 20Hz，过高会增加无效刷新。"
+        },
+        "kine-x.axisRefreshHz": {
+          "type": "number",
+          "default": 10,
+          "order": 7,
+          "description": "轴状态面板刷新率（Hz）。2~20，默认 10；订阅仍按 subscribeHz，面板只按此频率重绘（过高会晃眼）。"
+        },
+        "kine-x.modbusRefreshHz": {
+          "type": "number",
+          "default": 10,
+          "order": 8,
+          "description": "Modbus 寄存器面板刷新率（Hz）。2~20，默认 10；订阅仍按 subscribeHz，面板只按此频率增量重绘。"
+        },
+        "kine-x.autoReconnect": {
+          "type": "boolean",
+          "default": true,
+          "order": 9,
+          "description": "意外断线后自动重连（指数退避 2/5/10/20/30s）。主动断开连接或停止调试交接时不触发。"
+        },
+        "kine-x.showRawProtocol": {
+          "type": "boolean",
+          "default": false,
+          "order": 7,
+          "description": "在输出面板显示原始 JSON-Lines 报文（排查协议问题时开启）。"
+        },
+        "kine-x.requestTimeoutMs": {
+          "type": "number",
+          "default": 5000,
+          "order": 8,
+          "description": "单条 RPC 请求的超时（毫秒）。"
+        }
+      }
+    },
+    "snippets": [
+      {
+        "language": "kx-basic",
+        "path": "./snippets/kx-basic.code-snippets"
+      },
+      {
+        "language": "kx-lua",
+        "path": "./snippets/kx-lua.code-snippets"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "gen:commands": "node tools/gen-commands.mjs",
+    "mock": "node tools/mock-debug-server.mjs",
+    "test:smoke": "node test/connection.smoke.cjs",
+    "package": "vsce package --no-dependencies",
+    "install:vsix": "bash tools/install-vsix.sh",
+    "uninstall:vsix": "bash tools/install-vsix.sh --uninstall",
+    "publish:ovsx": "bash tools/publish-ovsx.sh",
+    "dist:vscodium": "bash tools/vscodium/build-vscodium.sh",
+    "lint": "tsc -p ./ --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.4.5"
+  }
+}

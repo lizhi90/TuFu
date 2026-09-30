@@ -1,0 +1,18 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "kine-x",
+      "request": "launch",
+      "name": "Kine-X 控制器调试",
+      "host": "192.168.1.11",
+      "port": 5000,
+      "engine": "basic",
+      "program": "${workspaceFolder}/demo.bas",
+      "stopOnEntry": true,
+      "waitBus": true,
+      "maxSteps": 5000000,
+      "trace": false
+    }
+  ]
+}

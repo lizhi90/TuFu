@@ -1,0 +1,833 @@
+===== PAGE 275 =====
+15 RL指令
+CR7 400.0 400.0 300.0 200.0 100.0 100.0
+CR12 800.0 800.0 500.0 350.0 150.0 150.0
+CR17 800.0 800.0 500.0 350.0 250.0
+CR18 800.0 800.0 500.0 350.0 150.0 150.0
+CR20 1600.0 1600.0 800.0 450.0 250.0 250.0
+CR25 1600.0 1600.0 800.0 450.0 250.0
+15.4.5 拖动回放
+15.4.5.1 ReplayPath
+对使用拖动示教进行录制的轨迹进行回放复现，可以控制回放时的运行速率。
+说明 注意：如果录制拖动轨迹速度较大，回放速率设置太大，容易触发伺服报警损伤机器，建议从低速
+率慢慢增加。
+ReplayPath path [, rate] [, wobj/tool]
+Path，数据类型：path，拖动回放路径类型，在路径列表中定义、拖动示教录制。
+Rate，数据类型：double，回放百分比，范围0.01~3.00。0.01表示按照拖动时1%运行速率回放；
+定义
+1.00表示100%运行速率原速回放；3.00表示300%运行速率回放。
+wobj/tool，数据类型：工具|工件。指定多动回放指令的末端设备是某个工具或者工件，回放时机
+器人会按照对应设备的工具更改回放的控制参数，提高运行的稳定性
+例 1
+示例 ReplayPath path , 1, tool1
+使用原始速率进行录制回放。
+15.4.6 IO指令
+15.4.6.1 SetDO
+设置某个数字输出信号的值，该指令如果放在运动指令之后使用，不会打断转弯区，在运动指令轨
+说明
+迹终点触发，或在转弯区起点触发，具体使用可参考例2
+SetDO DoName，Value
+DoName，数据类型：signaldo ，指定需要改变状态的 DO 信号名称，必须是已经在输入输出界
+定义
+面定义过的变量。
+Value，数据类型：bool ，DO信号的目标状态，仅支持 true 和 false。
+例 1
+SetDO do2，true
+将 do2 对应的数字输出点置为高电平。
+例 2
+情况1：两条带转弯区的运动指令之间使用IO指令
+示例
+MoveL p1，v1000，z50，tool0
+SetDO do2，true
+MoveL p2，v1000，z50，tool0
+此时SetDO指令在p1到p2的转弯区起点处触发。
+情况2：带转弯区运动指令之后使用IO指令，但后面不再有运动指令
+xCore控制系统使用手册 261
+===== PAGE 276 =====
+15 RL指令
+MoveL p1， v1000， z50， tool0
+SetDO do2， true
+....................................(后续没有运动指令，或者存在打断转弯区指令）
+此时SetDO指令在运动指令到达p1点后，触发执行。
+情况3：运动指令不带转弯区
+MoveL p1， v1000， fine， tool0
+SetDO do2， true
+....................................(不管后续指令是什么）
+此时SetDO指令在运动指令到达p1点后，触发执行。
+15.4.6.2 SetAllDO
+设置所有数字输出信号的值，该指令如果放在运动指令之后使用，不会打断转弯区，在运动指令轨
+说明
+迹终点触发，或在转弯区起点触发，具体使用可参考SetDO例2。
+SetAllDO Value
+定义
+Value，数据类型：bool ，DO信号的目标状态，仅支持true和false。
+例 1
+示例 SetAllDO true
+将所有数字输出电压置为高电平，绑定了系统功能的DO除外。
+15.4.6.3 SetGO
+设置某个组输出的值，该指令如果放在运动指令之后使用，不会打断转弯区，在运动指令轨迹终点
+说明
+触发，或在转弯区起点触发，具体使用可参考SetDO例2。
+SetGO GoName，Value
+GoName ，数据类型：signalgo ，指定需要改变值的 go 信号名称，必须是已经在输入输出界面
+定义
+定义过的变量。
+Value ，数据类型：int ，go 信号的目标值.注意：支持的最大值为2147483648(2的31次方)。
+例 1
+示例 SetGO go3，8
+将 go3 对应的一组物理端口的值设置为 8。
+15.4.6.4 SetAO
+设置某个模拟输出信号的值，该指令如果放在运动指令之后使用，不会打断转弯区，在运动指令轨
+说明
+迹终点触发，或在转弯区起点触发，具体使用可参考SetDO例2。
+SetAO AoName，Value
+AoName ，数据类型：signalao ，指定需要改变值的 ao 信号名称，必须是已经在输入输出界面
+定义
+定义过的变量。
+Value ，数据类型：double ，ao 信号的目标值.
+例 1
+示例 SetAO ao3，5.123
+将 ao3 对应的一组物理端口的值设置为 5.123。
+15.4.6.5 PulseDO
+262 xCore控制系统使用手册
+===== PAGE 277 =====
+15 RL指令
+用于产生一个脉冲的 DO 信号，该指令如果放在运动指令之后使用，不会打断转弯区，在运动指
+说明
+令轨迹终点触发，或在转弯区起点触发，具体使用可参考SetDO例2。
+PulseDO [\High,] [length,] signal
+[\High] ，当指令执行时，不论当前状态，始终将 signal 状态置为高（1）。
+定义
+[length] ，指定脉冲长度（0.001-2000s）。缺失时默认 0.2s。 数据类型：double 或 int
+signal ，要产生脉冲的信号。 数据类型：signaldo
+注意 PulseDO 过程中如果执行 SetDO/SetGO，PulseDO 失效，按 SetDO/SetGO 执行。
+15.4.6.6 PulseReg
+指定一个寄存器产生指定时间的一个脉冲信号，并在时间结束后恢复寄存器初值，该指令如果放在
+说明 运动指令之后使用，不会打断转弯区，在运动指令轨迹终点触发，或在转弯区起点触发，具体使用
+可参考SetDO例2。
+PulseReg Register, Value, Time
+Register，要产生脉冲信号的寄存器名称，数据类型：Bit|Bool 寄存器
+定义
+Value，指定脉冲信号的值，数据类型：Bool。
+Time ，脉冲信号的持续时间，单位秒，限制范围[0.001, 10.0]。 数据类型：double
+PulseReg 过程中如果执行WriteRegByName或者寄存器等号赋值操作，寄存器的有效值会按最后
+注意
+执行的指令生效，但是在PulseReg指定的时间结束后，会恢复执行PulseReg之前的初值。
+15.4.7 通信指令
+RL 程序中机器人与外部设备通信，支持以太网和串口两种方式。在指令集上，设计了一套统一的指令进行资源管理和数
+据收发，以提供一致的使用体验。
+指令集 TCP 客户端 TCP服务器 串口
+OpenDev Y Y Y
+SocketAccept N/A Y N/A
+CloseDev Y Y Y
+SendString Y Y Y
+SendByte Y Y Y
+ReadBit Y Y Y
+ReadByte Y Y Y
+ReadDouble Y Y N/A
+ReadInt Y Y N/A
+ReadString Y Y Y
+GetSocketConn Y N/A N/A
+GetSocketServer N/A Y N/A
+GetBufSize N/A N/A Y
+ClearBuffer N/A N/A Y
+15.4.7.1 OpenDev
+用于打开监听服务器、作为客户端发起连接、打开串口资源，取决于参数所表示的对象。
+打开SocketServer对象时，将初始化资源，并且完成端口绑定和端口监听。
+说明
+打开SocketConn对象时，机器人将作为TCP客户端，按照预设的ip和端口尝试连接外部服务器。
+打开串口资源，将按照窗口参数初始化串口，准备好通信条件。
+定义 OpenDev(name)
+xCore控制系统使用手册 263
+===== PAGE 278 =====
+15 RL指令
+name ，数据类型：string ，客户端对象或者服务端对象或者串口资源的名称
+例 1
+SocketConn scnn3 = {"192.168.0.200", 8090, "clt1", 2, "\n"}
+Try
+OpenDev("clt1") // 尝试连接远程服务器，连接成功则clt1的attr自动修改为outgoing。
+string readstr = ReadString(30, "clt1")
+..... //对readstr的逻辑处理
+string sendstr = "hello server！"
+SendString(sendstr ， "clt1") //使用clt1的客户端连接来发送数据
+... // 一系列代码
+catch(ERROR e) // ERROR错误类型，包括产生错误的文件、行号、错误码、错误内容等
+... //一系列异常处理
+Endtry
+示例
+例 2
+SocketServer listener1 = {"192.168.0.200", 8090, "svr1"}
+global pers bool exit = false
+try
+OpenDev( "svr1" ) //绑定端口、监听端口
+while(exit != true)
+SocketConn conn = SocketAccept( "svr1") //阻塞式接收连入的客户端
+Endwhile
+catch(ERROR e)
+... //一系列异常处理
+Endtry
+若发生报错，控制系统将抛出异常，并上报错误原因。如果异常没有被try代码块捕获，则控制系
+统将停止程序运行。
+15.4.7.2 SocketAccept
+说明 阻塞等待客户端连接到来，并完成客户端连接处理。该指令仅在机器人作为TCP服务器时使用
+返回值，数据类型：SocketConn，外部设备以TCP客户端形式连接上机器人后，控制系统产生一
+个通信对象，用于RL程序来控制通信读写。
+定义 SocketConn conn = SocketAccept(name)
+name，数据类型：string，已经准备好的SocketServer对象的名称，并且已经使用OpenDev打开
+成功。
+例 1
+SocketServer listener1 = {"192.168.0.200", 8090, "svr1"}
+global pers bool exit = false
+try
+OpenDev( "svr1" ) //绑定端口、监听端口
+示例
+while(exit != true)
+SocketConn conn = SocketAccept( "svr1") //阻塞式接收连入的客户端
+conn.name = "client1" // 重要！ 给通信连接起个名，否则后续难以按名称进行数据读写
+conn.suffix = "\n" //可选，设置数据包结束符
+Endwhile
+264 xCore控制系统使用手册
+===== PAGE 279 =====
+15 RL指令
+catch(ERROR e)
+... //一系列异常处理
+Endtry
+若发生报错，控制系统将抛出异常，并上报错误原因。如果异常没有被try代码块捕获，则控制系
+统将停止程序运行。
+⚫ 指令将阻塞当前任务，因此正确的使用方法是在多任务中使用，单独作为一个低优先级任务
+持续不断接收并产生通信连接对象SocketConn。
+⚫ 指令返回一个连接操作对象，并且拥有客户端连接ip和port信息，可供程序其他部分使用。
+注意
+返回的连接对象是一个 SocketConn 结构体，名称由系统随机分配。拿到连接对象以后，请
+更改连接对象的名称，避免连接丢失。
+⚫ 支持服务器一对多连接。
+15.4.7.3 CloseDev
+说明 关闭资源，可用于关闭TCP通信链接、TCP监听服务器或者串口资源
+CloseDev(name)
+定义 name，数据类型：string，用于通信的SocketConn连接、监听服务器SocketServer对象或者串口
+资源。
+例 1
+SocketConn scnn3 = {"192.168.0.200", 8090, "clt1", 2, "\n"}
+Try
+OpenDev("clt1")
+string readstr = ReadString(30, "clt1")
+..... //对readstr的逻辑处理
+string sendstr = "hello server！"
+SendString（sendstr ， "clt1"） //使用clt1的客户端连接来发送数据
+... // 一系列代码
+catch(ERROR e)
+... //一系列异常处理
+endtry
+CloseDev("clt") //无论是否发生错误，最后关闭socket客户端。
+示例
+例 2
+SocketServer listener1 = {"192.168.0.200", 8090, "svr1"}
+global pers bool exit = false
+try
+OpenDev( "svr1" ) //绑定端口、监听端口
+while(exit != true)
+SocketConn conn = SocketAccept( "svr1") //阻塞式接收连入的客户端
+conn.name = "client1" // 重要！ 给通信连接起个名，否则后续难以按名称进行数据读写
+conn.suffix = "\n" //可选，设置数据包结束符
+Endwhile
+catch(ERROR e)
+... //一系列异常处理
+Endtry
+xCore控制系统使用手册 265
+===== PAGE 280 =====
+15 RL指令
+CloseDev("client1") //关闭与外部TCP客户端通信。重要！
+CloseDev("svr1") //关闭监听服务器
+示例2中，有两个网络对象存在，必须按照顺序，先关闭通信连接，再关闭服务器对象，否则将产
+生资源释放不彻底的状态（TCP TIME_WAIT状态）。
+如果机器人做服务器时，已经与外部建立了多路通信连接，则需要在关闭服务器之前，先将这些通
+信连接依次关闭掉。
+如果发生了资源释放不彻底，需要重启控制系统才能恢复。不过不必过于担心，控制系统中允许的
+资源数量有冗余，可以保证少量的资源被占用后，依然可以正常工作。但还是需要避免大量资源因
+为使用方式不正确而处于占用状态。
+15.4.7.4 SendString
+说明 对外发送一个字符串。可以是通过网络或串口，取决于参数中的标识符所表示的硬件资源
+SendString(StringData，name)
+StringData，数据类型：string ，待发送的字符串数据。
+定义
+name ，数据类型：string ，用于发送数据的硬件资源名称，可以是建立好的 TCP 通信连接
+SocketConn对象，也可以是已经成功打开的串口资源。
+例 1
+SendString(“Hello World”，“Socket0”)
+通过 Socket0 对外发送 Hello World 字符串。 其中 Socket0 是已经定义并连接成功的
+SocketConn类型。
+示例
+例 2
+VAR String str1 =“Hello World”
+SocketSendString(str1，“Serial1”)
+通过 Serial1对外发送str1 存储的字符串 Hello World。 其中Serial1是已经定义并成功打开的串
+口。
+15.4.7.5 SendByte
+说明 对外发送一个字节 byte，在需要发送 ASCII 字符时非常有用
+SendByte(ByteData, name)
+ByteData ，数据类型：int 或 byte 或 byte 数组 ，发送一个 0~255 的无符号字节或数组，主
+定义
+要用于发送 ASCII 码。
+Name，数据类型：string ，用于发送数据的 Socket或者串口名称。
+例 1
+SendByte(13, “socket0“)
+通过 socket0 对外发送一个回车符。
+例 2
+示例
+VAR byte data1 = 13
+SendByte(data1, “serial0“)
+首先定义一个byte类型变量data1，它其实是一个回车符。然后通过serial0对外发送。
+例 3
+266 xCore控制系统使用手册
+===== PAGE 281 =====
+15 RL指令
+VAR byte data2[2] = {13,17}
+SendByte(data2, “socket0”)
+通过socket0发送一个byte类型数组变量data2。会将数组中的内容全部发出去。
+例 4
+VAR byte data2[2] = {13,17,20}
+SendByte(data2[2], “socket0”)
+通过socket0发送一个byte类型变量，该变量为data2[2]，仅表示数组中的第2个元素。此时会
+将data2[2]的值17发出去，而不会多发任何其他元素。
+15.4.7.6 ReadBit
+控制系统按 bit 接收数据。
+说明 1）通过网络通信以TCP形式接收，外部发送的数据需以SocketConn配置好的结束符结尾。
+2）通过串口通信方式接收，外部设备只需要发送数据部分即可，无需考虑结束符。
+返回值，数据类型：bool 数组，使用 bool 型数组存储接收到的 bit 数据，每一个 bit 对应一个
+bool 成员。
+Ret = ReadBit(BitNum, TimeOut, name)
+定义 BitNum ，数据类型：int ，需要读取的 bit 数量，大小应该为 8 的整数倍。
+TimeOut ，数据类型：int ，超时时间。单位 s，范围 0~86400，默认 60s。
+name ，数据类型：string，通信连接SocketConn的名称或者串口的名称。
+Ret ，数据类型：bool 数组，接收到的数据，数组第一个元素表示最低位。
+例 1
+bool groupio[16]
+groupio = ReadBit(16, 60, “Socket0”)
+示例 通过 ReadBit 指令读取 16 个 bit 的数据存储到名为 groupio 的布尔型数组中，超时时间60s。
+假设外部设备发送 ASCII 字符：95+结束符，则机器人接收到“95”。其中“9”的十六进制为 0x39，
+“5”的十六进制为0x35，因此用户接收到的数据为0x3935。此时groupio数组从[1]~[16]表示为：
+1001 1100 1010 1100。[1]是数据低位，与0x3935符合。
+15.4.7.7 ReadByte
+说明 接收一定字节的数据。注意数据之间需要使用逗号隔开
+返回值，数据类型：byte数组，使用 byte型数组存储接收到的数据。
+Ret = ReadByte(ByteNum, TimeOut, name)
+ByteNum ，数据类型：int ，需要读取的 bit 数量，大小应该为 8 的整数倍。
+定义
+TimeOut ，数据类型：int ，超时时间。单位 s，范围 0~86400，默认 60s。
+name ，数据类型：string，通信连接SocketConn的名称或者串口的名称。
+Ret ，数据类型：byte数组，接收到的数据。
+例 1
+byte rets[6] = {0,0,0,0,0,0}
+示例
+rets = ReadByte(6,60,"clt1")
+读取 6个 byte的数据存储到名为 rets的byte类型数组中，超时时间60s。
+注意外部设备的byte数据之间需要使用逗号隔开，比如发送”1,2,3,4,5,6”。
+注意 通过TCP发送数据，需要在数据后面加上预设好的结束符。
+通过串口发送数据，不需要结束符。
+xCore控制系统使用手册 267
+===== PAGE 282 =====
+15 RL指令
+15.4.7.8 ReadDouble
+通过 Socket 接收 double 型数据，外部发送的数据需以配置好的结束符结尾。
+说明
+注意，该指令仅对TCP网络通信生效，适用于机器人做客户端和服务端，但不适用于串口。
+返回值，数据类型：double数组，使用 double 型数组存储接收到的数据。
+Ret = ReadDouble(DoubleNum, TimeOut, name)
+定义 DoubleNum ，数据类型：double ，需要读取的 double 数个数，最大为 30 个。
+TimeOut ，数据类型：int ，超时时间。单位 s，范围 0~86400，默认 60s。
+name ，数据类型：string，用于接收数据的 Socket 名称。
+例 1
+double dd[10]
+示例
+dd =ReadDouble(10, 60, “Socket0”)
+读取 10 个 double 型的数据存储到名为 dd 的 double 型数组中，超时时间 60s。
+15.4.7.9 ReadInt
+通过 Socket 接收int型数据，外部发送的数据需以配置好的结束符结尾。
+说明
+注意，该指令仅对TCP网络通信生效，适用于机器人做客户端和服务端，但不适用于串口。
+返回值，数据类型：int ，使用 int 型数组存储接收到的数据。
+Ret = ReadInt(IntNum, TimeOut, name)
+定义 IntNum ，数据类型：int ，需要读取的int数个数，最大为30个。
+TimeOut ，数据类型：int ，超时时间。单位s，范围 0~86400，默认60s。
+name ，数据类型：string，用于接收数据的Socket名称。
+例 1
+int ii[10]
+示例
+ii = ReadInt(10, 60, “Socket0”)
+读取10个int型的数据存储到名为ii的int型数组中，超时时间60s。
+15.4.7.10 ReadString
+说明 读取字符串并返回，外部发送的数据需以配置好的结束符结尾
+返回值，数据类型： string，存储接收到的字符串。
+Ret = ReadString(TimeOut, name, [len])
+TimeOut ，数据类型： int ，超时时间。 单位 s， 范围 0~86400，默认 60s。
+定义
+name ，数据类型：string，用于接收数据的Socket或者串口名称。
+len，数据类型：int，可选参数，使用串口读取时才使用。由于串口中没有加入结束符的概念，因此
+需要指定长度后才能正确读取和解析。
+例 1
+VAR String str1
+str1 = ReadString(60, “Socket1”)
+从 Socket1 中接收一个字符串，并存储到 str1 中，超时时间 60s。网络通信方式。
+示例
+例 2
+VAR String str1
+str1 = ReadString(60, “serial0”,5)
+从 serial0中接收一个长度为5的字符串，并存储到 str1 中，超时时间 60s。串口通信方式。
+268 xCore控制系统使用手册
+===== PAGE 283 =====
+15 RL指令
+15.4.7.11 GetSocketConn
+从socket连接名称查找对应的socket属性集对象。该指令获取的结果可以用来进行判断和处理逻
+说明 辑。仅应该将其当作只读对象使用。该指令仅适用于通信连接（包括机器人作为客户端，或者作为
+服务端已经连接上的用于通信的通道），不适用于监听服务器和串口。
+返回值，数据类型：SocketConn，通过字面名称查找到的socket属性对象。
+Ret = GetSocketConn(name)
+name ，数据类型：string，通信连接SocketConn的名称。
+Ret，数据类型：SocketConn ，通过字面名称查找到的socket属性对象。
+可查询属性 查询方法 含义和示例
+ip地址 ret.ip 字符串，如”192.168.0.161”
+定义 端口号 ret.port 整型，如8090
+机器人做服务器：“incoming”；
+属性 ret.attr 机器人做客户端：“outgoing”；
+如果连接未建立：“”或者其他值，通常为空
+缓存大小 ret.cache 1~100
+名称 ret.name 示例为“client0”
+连接状态 ret.state closed、establish
+例 1
+SocketConn ret= GetSocketConn(“client0”)
+示例
+查找名称为“client0”的SocketConn对象。可以使用ret来获得这个连接的属性，包括ip地址、端
+口号、通信结束符、连接状态等信息。
+15.4.7.12 GetSocketServer
+从用户定名称查找对应的服务器属性集对象。该指令获取的结果可以用来进行判断和处理逻辑。仅
+说明 应该将其当作只读对象使用。该指令仅适用于监听服务器（SocketServer对象），不适用于通信连
+接（包括机器人作为客户端，或者作为服务端已经连接上的用于通信的通道）和串口。
+返回值，数据类型：SocketServer，通过字面名称查找到的服务器属性对象。
+Ret = GetSocketServer(name)
+Name，数据类型：string，通信连接SocketServer的名称。
+Ret ，数据类型：SocketServer，通过字面名称查找到的socket属性对象。
+定义
+可查询属性 查询方法 含义和示例
+ip地址 ret.ip 字符串，如”192.168.0.161”
+端口号 ret.port 整型，如8090
+名称 ret.name 示例为“svr1”
+连接状态 ret.state closed、listening、error
+例 1
+SocketServer listener1 = {"192.168.0.200", 8090, "svr1"}
+OpenDev( "svr1" ) //绑定端口、监听端口
+示例 //根据连接标识 "svr1" 获取SocketServer对象，此时ret将复制任务1中listener1的全部状态
+SocketServer ret= GetSocketServer("svr1"）
+if(ret.state == "listening") //使用SocketServer的attr属性，判断是否监听中
+//逻辑处理
+xCore控制系统使用手册 269
+===== PAGE 284 =====
+15 RL指令
+endif
+15.4.7.13 GetBufSize
+获取串口缓冲区中还剩余多少数据未读，单位为字节。指令仅适用于串口，不适用于TCP服务器和
+说明
+客户端。
+返回值，数据类型：int，缓冲区中未处理数据量，以字节为单位。
+Ret = GetBufSize(name)
+定义
+name ，数据类型：string，串口资源的字面名称。
+Ret，数据类型：int，缓冲区中未处理数据量，以字节为单位。
+例 1
+OpenDev("serial0")
+示例
+int a = GetBufSize("serial0")
+print(a)
+15.4.7.14 ClearBuffer
+说明 清除缓冲区，未读取完毕的字符将丢失。指令仅适用于串口，不适用于TCP服务器和客户端。
+Ret = ClearBuffer(name)
+定义 name ，数据类型：string，串口资源的字面名称。
+Ret ，数据类型：int，缓冲区中未处理数据量，以字节为单位。
+15.4.7.15 ReadOpcUaVarByName
+说明 通过名称读取OPC-UA自定义变量的值。
+ReadOpcUaVarByName(name, value)
+name，数据类型：string，OPC-UA自定义变量名称。
+value ，数据类型：bool/byte/int/double/string，用于存放读取到的OPC-UA自定义变量的值，
+定义
+如果value的类型与opcua变量的类型不一致，将自动转换，注意：string转换为数值类型时，都
+为0。
+无返回值。
+例 1
+int value = 0
+示例
+ReadOpcUaVarByName(“int_var”, value)
+print(value)
+15.4.7.16 WriteOpcUaVarByName
+说明 通过名称修改OPC-UA自定义变量的值。
+WriteOpcUaVarByName(name, value)
+name ,数据类型：string,OPC-UA自定义变量名称。
+定义
+value ,数据类型：bool/byte/int/double/string,OPC-UA变量的修改值，如果value的类型与opcua
+变量的类型不一致，将自动转换，注意：string转换为数值类型时，都为0。
+例 1
+int value = 0
+示例
+WriteOpcUaVarByName(“int_var”, value)
+WriteOpcUaVarByName(“int_var”, 123)
+270 xCore控制系统使用手册
+===== PAGE 285 =====
+15 RL指令
+15.4.8 网络指令
+15.4.8.1 SocketCreate（过期的）
+建立一个 Socket 连接，通过使用 Socket 指令，RL 程序可以从外部设备获取数据或者向外发送
+程序数据。 RL 语言支持同时建立多个不同的 Socket 以便于连接多个外部设备，不同 Socket 之
+间采用不同的名称来进行区分。Socket 指令是基于 TCP/IP 协议的，因此理论上任何支持 TCP/IP
+的外部设备都可以和 RL 程序通信以交换数据。所有发送给 RL Socket 指令的数据（即使用
+说明 SocketRead 系列指令接收的数据），都应该以“回车”结尾，在接收到“回车”之前的所有数据都将合
+并做为同一条数据处理。使用 Socket 功能时，机器人控制器仅支持作为 client 连接外部 server。
+最多支持创建 10 个 Socket 连接。
+注意，该指令被标注为“过期的”，为xCore控制系统1.3版本使用指令，在更高版本中依然有效，
+但不再继续维护，也不推荐继续使用。
+返回值，数据类型：bool，如果创建成功返回true，创建失败返回false
+SocketCreate（"ip_Address", Port, "Name", [Cache] [, "Terminator"]）
+ip_Address，数据类型：string定义需要连接 server 的 ipv4 地址，需使用双引号包含。
+定义 Port ，数据类型：int ，定义 server 端口号。
+Name ，数据类型：string ，定义新建 Socket 的名称，不同 Socket 之间需指定不同的名称。
+Cache ，数据类型：int，定义Socket缓存大小，通信数据存在缓存队列中，可省略。
+Terminator ，数据类型：string 定义Socket通信的结束符类型，可省略，默认是"\r"。
+例子：
+if (SocketCreate("10.0.6.11",8080,"S1",10,"\r"))
+// 创建成功
+示例
+else
+// 错误处理
+endif
+由于 TCP/IP 协议资源释放机制限制，请不要频繁调用 SocketCreate 和 SocketClose 指令，否则
+可能会造成程序运行出错。
+为避免循环模式下，频繁调用SocketCreate 和 SocketClose 指令，两条指令之间最好增加时间延
+注意 时，例如：
+SocketClose("S1")
+wait 0.1
+SocketCreate("10.0.6.11",8080,"S1",10,"\r")
+15.4.8.2 SocketClose（过期的）
+关闭 Socket
+说明 注意，该指令被标注为“过期的”，为xCore控制系统1.3版本使用指令，在更高版本中依然有效，
+但不再继续维护，也不推荐继续使用。
+SocketClose（”SocketName”）
+定义
+SocketName ，数据类型：string ，需要关闭的 Socket 名称。
+例 1
+示例
+SocketClose（”Socket0”）
+不要在SocketSend系列指令后直接使用SocketClose指令，否则可能造成数据发送失败，等待收
+注意
+到确认消息 后再使用SocketClose指令。
+xCore控制系统使用手册 271
+===== PAGE 286 =====
+15 RL指令
+15.4.8.3 SocketSendString（过期的）
+通过Socket对外发送一个字符串。
+说明 注意，该指令被标注为“过期的”，为xCore控制系统1.3版本使用指令，在更高版本中依然有效，
+但不再继续维护，也不推荐继续使用。
+SocketSendString（StringData，”SocketName”）
+定义 StringData ，数据类型：string ，待发送的 string 数据。
+SocketName ，数据类型：string ，用于发送数据的 Socket 名称。
+例 1
+SocketSendString（“Hello World”，”Socket0”）
+通过 Socket0 对外发送 Hello World 字符串。
+示例
+例 2
+VAR String str1 =“Hello World”
+SocketSendString（str1，”Socket0”）
+通过 Socket0 发送 str1 存储的字符串。
+15.4.8.4 SocketSendByte（过期的）
+通过 Socket 对外发送一个字节 byte，在需要发送 ASCII 字符时非常有用。
+说明 注意，该指令被标注为“过期的”，为xCore控制系统1.3版本使用指令，在更高版本中依然有效，
+但不再继续维护，也不推荐继续使用。
+SocketSendByte(ByteData, “SocketName”)
+ByteData ，数据类型：int 或 byte 或 byte 数组 ，发送一个 0~255 的无符号字节或数组，主
+定义
+要用于发送 ASCII 码。
+SocketName ，数据类型：string ，用于发送数据的 Socket 名称。
+例 1
+SocketSendByte(13, “socket0“)
+通过 socket0 对外发送一个回车符。
+例 2
+VAR byte data1 = 13
+示例 SocketSendByte(data1, “socket0“)
+首先定义一个byte类型变量data1，它其实是一个回车符。然后通过socket0对外发送。
+例 3
+VAR byte data2[2] = {13,17}
+SocketSendByte(data2, “socket0”)
+通过socket0发送一个byte类型数组变量data2。
+15.4.8.5 SocketReadBit（过期的）
+通过 Socket 按 bit 接收数据，外部发送的数据需以回车结尾。
+说明 注意，该指令被标注为“过期的”，为xCore控制系统1.3版本使用指令，在更高版本中依然有效，
+但不再继续维护，也不推荐继续使用。
+定义 返回值，数据类型：bool ，使用 bool 型数组存储接收到的 bit 数据，每一个 bit 对应一个 bool
+272 xCore控制系统使用手册
+===== PAGE 287 =====
+15 RL指令
+成员。
+SocketReadBit(BitNum, TimeOut, “SocketName”)
+BitNum ，数据类型：int ，需要读取的 bit 数量，大小应该为 8 的整数倍。
+TimeOut ，数据类型：int ，超时时间。单位 s，范围 0~86400，默认 60s。
+SocketName ，数据类型：string，用于接收数据的 Socket 名称。
+例 1
+bool groupio[16]
+示例 groupio = SocketReadBit(16, 60, “Socket0”)
+通过 SocketReadBit 指令读取 16 个 bit 的数据存储到名为 groupio 的布尔型数组中，超时时间
+60s。
+15.4.8.6 SocketReadDouble（过期的）
+通过 Socket 接收 double 型数据，外部发送的数据需以回车结尾。
+说明 注意，该指令被标注为“过期的”，为xCore控制系统1.3版本使用指令，在更高版本中依然有效，
+但不再继续维护，也不推荐继续使用。
+返回值，数据类型：double ，使用 double 型数组存储接收到的数据。
+SocketReadDouble(DoubleNum, TimeOut, “SocketName”)
+定义 DoubleNum ，数据类型：double ，需要读取的 double 数个数，最大为 30 个。
+TimeOut ，数据类型：int ，超时时间。单位 s，范围 0~86400，默认 60s。
+SocketName ，数据类型：string，用于接收数据的 Socket 名称。
+例 1
+double dd[10]
+示例 dd = SocketReadDouble(10, 60, “Socket0”)
+通过 SocketReadDouble 指令读取 10 个 double 型的数据存储到名为 dd 的 double 型数组
+中，超时时间 60s。
+15.4.8.7 SocketReadInt（过期的）
+通过 Socket 接收 int 型数据，外部发送的数据需以回车结尾。
+说明 注意，该指令被标注为“过期的”，为xCore控制系统1.3版本使用指令，在更高版本中依然有效，
+但不再继续维护，也不推荐继续使用。
+返回值，数据类型：int ，使用 int 型数组存储接收到的数据。
+SocketReadInt(IntNum, TimeOut, “SocketName”)
+定义 IntNum ，数据类型：int ，需要读取的int数个数，最大为30个。
+TimeOut ，数据类型：int ，超时时间。单位s，范围 0~86400，默认60s。
+SocketName ，数据类型：string，用于接收数据的Socket名称。
+例 1
+int ii[10]
+示例
+ii = SocketReadInt(10, 60, “Socket0”)
+通过 SocketReadInt 指令读取10个int型的数据存储到名为ii的int型数组中，超时时间60s。
+15.4.8.8 SocketReadString（过期的）
+从 Socket 读取一个字符串并返回，外部发送的数据应以回车结尾。
+说明 注意，该指令被标注为“过期的”，为xCore控制系统1.3版本使用指令，在更高版本中依然有效，
+但不再继续维护，也不推荐继续使用。
+xCore控制系统使用手册 273
+===== PAGE 288 =====
+15 RL指令
+返回值，数据类型： string，存储接收到的字符串。
+SocketReadString(TimeOut, “SocketName”)
+定义
+TimeOut ，数据类型： int ，超时时间。 单位 s， 范围 0~86400，默认 60s。
+SocketName ，数据类型：string，用于接收数据的Socket名称。
+例 1
+VAR String str1
+示例
+str1 = SocketReadString(60, “Socket1”)
+从 Socket1 中接收一个字符串，并存储到 str1 中，超时时间 60s。
+15.4.9 逻辑指令
+15.4.9.1 Return
+函数返回。
+说明 程序遇到 RETURN 指令时，如果程序当前处于子函数中，则程序将返回到上一级函数中。如果程
+序当前处于主函数中，则程序直接结束。
+15.4.9.2 Wait
+说明 程序等待一段时间，范围是 0~2147484 秒
+例1
+示例 Wait 2
+表示等待 2s的时间
+15.4.9.3 WaitUntil
+说明 程序等待某个条件成立，若超时，则将超时标志置true，结束等待继续向下执行。
+WaitUntil(cond,\MaxTime,\TimeFlag)
+Cond，bool类型逻辑表达式
+定义
+MaxTime，超时等待时间，可选参数；单位s，使用int或double类型
+TimeFlag，超时标志位，若超时则置true，可选参数；使用bool类型变量
+例1
+WaitUntil (di2 == true)
+…
+表示等待di 2 信号值为 true，然后才开始执行后面的语句。
+例2
+WaitUntil (di2 == true,5)
+…
+示例
+表示等待di 2 信号值为 true，若等待超过5s，di2信号依然为false，则执行后面的语句。
+例3
+Bool flag = false
+WaitUntil (di2 == true, 5,flag)
+…
+表示等待di 2 信号值为 true；若等待超过5s，di2信号依然为false，则将flag置为true，然后才
+开始执行后面的语句；若在5s内di2变为true，则flag置为false。可以将flag用于后续的逻辑判
+274 xCore控制系统使用手册
+===== PAGE 289 =====
+15 RL指令
+断
+15.4.9.4 Break
+跳出当前循环，在 RL 语言中在 WHILE 循环中使用，当 WHILE 循环执行到 Break 时，不管
+说明
+WHILE 的 CONDITION 如何，都会直接跳出 WHILE 循环。
+例 1
+VAR int counter = 0
+WHILE(1)
+IF(counter == 5)
+示例 break
+Endif
+counter++
+ENDWHILE
+该程序在执行到 counter 等于 5 时会跳出 WHILE 循环。
+15.4.9.5 IF…Else if…Else
+说明 条件判断语句
+例 1
+IF(condition1)
+//a
+Else if (condition2)
+//b
+示例 Else if (condition3)
+//c
+Else
+//d
+Endif
+condition1成立时执行逻辑a，condition2成立时执行逻辑b，以此类推。
+15.4.9.6 Goto
+说明 Goto语句允许把指针跳转到被标记的语句
+例 1
+int a = 0
+int b = 9
+Goto end
+示例 print(a)
+end:
+print(b)
+先定义两个变量a和b，然后用print函数打印两句话，直接用Goto语句强制跳转到打印b语句
+的end标记位置，此时a的打印就不会执行了
+15.4.9.7 For
+说明 For循环允许您编写一个执行指定次数的循环控制结构
+xCore控制系统使用手册 275
+===== PAGE 290 =====
+15 RL指令
+例 1
+For(int i from 1 to 10)
+printf(“i = %d\n”, i)
+endfor
+该程序把i从1到9每次加1依次打印9次。
+例 2
+示例
+For(int i from 1 to 10 step 3)
+printf(“i = %d\n”, i)
+Endfor
+该程序把i从1到10每次加3依次打印3次。
+补充说明：
+Continue和Break可以用来控制For的流程,详细操作见Continue和Break指令说明。
+15.4.9.8 Continue
+说明 跳出本次循环。继续从循环起始处执行下条语句，但不退出循环体，仅仅结束本次循环
+例 1
+VAR int count = 0
+WHILE(1)
+count++
+IF(count == 1)
+Continue
+示例
+Else
+break
+MoveAbsJ j10， v500， fine， tool1
+Endif
+ENDWHILE
+MoveAbsJ 的代码将不会被执行到。
+15.4.9.9 Inzone
+该指令和SetDO或者modbus、cclink等IO操作或指令配合使用，可保证信号在确定的点位触发，
+说明
+不会被前瞻指针提前触发。
+MoveL p1
+MoveL p2
+Inzone
+SetDO dox, true
+print(123)
+EndInzone
+示例
+MoveL p3
+补充说明：
+在示例中，使用了一个Inzone指令，解释器前瞻到Inzone之后，并不会立即执行，而是生成了一
+个附加函数，函数内容是SetDO以及print指令，这个附加函数会在运动指令move p2完成之后
+生效。
+1、如果p2 p3两条运动指令之间存在转弯区，则附加函数会在机器人进入两段运动的转弯区的时
+276 xCore控制系统使用手册
+===== PAGE 291 =====
+15 RL指令
+刻开始执行
+2、如果没有转弯区，则附加函数会在机器人到达p2的时刻开始执行
+15.4.9.10 While
+说明 While循环允许您编写一个在条件满足前不断执行的循环控制结构
+例 1
+int count = 0
+while(count < 10)
+count++
+示例 print(count)
+endwhile
+该程序实现一个count从0到10每次加1并打印的循环。
+补充说明：Continue和Break可以用来控制While的流程,详细操作见Continue和Break指令说
+明。
+15.4.9.11 Pause
+暂停程序运行。
+说明 程序会在 pause 语句的前一句执行完毕后进入暂停状态，必须使用示教器点击运行或者通过
+外部程序启动信号才可恢复程序运行。
+注意 该指令暂时不支持辅助编程
+15.4.9.12 try/catch
+try-catch指令是一种RL语言的错误处理机制，try 到catch指令中间的指令，如果出错后，程序
+说明
+会将执行错误转换为错误信息集合"e" 并从catch-endtry的代码块继续运行
+try
+// do something
+catch(error e)
+print(e)
+endtry
+举例, 从网络链接读数据是很有可能失败的指令，但是此时不希望机器人停机，可以用 try-catch
+将错误捕获并通过RL编程处理
+详细说明
+error类型说明，error是一个结构体，一共有四个参数组成，分别是
+定义
+⚫ file : string (错误发生文件名)
+⚫ line : int (错误行)
+⚫ num : int (错误码)
+⚫ reason : string(错误原因)
+error结构体可以通过print指令直接打印。
+// error data
+...
+catch(error e)
+print(e.file)
+print(e.line)
+xCore控制系统使用手册 277
+===== PAGE 292 =====
+15 RL指令
+print(e.num)
+print(e.reason)
+print(e)
+endtry
+例 1
+ReadOnce:
+Try
+Double xyz[3] = ReadDouble(3, timeout, socketname)
+Robtarget_0.trans.x = xyz[1]
+Robtarget_0.trans.y = xyz[2]
+Robtarget_0.trans.z = xyz[3]
+MoveL Robtarget_0, v2000, fine, tool0
+Catch(error e)
+SendString(“Recv rob xyz error”, socketname)
+Goto ReadOnce
+endtry
+该程序实现了一个简单的应用场景，使用通信指令ReadDouble从TcpSocket读取一个三维数组作
+为运动点位的xyz参数，然后使用MoveL指令运动到对应笛卡尔点。
+如果没有使用try/catch指令并且从TcpSocket收到点位是错误数据，则机器人会报错“超出运动范
+围”或者“规划错误”，并且停止程序的运行。
+示例 如果使用了try/catch指令，虽然依然会报告运动指令错误，但是程序不会停止，而是跳转到catch
+到 endtry的代码段，执行用户想要的错误处理。本样例中就是通过SendString告诉Socket上位
+机收到的点位错误，再由上位机决定如何处理，并执行goto指令重新执行ReadDouble等待下一
+次的位置。
+例2
+re_read:
+try
+opendev("conn_name")
+string_res = readstring("conn_name")
+catch (error e)
+if (e.num == xxx)
+// 某种可处理的错误不暂停
+goto re_read
+else
+print(e)
+Pause
+endif
+endtry
+注意 注意：力控指令不能触发try-catch
+try/catch能够处理的错误类型及标准错误码：
+分类 出错指令 说明 error.num error.reason
+默认错误 未分配专属错误码的指令 -1 未知错误
+278 xCore控制系统使用手册

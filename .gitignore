@@ -1,0 +1,28 @@
+# ---------- 构建产物（本机 cmake / 板端 g++ 直编） ----------
+build/
+lubancat2/build/
+CMakeFiles/
+CMakeCache.txt
+CTestTestfile.cmake
+Testing/
+*.o
+*.make
+*.gcda
+*.gcno
+*.d
+
+# ---------- Extension（VSCodium 插件 / Node） ----------
+lubancat2/Extension/node_modules/
+lubancat2/Extension/out/
+lubancat2/Extension/.vscode-test/
+lubancat2/Extension/.vscode/
+lubancat2/Extension/npm-debug.log*
+
+# ---------- 超出 GitHub 单文件 100MB 硬限制的厂商手册 ----------
+SV630N系列伺服用户手册-CN-D00.PDF
+
+# ---------- 本地临时 / 编辑器 ----------
+*.log
+*.tmp
+*.swp
+.DS_Store
