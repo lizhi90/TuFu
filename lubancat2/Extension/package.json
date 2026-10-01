@@ -2,7 +2,7 @@
   "name": "kinex-debug",
   "displayName": "Kine-X 调试",
   "description": "Kine-X 控制器在线调试上位机：脚本下载/运行、变量监视、状态面板（对接 docs/planA/13 调试通道）",
-  "version": "0.8.17",
+  "version": "0.12.4",
   "publisher": "kine-x",
   "license": "MIT",
   "engines": {
@@ -51,7 +51,9 @@
     "onCommand:kine-x.files.clearMain",
     "onCommand:kine-x.restart",
     "onCommand:kine-x.portMax",
-    "onCommand:kine-x.comm.open"
+    "onCommand:kine-x.comm.open",
+    "onCommand:kine-x.mbmap.open",
+    "onCommand:kine-x.mbdev.open"
   ],
   "contributes": {
     "languages": [
@@ -206,6 +208,12 @@
         "icon": "$(radio-tower)"
       },
       {
+        "command": "kine-x.mbmap.open",
+        "title": "Modbus 配置",
+        "category": "Kine-X 控制器",
+        "icon": "$(settings-gear)"
+      },
+      {
         "command": "kine-x.sysInfo",
         "title": "显示控制器信息",
         "category": "Kine-X 调试",
@@ -270,6 +278,12 @@
         "title": "取消主文件",
         "category": "Kine-X 调试",
         "icon": "$(star-empty)"
+      },
+      {
+        "command": "kine-x.mbdev.open",
+        "title": "Modbus 主站",
+        "category": "Kine-X 控制器",
+        "icon": "$(server-process)"
       }
     ],
     "menus": {
@@ -318,6 +332,12 @@
         },
         {
           "command": "kine-x.comm.open"
+        },
+        {
+          "command": "kine-x.mbmap.open"
+        },
+        {
+          "command": "kine-x.mbdev.open"
         },
         {
           "command": "kine-x.sysInfo"

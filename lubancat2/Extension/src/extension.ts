@@ -42,6 +42,10 @@ import { buildModbusPanelSpec } from './modbusPanelPure';
 import { FilesTreeState, FileSyncState, fnv1a64Hex, compareFileHash } from './filesPanelPure';
 import { parsePortMax, portMaxSummary } from './portMaxPure';
 import { KxCommPanel, CommPanelHooks } from './commPanel';
+import { KxMbmapPanel, MbmapPanelHooks } from './mbmapPanel';
+import { buildMbmapSpec, validateD12Text } from './mbmapPanelPure';
+import { KxMbdevPanel, MbdevPanelHooks } from './mbdevPanel';
+import { buildMbdevSpec } from './mbdevPanelPure';
 import { buildCommPanelSpec } from './commPanelPure';
 import { KxConnectPanel } from './connectPanel';
 import { ErrorCodes, KxEvent, KxRpcError } from './protocol';
@@ -347,6 +351,8 @@ export function activate(context: vscode.ExtensionContext): void {
         vscode.commands.registerCommand('kine-x.axis.open', () => openAxisPanel()),
         vscode.commands.registerCommand('kine-x.modbus.open', () => openModbusPanel()),
         vscode.commands.registerCommand('kine-x.comm.open', () => openCommPanel()),
+        vscode.commands.registerCommand('kine-x.mbmap.open', () => openMbmapPanel(context)),
+        vscode.commands.registerCommand('kine-x.mbdev.open', () => openMbdevPanel(context)),
         vscode.commands.registerCommand('kine-x.download', () => withScript((doc) => download(doc, false))),
         vscode.commands.registerCommand('kine-x.downloadAndRun', () =>
             withScript((doc) => download(doc, true)),
@@ -1639,6 +1645,124 @@ function commPanelHooks(): CommPanelHooks {
         buildSpec: () => buildCommPanelSpec(store, { connected: link === 'connected' }),
         onVisible: () => subs?.retain(['conn']),
         onHidden: () => subs?.release(['conn']),
+        log: (line) => out?.appendLine(line),
+    };
+}
+
+/** 「工具 → Modbus 主站」（D13；planA/21） */
+function openMbdevPanel(context: vscode.ExtensionContext): void {
+    if (link !== 'connected') {
+        void vscode.window.showWarningMessage(S.toolbar.statusOffline);
+        return;
+    }
+    if (controllerCaps.size > 0 && !controllerCaps.has('d13')) {
+        out.appendLine(S.mbdevPanel.sourceNone);
+        void vscode.window.showWarningMessage(S.mbdevPanel.sourceNone);
+        return;
+    }
+    KxMbdevPanel.createOrShow(mbdevPanelHooks(context));
+}
+
+function mbdevPanelHooks(context: vscode.ExtensionContext): MbdevPanelHooks {
+    void context;
+    return {
+        async fetch() {
+            if (link === 'connected' && conn && controllerCaps.has('d13')) {
+                try {
+                    const r = (await conn.request('mbdev.get')) as
+                        | { exists?: boolean; text?: string }
+                        | undefined;
+                    let statusJson = '';
+                    try {
+                        const st = (await conn.request('mbdev.status')) as unknown;
+                        statusJson = JSON.stringify(st ?? {});
+                    } catch (e) {
+                        out?.appendLine('[mbdev] mbdev.status 失败: ' + String(e));
+                    }
+                    const text = r && r.exists && r.text ? r.text : '{"version":1,"devices":[]}';
+                    return buildMbdevSpec('controller', text, statusJson);
+                } catch (e) {
+                    out?.appendLine('[mbdev] mbdev.get 失败: ' + String(e));
+                }
+            }
+            return buildMbdevSpec('none', '');
+        },
+        async save(text: string) {
+            if (!(conn && link === 'connected')) {
+                throw new Error('未连接控制器');
+            }
+            await conn.request('mbdev.set', { text });
+            out?.appendLine(`[mbdev] 主站组态已下发（${text.length} 字节；固件即时热加载）`);
+        },
+        log: (line) => out?.appendLine(line),
+    };
+}
+
+/** 「工具 → Modbus 配置」（D11）：控制器在线用 mbmap.get；否则用内置本地副本（面板内标注来源） */
+function openMbmapPanel(context: vscode.ExtensionContext): void {
+    if (link !== 'connected') {
+        void vscode.window.showWarningMessage(S.toolbar.statusOffline);
+        return;
+    }
+    if (controllerCaps.size > 0 && !controllerCaps.has('d12') && !controllerCaps.has('d11')) {
+        out.appendLine(S.mbmapPanel.noD11);
+        void vscode.window.showWarningMessage(S.mbmapPanel.noD11);
+        return;
+    }
+    KxMbmapPanel.createOrShow(mbmapPanelHooks(context));
+}
+
+async function readLocalRegmap(context: vscode.ExtensionContext): Promise<string> {
+    try {
+        const buf = await vscode.workspace.fs.readFile(
+            vscode.Uri.joinPath(context.extensionUri, 'data', 'regmap.json'),
+        );
+        return Buffer.from(buf).toString('utf8');
+    } catch (e) {
+        out?.appendLine('[mbmap] 读本地副本失败: ' + String(e));
+        return '';
+    }
+}
+
+function mbmapPanelHooks(context: vscode.ExtensionContext): MbmapPanelHooks {
+    return {
+        async fetch() {
+            const hasD12 = controllerCaps.has('d12');
+            const proto = hasD12 ? ('d12' as const) : ('d11' as const);
+            const method = hasD12 ? 'mbreg.get' : 'mbmap.get';
+            if (link === 'connected' && conn && (hasD12 || controllerCaps.has('d11'))) {
+                try {
+                    const r = (await conn.request(method)) as
+                        | { exists?: boolean; text?: string }
+                        | undefined;
+                    if (r && r.exists && r.text) {
+                        return buildMbmapSpec('controller', r.text, undefined, proto);
+                    }
+                    out?.appendLine(`[mbmap] ${method} 返回空（${method === 'mbreg.get' ? 'config/modbus.json' : '.mbmap'} 未写入）`);
+                } catch (e) {
+                    out?.appendLine(`[mbmap] ${method} 失败: ` + String(e));
+                }
+            }
+            return buildMbmapSpec('local', await readLocalRegmap(context), undefined, proto);
+        },
+        async save(text: string) {
+            if (!(conn && link === 'connected')) {
+                throw new Error('未连接控制器');
+            }
+            const hasD12 = controllerCaps.has('d12');
+            if (hasD12) {
+                const bad = validateD12Text(text);          // 宿主侧权威校验（不依赖 webview 内联脚本）
+                if (bad) {
+                    out?.appendLine(`[mbmap] 组态校验未通过：${bad}`);
+                    throw new Error(bad);
+                }
+            }
+            await conn.request(hasD12 ? 'mbreg.set' : 'mbmap.set', { text });
+            out?.appendLine(
+                `[mbmap] 组态已下发（${hasD12 ? 'D12 mbreg.set' : 'D11 mbmap.set'}，${text.length} 字节；` +
+                    '固件/脚本热加载生效）',
+            );
+        },
         log: (line) => out?.appendLine(line),
     };
 }

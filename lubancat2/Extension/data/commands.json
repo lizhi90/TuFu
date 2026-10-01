@@ -1,7 +1,7 @@
 {
   "$comment": "自动生成，请勿手改。来源：src/script/command_table.h（node tools/gen-commands.mjs）",
   "source": "src/script/command_table.h",
-  "count": 82,
+  "count": 90,
   "names": [
     "EN",
     "ENABLE",
@@ -81,6 +81,14 @@
     "MODBUS_IEEE",
     "NVSET",
     "NVGET",
+    "REGMAP_GET",
+    "MB_READ",
+    "MB_WRITE",
+    "MB_LIST",
+    "MBREG_ZONE",
+    "MBREG_PUT",
+    "MBD_STATUS",
+    "MBD_LIST",
     "RUNTASK",
     "STOPTASK",
     "PROC_STATUS",
@@ -199,6 +207,14 @@
         "MODBUS_IEEE",
         "NVSET",
         "NVGET",
+        "REGMAP_GET",
+        "MB_READ",
+        "MB_WRITE",
+        "MB_LIST",
+        "MBREG_ZONE",
+        "MBREG_PUT",
+        "MBD_STATUS",
+        "MBD_LIST",
         "RUNTASK",
         "STOPTASK",
         "PROC_STATUS"
@@ -512,6 +528,38 @@
     "NVSET": {
       "sig": "NVSET(reg, value)",
       "brief": "把 4x 寄存器值持久化到脚本目录 .nvram（立即落盘；掉电/重启后 NVGET 恢复）"
+    },
+    "REGMAP_GET": {
+      "sig": "REGMAP_GET()",
+      "brief": "读 Modbus 寄存器表文本（脚本目录 .mbmap；用户寄存器配置载体，D11 mbmap.set 写入）"
+    },
+    "MB_READ": {
+      "sig": "MB_READ(变量名)",
+      "brief": "按名读 Modbus 组态变量（planA/20；插件「Modbus 配置」组态，固件热加载）"
+    },
+    "MB_WRITE": {
+      "sig": "MB_WRITE(变量名, 值)",
+      "brief": "按名写 Modbus 组态变量（掉电保持条目写即落盘；主站侧权限另按组态）"
+    },
+    "MB_LIST": {
+      "sig": "MB_LIST()",
+      "brief": "列出全部组态变量：每行 name,4x地址,类型,读写[,persist]"
+    },
+    "MBREG_ZONE": {
+      "sig": "MBREG_ZONE(start, count)",
+      "brief": "按区读 4x 寄存器（打包 u16 大端字符串；可 string.unpack 解码）"
+    },
+    "MBREG_PUT": {
+      "sig": "MBREG_PUT(start, packed)",
+      "brief": "按区写 4x 寄存器（packed 为 u16 大端序列；persist 条目生效）"
+    },
+    "MBD_STATUS": {
+      "sig": "MBD_STATUS(设备名)",
+      "brief": "Modbus 主站设备状态（在线/错误/超时/ok 计数；planA/21）"
+    },
+    "MBD_LIST": {
+      "sig": "MBD_LIST()",
+      "brief": "列出主站设备点位：每行 设备.点位,read|write,fcN,类型,4x地址|var"
     },
     "NVGET": {
       "sig": "NVGET(reg)",

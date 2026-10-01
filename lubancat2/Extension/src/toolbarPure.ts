@@ -151,6 +151,8 @@ export function toolbarMenus(spec: ToolbarSpec): ToolbarMenuGroup[] {
                 mk('curve', 'kine-x.curve.open', S.toolbar.curveText, S.toolbar.curveTip, 'graph'),
                 mk('refresh', 'kine-x.panel.refresh', S.toolbar.refreshText, S.toolbar.refreshTip, 'refresh'),
                 mk('comm', 'kine-x.comm.open', S.toolbar.commText, S.toolbar.commTip, 'radio-tower'),
+                mk('mbmap', 'kine-x.mbmap.open', S.toolbar.mbmapText, S.toolbar.mbmapTip, 'sliders'),
+                mk('mbdev', 'kine-x.mbdev.open', S.toolbar.mbdevText, S.toolbar.mbdevTip, 'mbdev'),
             ],
         },
     ];
@@ -236,6 +238,10 @@ export function toolbarEnabled(id: string, spec: ToolbarSpec): boolean {
     if (id === 'restart') return spec.caps.has('d7');
     // 通讯状态（D10）：需控制器声明 d10，未声明时置灰（降级不伪装）
     if (id === 'comm') return spec.caps.has('d10');
+    // Modbus 配置（D12 固件组态 / D11 过渡）：需控制器声明 d12 或 d11，否则置灰（降级不伪装）
+    if (id === 'mbmap') return spec.caps.has('d12') || spec.caps.has('d11');
+    // Modbus 主站（D13）：需控制器声明 d13，否则置灰（降级不伪装）
+    if (id === 'mbdev') return spec.caps.has('d13');
     // 修改端口数量（D9）：需控制器声明 d9，未声明时置灰（降级不伪装）
     if (id === 'portMax') return spec.caps.has('d9');
     // 脚本类（下载/运行/停止）：需调试口可独占脚本引擎（`16` §9.1：caps 含 d2）
@@ -499,6 +505,10 @@ export const ICON_SVG: Readonly<Record<string, string>> = {
     info: '<svg viewBox="0 0 16 16"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 1a6 6 0 1 1 0 12A6 6 0 0 1 8 2zm-.9 2.2a.9.9 0 1 0 0 1.8.9.9 0 0 0 0-1.8zM7 7v5h2V7H7z"/></svg>',
     // 修改 IP（地球）
     globe: '<svg viewBox="0 0 16 16"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zM2.1 7h2.2c.1-1.3.3-2.5.7-3.4A6 6 0 0 0 2.1 7zm0 2a6 6 0 0 0 2.9 3.4c-.4-.9-.6-2.1-.7-3.4H2.1zm2.2 0c.1 1.5.4 2.8.9 3.6.4.7.9 1 1.3 1s.9-.3 1.3-1c.5-.8.8-2.1.9-3.6H4.3zm0-2h4.4c-.1-1.5-.4-2.8-.9-3.6-.4-.7-.9-1-1.3-1s-.9.3-1.3 1c-.5.8-.8 2.1-.9 3.6zm5.4 0h2.2a6 6 0 0 0-2.9-3.4c.4.9.6 2.1.7 3.4zm0 2c-.1 1.3-.3 2.5-.7 3.4a6 6 0 0 0 2.9-3.4h-2.2z"/></svg>',
+    // 设备/从站（用于「工具 → Modbus 主站」：机箱 + 指向箭头）
+    mbdev: '<svg viewBox="0 0 16 16"><path d="M1.5 3h7v10h-7V3zm1 1v8h5V4h-5zM10.2 5 13 8l-2.8 3V9.2H8.4V6.8h1.8V5z"/></svg>',
+    // 参数滑杆（用于「工具 → Modbus 配置」）
+    sliders: '<svg viewBox="0 0 16 16"><path d="M2 3.2h12v1.2H2zM4.4 2.4h2v2.8h-2zM2 7.4h12v1.2H2zM8.4 6.6h2v2.8h-2zM2 11.6h12v1.2H2zM5.6 10.8h2v2.8h-2z"/></svg>',
     // 本地同步（双向箭头）
     sync: '<svg viewBox="0 0 16 16"><path d="M5 2 2.5 4.5 5 7V5.5h6v1.5L13.5 4.5 11 1.5V3H5V2zM11 14l2.5-2.5L11 9v1.5H5V9L2.5 11.5 5 14.5V13h6v1z"/></svg>',
     // 通讯状态（无线电塔：塔身 + 两侧信号波；「工具 → 通讯状态」用）

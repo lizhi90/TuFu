@@ -355,6 +355,240 @@ function checkToolbarPure() {
     check('菜单条 HTML：含 CSP nonce', html.includes("script-src 'nonce-NONCE123'"));
     check('菜单条 HTML：点击只 postMessage，不内联执行命令', html.includes("type: 'cmd'"));
 
+    // ---- v0.9.0：Modbus 配置面板（mbmapPanelPure；D11）----
+    {
+        const { parseRegmap, buildMbmapSpec: bms, mbmapPanelHtml: htmlOf } = require('../out/mbmapPanelPure.js');
+        console.log('[smoke] Modbus 配置（mbmapPanelPure）');
+        check('mbmap：非 JSON → 明确报错', parseRegmap('not-json').ok === false);
+        check('mbmap：缺 entries → 明确报错', parseRegmap('{"x":1}').ok === false);
+        {
+            // v0.11.1：D12 固件组态用 registers 键（此前误报"缺少 entries"）
+            const pr12 = parseRegmap('{"version":1,"station":1,"registers":[{"addr":"4x300","type":"f32"}]}');
+            check('mbmap：D12 registers 键可解析', pr12.ok === true && (pr12.file.entries || []).length === 1);
+        }
+        const text = JSON.stringify({
+            version: 1,
+            entries: [
+                { addr: '4x3', type: 'int16', access: 'r', desc: '轴状态码', zone: '轴区', persist: true },
+                { addr: '4x1000', name: 'sta_heartbeat', type: 'uint16', access: 'w', desc: '心跳', zone: '机器人A区' },
+            ],
+        });
+        const spec = bms('controller', text);
+        check(
+            'mbmap：解析分组（2 分区 / 2 条）',
+            spec.total === 2 && spec.groups.length === 2 && spec.groups[0].zone === '轴区',
+        );
+        check(
+            'mbmap：读写/保持文案映射',
+            spec.groups[0].rows[0].accessText === '读' &&
+                spec.groups[0].rows[0].persistText === '★' &&
+                spec.groups[1].rows[0].accessText === '写',
+        );
+        const mHtml = htmlOf(spec, 'NONCE123');
+        check(
+            'mbmap HTML：CSP nonce/搜索/数据行齐备',
+            mHtml.includes("script-src 'nonce-NONCE123'") &&
+                mHtml.includes('id="q"') &&
+                mHtml.includes('4x1000') &&
+                mHtml.includes('sta_heartbeat'),
+        );
+        // v0.10.0：用户寄存器编辑（校验/合并/拆分）
+        {
+            const { validateUserEntry: vUE, buildRegmapText: bT, userEntries: uE, fixedEntries: fE } =
+                require('../out/mbmapPanelPure.js');
+            const ue = { addr: '4x300', name: 'a', type: 'f32', access: 'rw', persist: true, user: true };
+            check('mbmap 编辑：合法条目通过', vUE(ue, []) === null);
+            check('mbmap 编辑：越界地址拒绝（4x100）', typeof vUE({ ...ue, addr: '4x100' }, []) === 'string');
+            check(
+                'mbmap 编辑：重叠拒绝（f32@300 vs u16@301）',
+                typeof vUE({ addr: '4x301', type: 'u16', access: 'rw', user: true }, [ue]) === 'string',
+            );
+            check('mbmap 编辑：access 非法拒绝（D11 仅 r/rw）', typeof vUE({ ...ue, access: 'w' }, []) === 'string');
+            // v0.12.3：D12 权威校验（validateD12Entries/validateD12Text；宿主侧保存前执行）
+            const { validateD12Entries: vD12, validateD12Text: vD12T } =
+                require('../out/mbmapPanelPure.js');
+            check('D12 校验：w 权限合法（现网 50 条 w 不再被拒）',
+                vD12([{ addr: '4x28', type: 'i16', access: 'w' }]) === null);
+            check('D12 校验：r/rw 合法', vD12([
+                { addr: '4x0', type: 'i16', access: 'rw' },
+                { addr: '4x5', type: 'f32', access: 'r' },
+            ]) === null);
+            check('D12 校验：权限非法拒绝', typeof vD12([{ addr: '4x0', type: 'i16', access: 'x' }]) === 'string');
+            check('D12 校验：重叠拒绝', typeof vD12([
+                { addr: '4x300', type: 'f32', access: 'rw' },
+                { addr: '4x301', type: 'u16', access: 'rw' },
+            ]) === 'string');
+            check('D12 校验：persist 超 1023 拒绝',
+                typeof vD12([{ addr: '4x1100', type: 'u16', access: 'rw', persist: true }]) === 'string');
+            check('D12 校验：地址越界拒绝', typeof vD12([{ addr: '4x70000', type: 'u16', access: 'rw' }]) === 'string');
+            check('D12 文本校验：非 JSON 拒绝', typeof vD12T('{oops') === 'string');
+            check('D12 文本校验：缺 registers 拒绝', typeof vD12T('{"version":1}') === 'string');
+            check('D12 文本校验：真实形态通过',
+                vD12T(JSON.stringify({ version: 1, station: 1, registers: [
+                    { addr: '4x3', name: 'r3', type: 'i16', access: 'r' },
+                    { addr: '4x28', name: 'r28', type: 'i16', access: 'w' },
+                ] })) === null);
+            const merged = JSON.parse(
+                bT({ version: 1, entries: [{ addr: '4x3', type: 'int16' }] }, [ue]),
+            );
+            check(
+                'mbmap 编辑：合并保留固定条目 + 追加用户条目',
+                merged.entries.length === 2 && merged.entries[0].addr === '4x3' && merged.entries[1].user === true,
+            );
+            check(
+                'mbmap 编辑：user/fixed 拆分',
+                uE({ entries: merged.entries }).length === 1 && fE({ entries: merged.entries }).length === 1,
+            );
+            // v0.11.0：D12 固件组态
+            const { buildConfigText: bCT } = require('../out/mbmapPanelPure.js');
+            const d12txt = bCT({ version: 1 }, [{ addr: '4x300', name: '温度', type: 'f32', access: 'rw', persist: true, default: 25 }], 1);
+            const d12obj = JSON.parse(d12txt);
+            check(
+                'D12：registers 键 + station + default 往返',
+                Array.isArray(d12obj.registers) && d12obj.station === 1 && d12obj.registers[0].default === 25 &&
+                    d12obj.registers[0].persist === true,
+            );
+            check('D12：全空间地址校验（4x60000 合法）', vUE({ addr: '4x60000', type: 'u16', access: 'rw' }, [], [0, 65535]) === null);
+            check('D12：超界地址拒绝（4x70000）', typeof vUE({ addr: '4x70000', type: 'u16', access: 'rw' }, [], [0, 65535]) === 'string');
+        }
+        // ---- v0.12.0：Modbus 主站面板（mbdevPanelPure；D13）----
+        {
+            const { parseMbDev, buildMbdevSpec, validateAll, buildMbDevText, mbdevPanelHtml } =
+                require('../out/mbdevPanelPure.js');
+            const dev = {
+                name: '变频器1', kind: 'tcp', host: '192.168.1.50', port: 502, unit: 1,
+                timeout_ms: 300, retries: 1, poll_ms: 200,
+                points: [
+                    { name: '频率', dir: 'read', fc: 3, addr: 10, count: 2, type: 'f32', mapKind: 'reg', mapAddr: '4x600' },
+                    { name: '启动', dir: 'write', fc: 16, addr: 100, count: 1, type: 'u16', mapKind: 'reg', mapAddr: '4x601', on_change: true },
+                ],
+            };
+            check('mbdev：合法组态校验通过', validateAll([dev]) === null);
+            check(
+                'mbdev：功能码与方向不匹配拒绝',
+                typeof validateAll([{ ...dev, points: [{ ...dev.points[0], fc: 16 }] }]) === 'string',
+            );
+            check(
+                'mbdev：count 与类型不一致拒绝',
+                typeof validateAll([{ ...dev, points: [{ ...dev.points[0], count: 1 }] }]) === 'string',
+            );
+            check(
+                'mbdev：写点 4x 映射重叠拒绝',
+                typeof validateAll([{ ...dev, points: [dev.points[1], { ...dev.points[1], name: 'x' }] }]) === 'string',
+            );
+            const txt = buildMbDevText({ version: 1 }, [dev]);
+            const obj = JSON.parse(txt);
+            check(
+                'mbdev：下发文本结构（link/points/map kind/on_change）',
+                obj.devices.length === 1 && obj.devices[0].link.kind === 'tcp' &&
+                    obj.devices[0].points[0].map.kind === 'reg' &&
+                    obj.devices[0].points[0].map.addr === '4x600' &&
+                    obj.devices[0].points[1].on_change === true,
+            );
+            const pr = parseMbDev(txt);
+            check('mbdev：解析往返', pr.ok === true && (pr.file.devices || []).length === 1);
+            const st = JSON.stringify({ devices: [{ name: '变频器1', online: true, err: 0, timeouts: 0, ok: 8 }] });
+            const spec = buildMbdevSpec('controller', txt, st);
+            check('mbdev：spec（可编辑 + 状态）', spec.editable === true && spec.status.length === 1 && spec.status[0].online === true);
+            const h = mbdevPanelHtml(spec, 'NONCE123');
+            check(
+                'mbdev HTML：CSP/控件/状态齐备',
+                h.includes("script-src 'nonce-NONCE123'") && h.includes('id="dadd"') && h.includes('id="ptbody"') &&
+                    h.includes('变频器1'),
+            );
+            check(
+                'mbdev 设备表单：字段功能文字置顶（站号/超时/重试/轮询）',
+                h.includes('站号') && h.includes('超时(ms)') && h.includes('重试') && h.includes('轮询(ms)') &&
+                    h.includes('主机/IP'),
+            );
+            const toolsD = toolbarMenus(online).find((g) => g.id === 'tools');
+            check(
+                '菜单栏：工具菜单含「Modbus 主站」（带图标）',
+                Boolean(toolsD) &&
+                    toolsD.items.some((i) => i.id === 'mbdev' && i.command === 'kine-x.mbdev.open' && i.svg.startsWith('<svg')),
+            );
+            check('菜单条：未连接 → Modbus 主站置灰', toolbarEnabled('mbdev', offline) === false);
+            check(
+                '菜单条：已连接且有 d13 → Modbus 主站可用',
+                toolbarEnabled('mbdev', { ...online, caps: new Set([...online.caps, 'd13']) }) === true,
+            );
+        }
+        // ---- v0.12.0 守卫：面板内联脚本必须可解析（防 TS 模板转义缺陷，v0.11.2 教训）----
+        {
+            const { mbdevValidate } = (() => {
+                const m = require('../out/mbdevPanelPure.js');
+                return { mbdevValidate: m.validateAll };
+            })();
+            const devBase = { name: 'd', kind: 'tcp', host: '127.0.0.1', port: 502, unit: 1,
+                timeout_ms: 300, retries: 1, poll_ms: 200,
+                points: [{ name: 'p', dir: 'read', fc: 3, addr: 0, count: 1, type: 'u16', mapKind: 'var' }] };
+            check('D13 校验：合法设备通过', mbdevValidate([devBase]) === null);
+            check('D13 校验：timeout 越界拒绝',
+                typeof mbdevValidate([{ ...devBase, timeout_ms: 10 }]) === 'string');
+            check('D13 校验：retries 越界拒绝',
+                typeof mbdevValidate([{ ...devBase, retries: 9 }]) === 'string');
+            check('D13 校验：poll 越界拒绝',
+                typeof mbdevValidate([{ ...devBase, poll_ms: 5 }]) === 'string');
+            check('D13 校验：零点位拒绝',
+                typeof mbdevValidate([{ ...devBase, points: [] }]) === 'string');
+            check('D13 校验：fc6+f32 拒绝',
+                typeof mbdevValidate([{ ...devBase,
+                    points: [{ name: 'w', dir: 'write', fc: 6, addr: 1, count: 2, type: 'f32', mapKind: 'reg', mapAddr: '4x700' }] }]) === 'string');
+            check('D13 校验：fc1+f32 拒绝',
+                typeof mbdevValidate([{ ...devBase,
+                    points: [{ name: 'c', dir: 'read', fc: 1, addr: 1, count: 1, type: 'f32', mapKind: 'var' }] }]) === 'string');
+            const { mbmapPanelHtml: h1, buildMbmapSpec: b1 } = require('../out/mbmapPanelPure.js');
+            const { mbdevPanelHtml: h2, buildMbdevSpec: b2 } = require('../out/mbdevPanelPure.js');
+            const spec1 = b1('controller', '{"version":1,"station":1,"registers":[{"addr":"4x300","type":"u16","access":"rw"}]}', undefined, 'd12');
+            const spec2 = b2('controller', '{"version":1,"devices":[]}', '{"devices":[]}');
+            for (const [name, html] of [['Modbus 配置', h1(spec1, 'N')], ['Modbus 主站', h2(spec2, 'N')]]) {
+                const blocks = [...html.matchAll(/<script nonce="[^"]+">([\s\S]*?)<\/script>/g)].map((m) => m[1]);
+                let okJs = blocks.length >= 1;
+                for (const b of blocks) {
+                    try {
+                        // 仅解析不执行（语法检查）
+                        void new Function(b);
+                    } catch (e) {
+                        okJs = false;
+                    }
+                }
+                check(`${name}：内联脚本可解析（防模板转义缺陷）`, okJs);
+            }
+        }
+        const none = bms('none', '');
+        check('mbmap：无数据源 → 空表', none.total === 0 && none.groups.length === 0);
+        const toolsM = toolbarMenus(online).find((g) => g.id === 'tools');
+        check(
+            '菜单栏：工具菜单含「Modbus 配置」（带图标）',
+            Boolean(toolsM) &&
+                toolsM.items.some(
+                    (i) => i.id === 'mbmap' && i.command === 'kine-x.mbmap.open' && i.svg.startsWith('<svg'),
+                ),
+        );
+        check('菜单条：未连接 → Modbus 配置置灰', toolbarEnabled('mbmap', offline) === false);
+        {
+            const toolsT = toolbarMenus(online).find((g) => g.id === 'tools');
+            const tFrom = toolsT.items.find((i) => i.id === 'mbmap');
+            const tTo = toolsT.items.find((i) => i.id === 'mbdev');
+            check(
+                '菜单文案不混淆：从站「Modbus 从站」/ 主站「Modbus 主站」',
+                tFrom.text === 'Modbus 从站' && tTo.text === 'Modbus 主站',
+            );
+        }
+        check(
+            '菜单条：已连接但缺 d11 → Modbus 配置置灰',
+            toolbarEnabled('mbmap', { ...online, caps: new Set(['d1', 'd2', 'd3']) }) === false,
+        );
+        check(
+            '菜单条：已连接且有 d11 → Modbus 配置可用',
+            toolbarEnabled('mbmap', { ...online, caps: new Set([...online.caps, 'd11']) }) === true,
+        );
+        check(
+            '菜单条：已连接且有 d12 → Modbus 配置可用（固件组态）',
+            toolbarEnabled('mbmap', { ...online, caps: new Set([...online.caps, 'd12']) }) === true,
+        );
+    }
+
     // 菜单栏结构（v0.3.1）：顶层 = 控制器 / 工具；控制器内含「脚本语言」二级子菜单（Basic/Lua）
     const menus = toolbarMenus(offline);
     check('菜单栏：2 个顶层菜单（控制器/工具）', menus.length === 2 && menus.map((g) => g.id).join(',') === 'controller,tools');
@@ -384,8 +618,8 @@ function checkToolbarPure() {
     );
     const tools = menus.find((g) => g.id === 'tools');
     check(
-        '菜单栏：工具组含 轴状态/Modbus/设备命令/曲线/刷新/通讯状态（控制器文件已常驻控制台）',
-        tools.items.map((i) => i.id).join(',') === 'axisPanel,modbus,cmd,curve,refresh,comm',
+        '菜单栏：工具组含 轴状态/Modbus/设备命令/曲线/刷新/通讯状态/Modbus 配置/Modbus 主站（控制器文件已常驻控制台）',
+        tools.items.map((i) => i.id).join(',') === 'axisPanel,modbus,cmd,curve,refresh,comm,mbmap,mbdev',
     );
     check(
         '菜单栏：工具组未连接时全部置灰（均需连接）',
