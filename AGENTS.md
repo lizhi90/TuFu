@@ -58,6 +58,10 @@ Kine-X/
 | `script/port_manager.{h,cpp}` | 非阻塞 TCP 通道（**TCP_SERVER 多客户端，每端口最多 4 个**，每客户端独立收发；`status/send/recv` 带 idx，默认 0=主客户端）；重复 OPEN=先关后开；禁用 22/80 监听 |
 | `script/debug_server.{h,cpp}` | JSON-Lines RPC；`sys.info.caps` 据实（d2/d4 随 `allow_script`、d5 仅 basic）；D4 swap 判定先于 `join()`、旧实例 `retired_` join 后释放；D6 文件名白名单防穿越；事件推送限频 |
 | `script/json_lite.h` | 零依赖 JSON（保序对象、完整转义含 `\uXXXX`） |
+| `modbus/modbus_config.{h,cpp}` | **Modbus 组态模型**（planA/20）：条目解析/校验（重名/重叠/类型/权限/默认值/persist 范围）、值↔字编解码（u16/i16/u32/f32/f32hi，低/高字在先）、JSON 序列化 |
+| `modbus/modbus_server.{h,cpp}` | **固件 Modbus-TCP 从站引擎**（产品内建，非 RT 线程）：502 多客户端 + FC 01/02/03/04/05/06/0F/10；4x 全空间库存（策略 A）+ 组态叠加（只读拦截 0x02/persist 落盘）；命名访问（`MB_READ/MB_WRITE/MB_LIST` 的落点）；热加载 |
+| `modbus/modbus_master_config.{h,cpp}` | **主站组态模型**（planA/21）：设备（tcp/rtu-tcp、unit、超时/重试/轮询）+ 点位（方向/功能码/地址/类型/映射 reg 或 var/on_change）；解析校验 + 与从站只读交叉校验 |
+| `modbus/modbus_master.{h,cpp}` | **固件 Modbus 主站引擎**（独立线程）：轮询读点→4x/变量；写点（4x 变化即发 / 显式 `MB_WRITE`）；TCP/RTU-over-TCP；超时重试、退避重连、同设备串行；`MBD_STATUS/MBD_LIST`、D13 |
 | `script/nvram_store.{h,cpp}` | **4x 寄存器持久化**（NVSET/NVGET → 脚本目录 `.nvram`，文本键值+原子写；屏输入参数掉电保存） |
 | `src/main.cpp` | 装配 + 线程编排：RT 循环（先 `take` 命令再 `tick`，参数经 `ParamsMailbox` 交 SDO 线程）、SDO 线程、可选脚本线程、DebugServer；100ms 发布 `Shared`/`Snap`；退出先去使能 20 拍 |
 
@@ -135,6 +139,7 @@ node tools/d45-real-verify.mjs [host] [port]   # D4/D5 真机联调（planA 17 �
 - `eth0` down 时看不到其 IRQ，绑亲和前必须先 `ip link set eth0 up`；批量 IRQ 迁移必须排除 EtherCAT 口。
 - `sched_rt_runtime_us` 必须设 `-1`，否则 RT 线程被节流（表现为偶发大延迟）。
 - `finalize-deploy.sh` 会先删除旧 `kine-x` 产物，防止"旧固件秒过部署"。
+  - **★固件 502 客户端断开回收已修（2026-10-01）**：旧版 `recv()==0` 未回收 → CLOSE-WAIT 占死 8 槽（触摸屏/机器人偶发重连会"再也连不上"）且 poll 空转（实测 61% CPU）；修复后 EOF/硬错误即回收。探测 502 避免同一 IP 快速连打；编译完成后**手动拷装**（`cp app/kine-x bin/` + restart），别在编译完成后跑 finalize（会误删新产物）。
 - 旧 ZBasic 侧坑（TICKS 倒数计数、`PRINT #` 不换行、称重 CRC 字节序、块式 if 必须 `endif`、标识符不区分大小写等）见根 `README.md` 第八节——改 `.bas` 前必读。
 - 板端：D6 文件管理与空闲超时/swap 快照重置已随 2026-09-25 18:03 的 `kine-x.service` 重启部署到位（`/userdata/kine-x/scripts` 已建）；`tools/d45-real-verify.mjs` 待重跑。
 - **语言绑定已部署（2026-09-25 20:04）**：板端新固件 `sys.info.engine="auto"`（空目录两种语言都收）；`18-push-src → 36-build-m2 → finalize-deploy` 走完，手工 `systemctl restart kine-x.service` 生效（**注意 `10-install-service.sh install` 的 `enable --now` 不会重启已运行服务，finalize 验证可能验到旧进程**）。
@@ -168,7 +173,7 @@ node tools/d45-real-verify.mjs [host] [port]   # D4/D5 真机联调（planA 17 �
   屏输入参数（轴 64/65、69/70；称重 130/131/132/133；泵 204/211/212/214/221/222/225/226）经 `NVSET/NVGET` **掉电保持**
   （脚本目录 `.nvram`，清单=脚本 `NVRAM_REGS`，见 planA/18 §0）。
   TODO：分配模式/校准/方向/泵头泵管型号等（见 planA/05 §8）。
-- 插件：T-01~T-22、T-24~T-26 完成；**v0.8.17 已打包**（`Extension/kinex-debug-0.8.17.vsix`，smoke 321/321）；T-23 定制 VSCodium 仅配方脚本、本仓库不构建。
+- 插件：T-01~T-22、T-24~T-26 完成；**v0.12.1 已打包**（`Extension/kinex-debug-0.12.1.vsix`，smoke 356/356）；T-23 定制 VSCodium 仅配方脚本、本仓库不构建。
   - v0.4.6：控制器文件列表并入侧边栏控制台（不再有 `kine-x.files.open` 独立面板）。
   - v0.4.7：删除树形面板遗留（`panelModel.ts`/`panels.ts` 与 `view/title` 死菜单）；引擎不符时**本地前置拦截**并给出改法；`filesPanelPure` 文案收进 `strings.ts`；版本号 `0.4.7`。
   - v0.4.8：对齐控制器「语言由脚本目录推导」——识别 `sys.info.engine` 的 `auto`/`mixed`（显示「自动/混合」）、编译成功后自动重取 `sys.info`、DAP 不再把 auto 当冲突；Mock 支持 `--engine auto`，smoke 覆盖绑定全流程（225/225）。
@@ -188,6 +193,15 @@ node tools/d45-real-verify.mjs [host] [port]   # D4/D5 真机联调（planA 17 �
   - v0.8.3：`MODBUS_IEEE` 字序定案同步（低字在前）——`kDocs` 文案更新并重生成 `data/commands.json`；插件无功能改动。
   - v0.8.4：「控制器文件」**一致性标识**——控制器 `file.list` 增 `hash`（FNV-1a 64，**板端已部署 17:43**），插件比对 `controller-sync/` 本地副本显示 一致/不一致/本地无副本/未比较；Mock 同步实现。
   - v0.8.7：「工具 → 通讯状态」（协议 **D10** `conn` 订阅）——连接快照（进程级，含对端 IP）+ `PORT_INFO` 标签 + EtherCAT 主站/每从站明细；缺 `d10` 置灰。**板端待部署**。
+  - v0.9.0：「工具 → Modbus 配置」（协议 **D11** `mbmap.get/set`，脚本目录 `.mbmap`）——寄存器清单页（地址/名称/类型/读写/★保持/说明 + 搜索 + 刷新；来源=控制器，回退本地副本并标注）；数据由 `tools/gen-regmap.mjs` 从 `planA/18`+`19` 生成（改文档须重跑）。
+  - v0.12.1：「工具 → **Modbus 配置**」更名「**Modbus 从站**」（与「Modbus 主站」对称）；smoke 增两页文案不混淆锁定。
+  - v0.12.0（M-P2）：「工具 → **Modbus 主站**」（协议 **D13** `mbdev.get/set/status`）：设备表+点位表编辑、校验、保存、在线状态；门控 d13；smoke 增"内联脚本可解析"守卫（防模板转义缺陷）。
+  - v0.11.0（P2）：Modbus 配置切**固件组态 D12**（`mbreg.get/set`）：有 d12 全表可编辑（含**默认值**列；r/w/rw）；无 d12 回退 D11 过渡或本地只读；门控 d12‖d11。
+    - **v0.12.4**：「Modbus 主站」设备表单字段功能文字置顶（链路/名称/主机/IP/端口/站号/超时/重试/轮询）+ smoke 锁定（373/373）。
+    - **v0.12.3（评审修复）**：D11 停报 caps、`mbmap.get/set` 明确 `NOT_SUPPORTED`（`kx_regmap.lua`/`.mbmap` 退役；推送脚本停推+前置检查 d12/enable）；D12 校验 proto-aware（w 合法）+ 宿主侧权威校验 `validateD12Text`；D13 校验补固件边界（timeout/retries/poll/非空/位类型/fc6 2字拒绝）。
+  - v0.10.0：Modbus 配置**可编辑**——「用户寄存器（4x300~999，真正生效）」增删改 + 校验 + 保存（控制器 `kx_regmap.lua` 热加载；RO 异常 0x02；`persist` 走 `.nvram`（容量扩到 1024）；`REGMAP_GET` 通道）；固定区只读。
+- **固件 Modbus 主站（planA/21，P4）**：**M-P1 完成（本地 ctest 19/19；`modbus_master_test` 24/24）**——设备+点位组态、轮询/写回/重连、`MBD_STATUS/MBD_LIST`、D13 `mbdev.get/set/status`；板端部署与自环验证待做（M-P2 插件页随后）。
+- **固件 Modbus 从站产品化（planA/20）**：**P1~P3 全部完成并部署（2026-10-01；现有 108 条寄存器已由 `gen-regmap` 自动生成 `deploy/modbus.json` 并经 D12 热加载进固件，只读拦截实测生效）**——固件引擎（502 多客户端 + FC 全集 + 4x 全空间 + 组态 + `MB_READ/MB_WRITE/MB_LIST`/`MBREG_ZONE/PUT` + persist + D12 热加载）；插件 v0.11.0 切 D12（smoke 341/341）；**固件 502 已独占 502（913224 B，`config/modbus.enable`）**；脚本 `MB_WIRE=false`（Lua 502 退役）；**v0.12.2 按名访问层**：业务 `reg_get/reg_set` 对已组态地址内部改走 `MB_READ/MB_WRITE`（名字由 `MB_LIST()` 装载、5s 自刷新；零调用点改动），未组态地址回退 `kx_mbsync` 同步（每拍 pull 非脏字 / push 仅脏段）；真机闭环验证通过（机器人心跳链 4x142 递增、固件写 4x75 触发脚本兜底使能）。固件 502 客户端已接入 D10 通讯状态（`clients_info` → `conn` 事件 `fw:true` 行，2026-10-01）；**4x1117 现场放开为 rw**（屏直写；生成器 `accessOverride`）。后续小项：M-P3 主站现场联调。
   - v0.8.6：Modbus 面板**「已用寄存器」监视**——控制器 `mb` 事件带 `used` 位图（`Shared::mb_used`，脚本 `MODBUS_REG/MODBUS_IEEE` 读/写即标记），面板高亮 + 「仅显示已用」过滤；脚本 `mirror_used()` 100ms 全量镜像（输出区 + HMI 输入区）。**板端已部署 21:04**，真机验证 `used = 0-6,9-13,60-69,120-135,140-149`。
   - v0.8.5：「控制器 → 修改端口数量」（协议 **D9**，**板端已部署 19:57**；`caps` 含 `d9`）——运行期端口上限（静态容量 64、默认 16、可设 1..64、持久化 `.portmax`；占用时拒绝收缩回 `BUSY`）；缺 `d9` 置灰。真机验证：`used=[10,11,12,13]` 回读、`set 24 → 重启后启动日志=24`（持久化）、`set 10` 因占用回 `BUSY`。
 - 待办：按 `planA/17` 跑 D4/D5 实机联调 → `d45-real-verify.mjs` 全绿 → 插件装机验证「控制器文件」列表与同步流程。
@@ -204,6 +218,9 @@ node tools/d45-real-verify.mjs [host] [port]   # D4/D5 真机联调（planA 17 �
 | 范围与边界（原生服务已移除） | `planA/12` |
 | 调试通道协议（JSON-Lines, D1~D6） | `planA/13` |
 | 插件选型 / 需求任务 / 报文样例 Mock / D4D5 验收 | `planA/14`、`15`、`16`、`17` |
+| **Modbus 产品化设计（从站固件组态 + 按名访问；P1~P3 已部署）** | `planA/20-Modbus配置与固件封装设计.md` |
+| **Modbus 主站封装设计（设备+点位组态；P4，设计评审中）** | `planA/21-Modbus主站封装设计.md` |
+| **通用工业 I/O 与总线路线（PLC 级产品演进，方案评审稿）** | `planA/22-通用工业IO与总线路线.md` |
 | **对屏 4x 寄存器总表（单一事实来源）** | `planA/18-触摸屏寄存器总表.md` |
 | 机器人 Modbus 直连（502 多客户端；机器人主站，1000 区） | `planA/19-机器人Modbus从站(503)接口.md`（文件名沿用历史，内容为 502 方案） |
 | 旧系统对外协议速查（命令表/寄存器表/踩坑） | 根 `README.md` |

@@ -101,7 +101,7 @@
 | 4x1114 | `ctrl_motor_off` | uint16 位（脉冲） | 去使能 ← 4x153 关 |
 | 4x1115 | `ctrl_motor_on` | uint16 位（脉冲） | 使能 ← 4x153 开 |
 | 4x1116 | `ctrl_motor_on_off` | uint16 位（**电平** 1 上电/0 下电） | ← 4x153 |
-| 4x1117 | `ctrl_motoron_pptomain_start` | uint16 位（脉冲） | 上电+回主程序+启动（一键）← 4x152 启动 |
+| 4x1117 | `ctrl_motoron_pptomain_start` | uint16 位（脉冲） | 上电+回主程序+启动（一键）← 4x152 启动；**★主站（屏）可直接写（2026-10-01 现场：屏按钮直写本址；固件组态 access=rw，见 planA/20）** |
 | 4x1118 | `ctrl_motoron_start` | uint16 位（脉冲） | 上电+启动 |
 | 4x1119 | `ctrl_pause_motoroff` | uint16 位（脉冲） | 暂停+下电 |
 | 4x1120 | `ctrl_pptomain` | uint16 位（脉冲） | 程序指针回 main ← 启动时序/4x157 |
