@@ -45,7 +45,54 @@ ENABLED = function() return enabled_stub end
 TICKS = function() return -math.floor(os.clock() * 1000) end
 local nvstub = {}
 NVGET = function(r) return nvstub[r] or 0 end            -- NVRAM 宿主桩（2026-09-28）
+local regmap_stub = ""                                   -- .mbmap 文本桩（REGMAP_GET；v0.9.0 遗留）
+REGMAP_GET = function() return regmap_stub end
+local mb_fw = {}                                         -- 固件 Modbus 库存桩（addr → u16；P3b kx_mbsync）
+MBREG_ZONE = function(st, cnt)
+    local t = {}
+    for i = 0, cnt - 1 do t[#t + 1] = string.pack(">H", mb_fw[st + i] or 0) end
+    return table.concat(t)
+end
+MBREG_PUT = function(st, packed)
+    local n = math.floor(#packed / 2)
+    local vals = { string.unpack(">" .. string.rep("H", n), packed) }
+    for i = 1, n do mb_fw[st + i - 1] = vals[i] end
+end
 NVSET = function(r, v) nvstub[r] = v end
+-- ★v0.12.2 按名访问桩：addr → {n=名, sp=1/2}；未列地址走旧缓存+同步（回退路径）
+local mb_names, mb_by_name = {}, {}
+local function mbname_seed(a, n, sp)
+    mb_names[a] = { n = n, sp = sp or 1 }
+    mb_by_name[n] = a
+end
+MB_LIST = function()
+    local t = {}
+    for a, e in pairs(mb_names) do
+        t[#t + 1] = e.n .. ",4x" .. a .. "," .. (e.sp == 2 and "f32" or "i16") .. ",rw"
+    end
+    return table.concat(t, "\n")
+end
+MB_READ = function(n)
+    local a = mb_by_name[n]
+    if not a then error("未组态变量：" .. tostring(n)) end
+    local e = mb_names[a]
+    if e.sp == 2 then
+        local w1, w2 = mb_fw[a] or 0, mb_fw[a + 1] or 0
+        return string.unpack(">f", string.pack(">I2I2", w2, w1))   -- 低字在前
+    end
+    return mb_fw[a] or 0
+end
+MB_WRITE = function(n, v)
+    local a = mb_by_name[n]
+    if not a then error("未组态变量：" .. tostring(n)) end
+    local e = mb_names[a]
+    if e.sp == 2 then
+        local hi, lo = string.unpack(">I2I2", string.pack(">f", v or 0))
+        mb_fw[a], mb_fw[a + 1] = lo, hi
+    else
+        mb_fw[a] = math.floor(v or 0) & 0xFFFF
+    end
+end
 DELAY = function(ms) end
 RAPIDSTOP = function(m) end
 WAITIDLE = function() end
@@ -498,7 +545,8 @@ check(T.reg_get(20) == 111 and T.reg_get(21) == 222 and #resp16 == 12, "FC16 写
 local bad = T.mb_handle_pdu(3, 0, 1, 3, string.pack(">I2I2", 250, 10))
 check(string.byte(bad, 8) == (3 | 0x80) and string.byte(bad, 9) == 2, "越界读 -> 异常码 0x02")
 
--- throughput: modbus_step 解析字节流
+-- throughput: modbus_step 解析字节流（P3b：Lua 502 线上处理默认退役；此处开回验证回退路径）
+T._set_mb_wire(true)
 T.modbus_state.opened = 1
 T.modbus_state.rx[0] = string.pack(">I2I2I2BB", 7, 0, 6, 1, 3) .. string.pack(">I2I2", 10, 2)  -- 客户端 0
 rxq[13] = {}
@@ -508,7 +556,8 @@ local got = false
 for _, m in ipairs(sent) do
     if m.ch == 13 and string.byte(m.s, 1) == 0 then got = true end
 end
-check(got, "modbus_step 从字节流解析 MBAP 并应答")
+check(got, "modbus_step 从字节流解析 MBAP 并应答（MB_WIRE 回退路径）")
+T._set_mb_wire(false)
 
 -- ★机器人区（4x1000~1199，planA/19；触摸屏/机器人同连 502，2026-09-28）
 local w6 = T.mb_handle_pdu(9, 0, 1, 6, string.pack(">I2I2", 1050, 4321))
@@ -928,6 +977,56 @@ T.reg_set(214, 5)                                     -- ★输送管数量（20
 T.modbus_step()
 check(nvstub[64] == 300 and nvstub[131] == 250 and nvstub[130] == 1 and nvstub[133] ~= nil and nvstub[214] == 5,
       "持久化：轴速度(64)/称重参数(130/131/132-133)/输送管数量(214) 变化 → NVSET 已存")
+
+print("== 3g) 固件库存同步（P3b kx_mbsync；退役 Lua 502 后业务经同步层）==")
+T.mbsync_push()                     -- 先清历史脏字（前序用例写过 4x3/60 等）
+mb_fw[60] = 1; mb_fw[1000] = 7
+T.mbsync_pull()
+check(T.reg_get(60) == 1 and T.reg_get(1000) == 7, "pull：固件 → 本地（主站写入可见）")
+-- 脚本写入（未组态地址 250 → 旧缓存+同步回退路径）：脏字不因 pull 被覆盖，push 后到达固件
+T.reg_set(250, 8)
+mb_fw[250] = 0
+T.mbsync_pull()
+check(T.reg_get(250) == 8, "pull：本拍脏字不被固件旧值覆盖（未组态回退）")
+T.mbsync_push()
+check(mb_fw[250] == 8, "push：脏字回推固件（未组态回退）")
+T.mbsync_pull()
+check(T.reg_get(250) == 8, "脏清：push 后 pull 与固件一致（未组态回退）")
+-- 只推脏段：改动 5 与 9（不相邻），4 与 6~8 保持主站值不受影响
+mb_fw[4] = 44; mb_fw[6] = 66; mb_fw[7] = 77; mb_fw[8] = 88
+T.reg_set(5, 55); T.reg_set(9, 99)
+T.mbsync_push()
+check(mb_fw[5] == 55 and mb_fw[9] == 99 and mb_fw[4] == 44 and mb_fw[6] == 66 and mb_fw[8] == 88,
+      "push：脏段精确回推（未改写字不被覆盖）")
+-- 机器人区同样同步
+T.reg_set(1140, 2)
+T.mbsync_push()
+check(mb_fw[1140] == 2, "push：机器人区脏字回推（未组态回退）")
+
+print("== 3h) 按名访问层（v0.12.2：已组态地址 reg_* → MB_READ/MB_WRITE 直达）==")
+mbname_seed(3, "r3")                                     -- 单字条目
+mbname_seed(252, "r252", 2)                              -- 浮点条目（低字在前）
+mbname_seed(251, "r251")                                 -- i16 条目（符号还原用例）
+T.mbnames_refresh()
+T.reg_set(3, 8)
+check(mb_fw[3] == 8, "按名写：reg_set(3) → MB_WRITE 直达固件（本地零脏字）")
+mb_fw[250] = 0                                           -- 干扰：固件对 250 的旧值（未组态）不影响
+mb_fw[3] = 5                                             -- 模拟主站/屏写入固件
+T.mbnames_tick()                                         -- 按拍缓存失效（下一拍首读回源）
+check(T.reg_get(3) == 5, "按名读：下一拍 reg_get(3) 直读固件（无需 pull）")
+check(T.reg_get(3) == 5, "按拍缓存：同拍重复读一致")
+check(T.reg_get(250) == 8, "未组态地址仍走本地缓存（回退路径未被破坏）")
+T.reg_set_f(252, 1.5)
+check(mb_fw[252] == 0x0000 and mb_fw[253] == 0x3FC0,
+      "按名写浮点：reg_set_f → MB_WRITE 单条目（1.5f 低字=0x0000/高字=0x3FC0）")
+check(T.reg_get_f(252) == 1.5, "按名读浮点：reg_get_f → MB_READ 解码 = 1.5")
+mb_fw[252] = 0; mb_fw[253] = 0x4000                      -- 外部（主站/屏）改写为 2.0f
+T.mbnames_tick()
+check(T.reg_get_f(252) == 2.0, "按名读浮点直读固件（外部改字下一拍可见）")
+T.reg_set(251, 65531)                                    -- i16 原始字 0xFFFB（-5）
+check(mb_fw[251] == 0xFFFB, "按名写 i16：原始字还原符号（65531 → 编码为 -5 = 0xFFFB）")
+T.mbnames_tick()
+check(T.reg_get(251) == 65531, "按名读 i16：解码 -5 → 原始字 65531")
 
 print("== 9) NVRAM 持久化（NVSET/NVGET：恢复/变化即存） ==")
 nvstub[204] = 123

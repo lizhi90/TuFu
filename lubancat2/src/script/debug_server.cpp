@@ -2,6 +2,11 @@
 // 规范与角色说明见 debug_server.h 顶部注释；报文样例见 docs/planA/16。
 #include "script/debug_server.h"
 
+#include "modbus/modbus_config.h"
+#include "modbus/modbus_master.h"
+#include "modbus/modbus_master_config.h"
+#include "modbus/modbus_server.h"
+
 #include <dirent.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -21,7 +26,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
+#include <sstream>
 #include <iterator>
 #include <set>
 
@@ -473,6 +480,13 @@ bool DebugServer::rpc(const std::string& m, const Json& p, Json* r, Err* e) {
     if (m == "boot.clear")     return m_boot_clear(p, r, e);
     if (m == "port.max.get")   return m_port_max_get(p, r, e);  // D9 端口数量上限
     if (m == "port.max.set")   return m_port_max_set(p, r, e);  // D9 端口数量上限
+    if (m == "mbmap.get")      return m_mbmap_get(p, r, e);      // D11 Modbus 寄存器表（配置载体）
+    if (m == "mbmap.set")      return m_mbmap_set(p, r, e);      // D11 Modbus 寄存器表写入
+    if (m == "mbreg.get")      return m_mbreg_get(p, r, e);      // D12 Modbus 组态（产品化；固件引擎）
+    if (m == "mbreg.set")      return m_mbreg_set(p, r, e);      // D12 Modbus 组态写入 + 热加载
+    if (m == "mbdev.get")      return m_mbdev_get(p, r, e);      // D13 Modbus 主站组态（planA/21）
+    if (m == "mbdev.set")      return m_mbdev_set(p, r, e);      // D13 Modbus 主站组态写入 + 热加载
+    if (m == "mbdev.status")   return m_mbdev_status(p, r, e);   // D13 主站设备在线状态
     if (m == "axis.snapshot")  return m_axis_snapshot(p, r, e);
     if (m == "cmd")            return m_cmd(p, r, e);
     if (m == "subscribe")      return m_subscribe(p, r, e);
@@ -517,6 +531,9 @@ bool DebugServer::m_sys_info(const Json&, Json* r, Err*) {
     caps.push(jstr("d8"));                           // D8 主文件（开机运行）：boot.get/set/clear
     caps.push(jstr("d9"));                           // D9 端口数量上限：port.max.get/set（持久化 .portmax）
     caps.push(jstr("d10"));                          // D10 通讯状态：conn 订阅（端口快照 + EtherCAT 主/从明细）
+
+    caps.push(jstr("d12"));                          // D12 Modbus 组态（产品化）：mbreg.get/set（config/modbus.json + 热加载）
+    caps.push(jstr("d13"));                          // D13 Modbus 主站组态：mbdev.get/set/status（config/modbus_master.json + 热加载）
     info.set("caps", std::move(caps));
 
     *r = std::move(info);
@@ -1280,6 +1297,217 @@ bool DebugServer::m_port_max_set(const Json& p, Json* r, Err* e) {
     return true;
 }
 
+// ---- D11：已废弃（2026-10-01，planA/20 §8）----
+//   用户寄存器层 kx_regmap 退役、.mbmap 链路取消；D11 不再上报 caps，路由明确拒绝并引导 D12
+//   （项目铁律：降级不伪装——不返回"成功但零效果"）。
+bool DebugServer::m_mbmap_get(const Json&, Json*, Err* e) {
+    e->code = "NOT_SUPPORTED";
+    e->msg  = "D11 mbmap 已废弃（2026-10-01）：请改用 D12 mbreg.get/set（config/modbus.json，插件「Modbus 从站」页）";
+    return false;
+}
+
+bool DebugServer::m_mbmap_set(const Json&, Json*, Err* e) {
+    e->code = "NOT_SUPPORTED";
+    e->msg  = "D11 mbmap 已废弃（2026-10-01）：请改用 D12 mbreg.get/set（config/modbus.json，插件「Modbus 从站」页）";
+    return false;
+}
+
+// ---- D12：Modbus 组态（产品化；固件 ModbusServer；planA/20）----
+bool DebugServer::m_mbreg_get(const Json&, Json* r, Err*) {
+    Json out = Json::make_obj();
+    out.set("path",  jstr(mb_cfg_path_));
+    out.set("count", jint(mb_ ? mb_->entry_count() : 0));
+    std::ifstream f(mb_cfg_path_, std::ios::binary);
+    if (!f) {
+        out.set("exists", Json::make_bool(false));
+        out.set("text",   jstr(""));
+    } else {
+        std::stringstream ss;
+        ss << f.rdbuf();
+        out.set("exists", Json::make_bool(true));
+        out.set("text",   jstr(ss.str()));
+    }
+    *r = std::move(out);
+    return true;
+}
+
+bool DebugServer::m_mbreg_set(const Json& p, Json* r, Err* e) {
+    if (!mb_) {
+        e->code = "RUNTIME_ERROR";
+        e->msg  = "Modbus 引擎未启用（固件未接线）";
+        return false;
+    }
+    const Json* pt = p.find("text");
+    if (!pt || !pt->is_str()) {
+        e->code = "BAD_PARAM";
+        e->msg  = "缺少 text（组态 JSON 文本）";
+        return false;
+    }
+    const std::string text = pt->as_str();
+    constexpr size_t kMaxBytes = 256 * 1024;
+    if (text.size() > kMaxBytes) {
+        e->code = "BAD_PARAM";
+        e->msg  = "text 超过上限 256KB";
+        return false;
+    }
+    // 先校验（不改运行态）→ 落盘（原子）→ 热加载
+    MbConfig cfg;
+    std::string verr;
+    if (!mb_config_parse(text, &cfg, &verr)) {
+        e->code = "BAD_PARAM";
+        e->msg  = verr;
+        return false;
+    }
+    if (!mb_cfg_path_.empty()) {
+        const size_t slash = mb_cfg_path_.find_last_of('/');
+        if (slash != std::string::npos) {
+            std::error_code ec;
+            std::filesystem::create_directories(mb_cfg_path_.substr(0, slash), ec);
+        }
+        const std::string tmp = mb_cfg_path_ + ".tmp";
+        {
+            std::ofstream fo(tmp, std::ios::binary | std::ios::trunc);
+            if (!fo) {
+                e->code = "RUNTIME_ERROR";
+                e->msg  = "写入临时文件失败：" + tmp;
+                return false;
+            }
+            fo.write(text.data(), (std::streamsize)text.size());
+            if (!fo.good()) {
+                e->code = "RUNTIME_ERROR";
+                e->msg  = "写入临时文件失败（磁盘？）：" + tmp;
+                return false;
+            }
+        }
+        if (std::rename(tmp.c_str(), mb_cfg_path_.c_str()) != 0) {
+            std::remove(tmp.c_str());
+            e->code = "RUNTIME_ERROR";
+            e->msg  = "替换组态文件失败：" + mb_cfg_path_;
+            return false;
+        }
+    }
+    std::string aerr;
+    if (!mb_->load_config_text(text, &aerr)) {       // 重新解析同一文本（幂等）
+        e->code = "RUNTIME_ERROR";
+        e->msg  = aerr;
+        return false;
+    }
+    Json out = Json::make_obj();
+    out.set("path",  jstr(mb_cfg_path_));
+    out.set("bytes", jint((long long)text.size()));
+    out.set("count", jint(mb_->entry_count()));
+    *r = std::move(out);
+    return true;
+}
+
+// ---- D13：Modbus 主站组态/状态（planA/21；固件 ModbusMaster）----
+bool DebugServer::m_mbdev_get(const Json&, Json* r, Err*) {
+    Json out = Json::make_obj();
+    out.set("path",  jstr(master_cfg_path_));
+    out.set("count", jint(master_ ? master_->device_count() : 0));
+    std::ifstream f(master_cfg_path_, std::ios::binary);
+    if (!f) {
+        out.set("exists", Json::make_bool(false));
+        out.set("text",   jstr(""));
+    } else {
+        std::stringstream ss;
+        ss << f.rdbuf();
+        out.set("exists", Json::make_bool(true));
+        out.set("text",   jstr(ss.str()));
+    }
+    *r = std::move(out);
+    return true;
+}
+
+bool DebugServer::m_mbdev_set(const Json& p, Json* r, Err* e) {
+    if (!master_) {
+        e->code = "RUNTIME_ERROR";
+        e->msg  = "Modbus 主站引擎未启用（固件未接线）";
+        return false;
+    }
+    const Json* pt = p.find("text");
+    if (!pt || !pt->is_str()) {
+        e->code = "BAD_PARAM";
+        e->msg  = "缺少 text（主站组态 JSON 文本）";
+        return false;
+    }
+    const std::string text = pt->as_str();
+    constexpr size_t kMaxBytes = 256 * 1024;
+    if (text.size() > kMaxBytes) {
+        e->code = "BAD_PARAM";
+        e->msg  = "text 超过上限 256KB";
+        return false;
+    }
+    // 先校验（含与从站只读冲突的交叉校验）→ 落盘 → 热加载
+    MbMasterConfig cfg;
+    std::string verr;
+    if (!mb_master_config_parse(text, &cfg, &verr)) {
+        e->code = "BAD_PARAM";
+        e->msg  = verr;
+        return false;
+    }
+    if (mb_ && !mb_master_cross_check(cfg, mb_->config_copy(), &verr)) {
+        e->code = "BAD_PARAM";
+        e->msg  = verr;
+        return false;
+    }
+    if (!master_cfg_path_.empty()) {
+        const size_t slash = master_cfg_path_.find_last_of('/');
+        if (slash != std::string::npos) {
+            std::error_code ec;
+            std::filesystem::create_directories(master_cfg_path_.substr(0, slash), ec);
+        }
+        const std::string tmp = master_cfg_path_ + ".tmp";
+        {
+            std::ofstream fo(tmp, std::ios::binary | std::ios::trunc);
+            if (!fo) {
+                e->code = "RUNTIME_ERROR";
+                e->msg  = "写入临时文件失败：" + tmp;
+                return false;
+            }
+            fo.write(text.data(), (std::streamsize)text.size());
+            if (!fo.good()) {
+                e->code = "RUNTIME_ERROR";
+                e->msg  = "写入临时文件失败（磁盘？）：" + tmp;
+                return false;
+            }
+        }
+        if (std::rename(tmp.c_str(), master_cfg_path_.c_str()) != 0) {
+            std::remove(tmp.c_str());
+            e->code = "RUNTIME_ERROR";
+            e->msg  = "替换组态文件失败：" + master_cfg_path_;
+            return false;
+        }
+    }
+    std::string aerr;
+    if (!master_->load_config_text(text, &aerr)) {
+        e->code = "RUNTIME_ERROR";
+        e->msg  = aerr;
+        return false;
+    }
+    Json out = Json::make_obj();
+    out.set("path",  jstr(master_cfg_path_));
+    out.set("bytes", jint((long long)text.size()));
+    out.set("count", jint(master_->device_count()));
+    *r = std::move(out);
+    return true;
+}
+
+bool DebugServer::m_mbdev_status(const Json&, Json* r, Err* e) {
+    if (!master_) {
+        e->code = "RUNTIME_ERROR";
+        e->msg  = "Modbus 主站引擎未启用（固件未接线）";
+        return false;
+    }
+    Json out = Json::make_obj();
+    Json parsed;
+    if (json_parse(master_->status_json(), &parsed)) {
+        if (const Json* d = parsed.find("devices")) out.set("devices", *d);
+    }
+    *r = std::move(out);
+    return true;
+}
+
 // ---------------------------------------------------------------------------
 // D1：变量 / 轴快照 / 终端命令
 // ---------------------------------------------------------------------------
@@ -1612,6 +1840,22 @@ void DebugServer::push_events(int fd) {
             if (!s.tag.empty())  o.set("tag",  jstr(s.tag));    // PORT_INFO 用途
             if (!s.role.empty()) o.set("role", jstr(s.role));   // PORT_INFO 主/从
             conns.push(std::move(o));
+        }
+        // 固件 502 从站的真实客户端（脚本侧 502 已退役不再出现在 PortManager；planA/20）
+        if (mb_) {
+            for (const auto& ci : mb_->clients_info()) {
+                Json o = Json::make_obj();
+                o.set("port",      jint(502));
+                o.set("kind",      jstr("TCP_SERVER"));
+                o.set("conn",      Json::make_bool(true));
+                o.set("listen",    jint(502));
+                o.set("peer_port", jint(ci.peer_port));
+                o.set("peer",      jstr(ci.peer));
+                o.set("tag",       jstr("Modbus-TCP 从站(502·固件)"));
+                o.set("role",      jstr("从站"));
+                o.set("fw",        Json::make_bool(true));
+                conns.push(std::move(o));
+            }
         }
         BusInfo bi;
         {

@@ -69,7 +69,7 @@ int main() {
     }
 
     std::printf("== 4) 坏行忽略 ==\n");
-    write_raw("# comment\n204=77\nbadline\n300=1\n212=99999\n211=abc\n\n# x\n221 = 300 \n");
+    write_raw("# comment\n204=77\nbadline\n1200=1\n212=99999\n211=abc\n\n# x\n221 = 300 \n");
     {
         NvramStore nv(kFile);
         std::string err;
@@ -86,7 +86,9 @@ int main() {
         CHECK(nv.load(nullptr));
         std::string err;
         CHECK(!nv.set(-1, 1, &err) && !err.empty());
-        CHECK(!nv.set(256, 1, &err));
+        CHECK(!nv.set(1200, 1, &err));
+        // 用户寄存器区（4x300~999）：已纳入持久化范围（v0.9.0 扩到 1024）
+        CHECK(nv.set(512, 1234, nullptr) && nv.get(512) == 1234);
         // 65535 合法（uint16 上限）
         CHECK(nv.set(0, 65535, nullptr));
         CHECK(nv.get(0) == 65535);

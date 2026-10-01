@@ -39,6 +39,9 @@
 
 namespace kx {
 
+class ModbusServer;
+class ModbusMaster;
+
 class DebugServer {
 public:
     // sh           共享状态（轴/总线/寄存器快照来源）
@@ -52,6 +55,17 @@ public:
     DebugServer(Shared& sh, const DebugCfg& cfg, bool allow_script, const std::string& engine_hint,
                 std::atomic<bool>* restart_flag = nullptr);
     ~DebugServer();
+
+    // 固件 Modbus 引擎（D12：mbreg.get/set；planA/20）；未接线时 mbreg.* 明确报不支持
+    void set_modbus(ModbusServer* mb, const std::string& cfg_path) {
+        mb_ = mb;
+        mb_cfg_path_ = cfg_path;
+    }
+    // 固件 Modbus 主站（D13：mbdev.get/set/status；planA/21）
+    void set_master(ModbusMaster* md, const std::string& cfg_path) {
+        master_ = md;
+        master_cfg_path_ = cfg_path;
+    }
 
     DebugServer(const DebugServer&) = delete;
     DebugServer& operator=(const DebugServer&) = delete;
@@ -128,6 +142,13 @@ private:
     bool  m_boot_clear(const Json& p, Json* r, Err* e);     // D8 主文件取消
     bool  m_port_max_get(const Json& p, Json* r, Err* e);   // D9 端口数量上限（运行期 + 持久化 .portmax）
     bool  m_port_max_set(const Json& p, Json* r, Err* e);   // D9 端口数量上限设置
+    bool  m_mbmap_get(const Json& p, Json* r, Err* e);      // D11 Modbus 寄存器表（脚本目录 .mbmap）
+    bool  m_mbmap_set(const Json& p, Json* r, Err* e);      // D11 Modbus 寄存器表写入
+    bool  m_mbreg_get(const Json& p, Json* r, Err* e);      // D12 Modbus 组态（产品化；固件引擎）
+    bool  m_mbreg_set(const Json& p, Json* r, Err* e);      // D12 Modbus 组态写入 + 热加载
+    bool  m_mbdev_get(const Json& p, Json* r, Err* e);      // D13 Modbus 主站组态（planA/21）
+    bool  m_mbdev_set(const Json& p, Json* r, Err* e);      // D13 Modbus 主站组态写入 + 热加载
+    bool  m_mbdev_status(const Json& p, Json* r, Err* e);   // D13 主站设备在线状态
     bool m_axis_snapshot(const Json& p, Json* r, Err* e);
     bool m_cmd(const Json& p, Json* r, Err* e);
     bool m_subscribe(const Json& p, Json* r, Err* e);
@@ -162,6 +183,10 @@ private:
     bool         allow_script_ = true;
     ScriptLanguage lang_       = ScriptLanguage::BASIC;
     std::atomic<bool>* restart_flag_ = nullptr;   // main 的重启兜底标志（可空）
+    ModbusServer* mb_ = nullptr;                  // D12：固件 Modbus 引擎（可空=未接线）
+    std::string   mb_cfg_path_;                   // D12：组态文件路径（config/modbus.json）
+    ModbusMaster* master_ = nullptr;              // D13：固件 Modbus 主站（可空=未接线）
+    std::string   master_cfg_path_;               // D13：组态文件路径（config/modbus_master.json）
 
     // 监听/连接
     int                listen_fd_ = -1;

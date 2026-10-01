@@ -51,6 +51,15 @@ else
 fi
 sudo chmod 755 "$BIN"
 
+# 2.5) Modbus 从站组态种子（★仅当板端缺失时安装，避免覆盖现场调整；D12 可在线覆盖/重载）
+if [ -f /opt/kine-x/app/deploy/modbus.json ] && [ ! -f /userdata/kine-x/config/modbus.json ]; then
+  sudo mkdir -p /userdata/kine-x/config
+  sudo cp -f /opt/kine-x/app/deploy/modbus.json /userdata/kine-x/config/modbus.json
+  echo "已安装 Modbus 从站组态种子（108 条）→ /userdata/kine-x/config/modbus.json"
+else
+  echo "Modbus 组态：板端已存在或种子缺失（跳过）"
+fi
+
 # 3) 安装 systemd 服务（enable --now，开机自启）
 sep "安装并启动服务"
 bash /opt/kine-x/deploy/10-install-service.sh install

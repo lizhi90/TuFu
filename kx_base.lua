@@ -96,11 +96,16 @@ local REG_CMD_PULSE = {
 }
 
 -- Modbus-TCP 从站（触摸屏）
-local MB_CH         = 13           -- Modbus 从站监听端口句柄
+local MB_WIRE       = false        -- ★P3b（2026-10-01）：Lua 502 线上处理退役（固件 ModbusServer 独占 502）；
+                                   --   置 true 可回退兼容（与固件 enable 文件互斥，二者只能开一个）
+local MB_CH         = 13           -- Modbus 从站监听端口句柄（MB_WIRE=true 时使用）
 local MB_PORT       = 502          -- 触摸屏轮询端口（特权端口，需 CAP_NET_BIND_SERVICE）
 local MB_STATION    = 1            -- 从站站号（原 ZMC ADDRESS=1）
 local MB_REGN       = 256          -- 4x 寄存器数量（触摸屏/旧区 0~255）
 local MB_ROBOT_BASE = 1000         -- ★机器人 Modbus 区起始（planA/19；触摸屏+机器人同连 502，2026-09-28）
+-- ★P3b（2026-10-01）：用户寄存器区移交固件组态（config/modbus.json，D12/插件编辑）；
+--   脚本侧 reg_* 改为与固件库存按区同步（kx_mbsync.lua）；reg_dirty = 本拍被脚本改写的字
+local reg_dirty   = {}
 local MB_ROBOT_N    = 200          -- 机器人区 1000~1199（4x 保持寄存器；线圈/离散未启用）
 
 -- ======================== 运行状态 ========================
@@ -283,10 +288,64 @@ local function mb_addr_ok(a, count)
     return false
 end
 
-local function reg_get(a) return regs[a] or 0 end
+-- ★v0.12.2（按名访问层，planA/20 §4/§5）：业务寄存器对**已组态地址**经 MB_READ/MB_WRITE 按名访问
+--   （名字由固件组态经 MB_LIST() 自动装载）；未组态地址回退旧缓存 + kx_mbsync 同步（安全网）。
+local mb_name      = {}        -- addr → name（仅条目起始地址）
+local mb_name_span = {}        -- addr → 1/2（类型字数）
+local mb_name_i16  = {}        -- addr → true（i16 条目：原始字回写需还原符号）
+local mb_read_cache_w = {}     -- ★按拍读缓存（字）：每拍由 mbnames_tick 清空，降低按名调用开销
+local mb_read_cache_f = {}     -- ★按拍读缓存（浮点 2 字条目）
+local function mbnames_tick()
+    if next(mb_read_cache_w) ~= nil then mb_read_cache_w = {} end
+    if next(mb_read_cache_f) ~= nil then mb_read_cache_f = {} end
+end
+local function mbnames_refresh()
+    if not MB_LIST then return end
+    local ok, txt = pcall(MB_LIST)
+    if not ok or type(txt) ~= "string" then return end
+    local n_name, n_span, n_i16 = {}, {}, {}
+    for line in txt:gmatch("[^\n]+") do
+        local name, addr, typ = line:match("^([^,]+),(4x%d+),([%w]+)")
+        if name and addr then
+            local a = tonumber(addr:sub(3))
+            if a then
+                n_name[a] = name
+                n_span[a] = (typ == "f32" or typ == "f32hi" or typ == "u32") and 2 or 1
+                if typ == "i16" then n_i16[a] = true end
+            end
+        end
+    end
+    mb_name, mb_name_span, mb_name_i16 = n_name, n_span, n_i16
+    mbnames_tick()                                          -- 名字表变更 → 读缓存失效
+end
+
+local function reg_get(a)
+    local n = mb_name[a]
+    if n and (mb_name_span[a] or 1) == 1 and MB_READ then
+        local cv = mb_read_cache_w[a]                    -- 按拍缓存：本拍已读过则不再跨语言调用
+        if cv ~= nil then return cv end
+        local ok, v = pcall(MB_READ, n)
+        if ok and type(v) == "number" then
+            cv = math.floor(v) & 0xFFFF
+            mb_read_cache_w[a] = cv
+            return cv
+        end
+    end
+    return regs[a] or 0
+end
 local function reg_set(a, v)
     v = math.floor(v or 0) & 0xFFFF
+    local n = mb_name[a]
+    if n and (mb_name_span[a] or 1) == 1 and MB_WRITE then
+        local w = v
+        if mb_name_i16[a] and v >= 0x8000 then w = v - 0x10000 end   -- ★i16：原始字还原符号（MB_WRITE 按类型编码）
+        if pcall(MB_WRITE, n, w) then
+            mb_read_cache_w[a] = v                      -- 写后同拍读一致（缓存原始字）
+            return
+        end
+    end
     if (a >= 0 and a < MB_REGN) or (a >= MB_ROBOT_BASE and a < MB_ROBOT_BASE + MB_ROBOT_N) then
+        if regs[a] ~= v then reg_dirty[a] = true end    -- ★P3b：脏字由 kx_mbsync 回推固件（未组态回退）
         regs[a] = v
     end
 end
@@ -297,6 +356,13 @@ local MB_FLOAT_ORDER = 1
 -- 调试用：非 nil 时 4x10/11 固定显示该值（确认屏端解码方式用，用完必须改回 nil）
 local MB_TEST_POS = nil
 local function reg_set_f(a, v)
+    local n = mb_name[a]
+    if n and (mb_name_span[a] or 1) == 2 and MB_WRITE then
+        if pcall(MB_WRITE, n, v) then
+            mb_read_cache_f[a] = v or 0
+            return
+        end
+    end
     local hi, lo = string.unpack(">I2I2", string.pack(">f", v or 0))
     if MB_FLOAT_ORDER == 0 then
         reg_set(a, hi)
@@ -307,6 +373,16 @@ local function reg_set_f(a, v)
     end
 end
 local function reg_get_f(a)
+    local n = mb_name[a]
+    if n and (mb_name_span[a] or 1) == 2 and MB_READ then
+        local cv = mb_read_cache_f[a]
+        if cv ~= nil then return cv end
+        local ok, v = pcall(MB_READ, n)
+        if ok and type(v) == "number" then
+            mb_read_cache_f[a] = v
+            return v
+        end
+    end
     local w1 = reg_get(a)
     local w2 = reg_get(a + 1)
     if MB_FLOAT_ORDER == 0 then

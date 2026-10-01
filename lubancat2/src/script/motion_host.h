@@ -91,6 +91,8 @@
 namespace kx {
 
 class NvramStore;   // 持久化存储（NVSET/NVGET；见 nvram_store.h）
+class ModbusServer; // 固件 Modbus 引擎（MB_READ/MB_WRITE/MB_LIST；见 modbus/modbus_server.h）
+class ModbusMaster; // 固件 Modbus 主站（MBD_*；见 modbus/modbus_master.h）
 
 class MotionHost : public ScriptHost {
 public:
@@ -126,6 +128,12 @@ public:
 
     // 持久化存储（NVSET/NVGET）：由 main.cpp 注入（脚本目录 .nvram）；未注入时命令明确报不支持
     void set_nvram(NvramStore* nv) { nv_ = nv; }
+    // Modbus 寄存器表目录（脚本目录；REGMAP_GET 读取 .mbmap，热加载轮询用）
+    void set_regmap_dir(const std::string& d) { regmap_dir_ = d; }
+    // 固件 Modbus 引擎（planA/20）：MB_READ/MB_WRITE/MB_LIST 的目标；未接线时命令明确报不支持
+    void set_modbus(ModbusServer* mb) { mb_ = mb; }
+    // 固件 Modbus 主站（MBD_STATUS/MBD_LIST；MB_READ/MB_WRITE 的“设备.点位”回退）
+    void set_master(ModbusMaster* md) { master_ = md; }
 
     // 端口通道（B 层）：供外部注入/观察（默认内建一个）
     PortManager&       ports()       { return ports_; }
@@ -157,6 +165,9 @@ private:
 
     Shared*     sh_ = nullptr;
     NvramStore* nv_ = nullptr;                       // 持久化存储（NVSET/NVGET；可空=未启用）
+    std::string regmap_dir_;                         // 脚本目录（.mbmap 所在；REGMAP_GET 用）
+    ModbusServer* mb_ = nullptr;                     // 固件 Modbus 引擎（MB_*；可空=未启用）
+    ModbusMaster* master_ = nullptr;                 // 固件 Modbus 主站（MBD_*；可空=未启用）
     Config      cfg_{};
     std::function<void(const std::string&)> out_;
     const std::atomic<bool>* abort_ = nullptr;

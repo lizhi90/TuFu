@@ -23,7 +23,10 @@ rm -f "$TAR"
 # 注意：config/ 一并打包——否则板端 app.conf 缺 ECAT_VENDOR/ECAT_PRODUCT/ECAT_EXPLICIT_PDO，
 #       会退回旧默认值导致从站 attach 失败（AL 0x001E，进不了 OP）。
 # 注意：third_party/ 一并打包——Lua 脚本引擎依赖 vendored Lua 5.4 源码（见 docs/planA/09）。
-tar czf "$TAR" src tools config third_party CMakeLists.txt 2>/dev/null || { echo "打包失败"; exit 1; }
+#   deploy/modbus.json 一并打包（finalize 作为组态种子安装；见 planA/20 §8）
+tar czf "$TAR" src tools config third_party CMakeLists.txt deploy/modbus.json 2>/dev/null || {
+  tar czf "$TAR" src tools config third_party CMakeLists.txt 2>/dev/null || { echo "打包失败"; exit 1; }
+}
 echo "  $TAR ($(du -h "$TAR" | cut -f1))"
 
 echo "== 上传 =="

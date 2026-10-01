@@ -43,7 +43,9 @@ inline const char* const* motion_command_names() {
         "OPEN", "CLOSE", "PRINT", "PUTCHAR", "GET", "PORT_STATUS", "PORT_CLIENTS", "PORT_TARGET", "PORT_MAX",
         "PORT_INFO", "JOGLEAD", "SRAMP", "FASTDEC", "VP_SPEED",
         // Modbus / 持久化 / 任务
-        "MODBUS_REG", "MODBUS_IEEE", "NVSET", "NVGET", "RUNTASK", "STOPTASK", "PROC_STATUS",
+        "MODBUS_REG", "MODBUS_IEEE", "NVSET", "NVGET", "REGMAP_GET",
+        "MB_READ", "MB_WRITE", "MB_LIST", "MBREG_ZONE", "MBREG_PUT", "MBD_STATUS", "MBD_LIST",
+        "RUNTASK", "STOPTASK", "PROC_STATUS",
         // 明确不可用
         "SDO_WRITE",
         nullptr
@@ -143,6 +145,14 @@ inline const MotionCommandDoc* motion_command_docs() {
         {"VP_SPEED", "VP_SPEED(axis)", "当前运动速度 mm/s（只读；内核实际位置差分估计）"},
         // Modbus / 任务
         {"NVSET", "NVSET(reg, value)", "把 4x 寄存器值持久化到脚本目录 .nvram（立即落盘；掉电/重启后 NVGET 恢复）"},
+        {"REGMAP_GET", "REGMAP_GET()", "读 Modbus 寄存器表文本（脚本目录 .mbmap；用户寄存器配置载体，D11 mbmap.set 写入）"},
+        {"MB_READ", "MB_READ(变量名)", "按名读 Modbus 组态变量（planA/20；插件「Modbus 配置」组态，固件热加载）"},
+        {"MB_WRITE", "MB_WRITE(变量名, 值)", "按名写 Modbus 组态变量（掉电保持条目写即落盘；主站侧权限另按组态）"},
+        {"MB_LIST", "MB_LIST()", "列出全部组态变量：每行 name,4x地址,类型,读写[,persist]"},
+        {"MBREG_ZONE", "MBREG_ZONE(start, count)", "按区读 4x 寄存器（打包 u16 大端字符串；可 string.unpack 解码）"},
+        {"MBREG_PUT", "MBREG_PUT(start, packed)", "按区写 4x 寄存器（packed 为 u16 大端序列；persist 条目生效）"},
+        {"MBD_STATUS", "MBD_STATUS(设备名)", "Modbus 主站设备状态（在线/错误/超时/ok 计数；planA/21）"},
+        {"MBD_LIST", "MBD_LIST()", "列出主站设备点位：每行 设备.点位,read|write,fcN,类型,4x地址|var"},
         {"NVGET", "NVGET(reg)", "读回 .nvram 保存的寄存器值（无记录返回 0）；恢复由脚本 init 阶段完成"},
         {"MODBUS_REG", "MODBUS_REG(i[, v])", "读写 4x 寄存器镜像"},
         {"MODBUS_IEEE", "MODBUS_IEEE(i[, v])", "读写 32 位浮点镜像（低字在前）"},

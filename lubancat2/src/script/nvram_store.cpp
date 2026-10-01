@@ -78,6 +78,12 @@ bool NvramStore::load(std::string* err) {
     return true;
 }
 
+bool NvramStore::has(int reg) const {
+    std::lock_guard<std::mutex> lk(m_);
+    if (reg < 0 || reg >= kRegs) return false;
+    return has_[reg] != 0;
+}
+
 uint16_t NvramStore::get(int reg) const {
     std::lock_guard<std::mutex> lk(m_);
     if (reg < 0 || reg >= kRegs || !has_[reg]) return 0;

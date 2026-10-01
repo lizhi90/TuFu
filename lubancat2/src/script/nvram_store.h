@@ -20,7 +20,7 @@ namespace kx {
 
 class NvramStore {
 public:
-    static constexpr int kRegs = 256;                  // 4x 寄存器个数
+    static constexpr int kRegs = 1024;                 // 4x 寄存器个数（v0.9.0 扩：覆盖用户寄存器区 300~999）
 
     explicit NvramStore(std::string file) : file_(std::move(file)) {}
 
@@ -29,6 +29,9 @@ public:
 
     // 越界/未存 → 0。
     uint16_t get(int reg) const;
+
+    // 是否有持久化记录（Modbus persist 条目恢复用）
+    bool has(int reg) const;
 
     // 更新 + 立即落盘；值未变化时跳过写盘。失败返回 false 并给出原因。
     bool set(int reg, uint16_t v, std::string* err = nullptr);

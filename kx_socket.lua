@@ -17,7 +17,8 @@ end
 port_tag_declare = function()
     pcall(PORT_INFO, COM_PORT, "4321 ASCII 服务端", "—")
     pcall(PORT_INFO, SCALE_CH, "称重网关 TCP 客户端", "Modbus 主站")
-    pcall(PORT_INFO, MB_CH,    "Modbus-TCP 从站(502)", "从站")
+    -- 502 已由固件从站独占（MB_WIRE=false）：不再声明脚本端口标签；
+    -- 面板的连接行来自固件客户端快照（debug_server conn 事件，tag="Modbus-TCP 从站(502·固件)"）
 end
 
 

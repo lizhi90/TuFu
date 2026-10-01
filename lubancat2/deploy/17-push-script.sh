@@ -10,14 +10,31 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 DEST=/userdata/kine-x/scripts
 TMP=/tmp/kx_push_script.md5
 
+# ★前置检查（v0.12.2）：本脚本 MB_WIRE=false，依赖固件内建 502（含 D12 且已放行 config/modbus.enable）。
+#   若板端固件缺失而脚本先上，502 将无人服务（触摸屏/机器人失联）——默认中止，FORCE=1 可跳过。
+if [ "${FORCE:-0}" != "1" ]; then
+  PRE="$(printf 'test -f /userdata/kine-x/config/modbus.enable && grep -aq "mbreg.get" /opt/kine-x/bin/kine-x && echo KX_PREFLIGHT_OK\n' | bash "$HERE/ssh_run.sh" - 2>/dev/null | tr -d "\r")"
+  if ! printf '%s' "$PRE" | grep -q KX_PREFLIGHT_OK; then
+    echo "✘ 前置检查未通过：板端缺少 D12 固件或 config/modbus.enable"
+    echo "  本脚本不再监听 502（MB_WIRE=false），先部署含 D12 的 kine-x 并创建 enable 文件，或 FORCE=1 强制推送"
+    exit 1
+  fi
+  echo "✓ 前置检查通过（固件 D12 + modbus.enable）"
+fi
+
+# 先清理板端退役残留（kx_regmap.lua/.mbmap），否则会进入下面 md5 glob 造成"必然不一致"
+printf 'rm -f %s/kx_regmap.lua %s/.mbmap\n' "$DEST" "$DEST" | bash "$HERE/ssh_run.sh" - >/dev/null 2>&1 || true
+
 {
   printf 'set -e\n'
   printf "cat > %s/demo.lua <<'KXEOF'\n" "$DEST"; cat "$ROOT/EtherCAT_SocketServer.lua"; printf 'KXEOF\n'
   for f in "$ROOT"/kx_*.lua; do
       [ -f "$f" ] || continue
+      [ "$(basename "$f")" = "kx_regmap.lua" ] && continue    # ★P3b 已退役（不部署；D12 取代用户寄存器层）
       printf "cat > %s/%s <<'KXEOF'\n" "$DEST" "$(basename "$f")"; cat "$f"; printf 'KXEOF\n'
   done
-  printf 'md5sum %s/demo.lua %s/kx_*.lua\n' "$DEST" "$DEST"
+  printf 'md5sum %s/demo.lua %s/kx_*.lua' "$DEST" "$DEST"
+  printf '\n'
 } | bash "$HERE/ssh_run.sh" - > "$TMP" || exit 1
 
 ok=1

@@ -238,7 +238,8 @@ end
 
 local function modbus_step()
     -- 打开/重试监听 502（无 CAP_NET_BIND_SERVICE 时权限不足，明确报错不伪装；5s 重试）
-    if modbus_state.opened == 0 then
+    -- ★P3b：MB_WIRE=false → 不再监听（固件从站接管，见 config/modbus.enable）
+    if MB_WIRE and modbus_state.opened == 0 then
         if elapsed(modbus_state.logt) <= 5000 then return end
         modbus_state.logt = now()
         local ok, err = pcall(OPEN, MB_CH, "TCP_SERVER", MB_PORT)
@@ -252,6 +253,7 @@ local function modbus_step()
         end
     end
 
+    if MB_WIRE then
     -- 连接状态变化（多客户端：触摸屏/机器人等可同时连 502，各自独立会话）
     local ncl = PORT_CLIENTS(MB_CH)                         -- 顺带推进 accept
     if ncl ~= (modbus_state.nclold or 0) then
@@ -318,6 +320,7 @@ local function modbus_step()
                             modbus_state.frames, modbus_state.lastfc, modbus_state.bad_uid,
                             ncl, rxbytes))
     end
+    end -- MB_WIRE
 
     -- ---- HMI 业务逻辑（等价旧 modbus_task）----
     -- 输入区：4x0 int16 / 4x1 float32 -> hmi 值 + 新数据标志 + 计数

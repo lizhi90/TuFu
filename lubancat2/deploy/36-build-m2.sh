@@ -91,6 +91,8 @@ build_one kine-x src/main.cpp src/common/config.cpp \
   src/script/engine_rule.cpp src/script/lua_engine.cpp \
   src/script/debug_server.cpp src/script/boot_config.cpp src/script/port_config.cpp \
   src/script/nvram_store.cpp \
+  src/modbus/modbus_config.cpp src/modbus/modbus_server.cpp \
+  src/modbus/modbus_master_config.cpp src/modbus/modbus_master.cpp \
   src/script/source_include.cpp || exit 1
 
 # ---- 自检工具 ----

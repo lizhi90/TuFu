@@ -1,10 +1,15 @@
 // motion_host.cpp —— 脚本设备命令 -> kx::Shared 的翻译层
 #include "script/motion_host.h"
 
+#include "modbus/modbus_master.h"
+#include "modbus/modbus_server.h"
+
 #include "script/nvram_store.h"
 
 #include <chrono>
 #include <cstring>
+#include <fstream>
+#include <sstream>
 #include <thread>
 
 namespace kx {
@@ -220,6 +225,107 @@ int MotionHost::call(const std::string& name, const std::vector<Value>& args,
             return 0;
         }
         if (ret) *ret = Value::number(sh_->snapshot(ax).inc_per_mm);
+        return 0;
+    }
+
+    // ---- MBD_STATUS/MBD_LIST：Modbus 主站状态/清单（planA/21；P4）----
+    if (name == "MBD_STATUS" || name == "MBD_LIST") {
+        if (!master_) return fail("未启用 Modbus 主站（固件 ModbusMaster 未接线）");
+        if (name == "MBD_LIST") {
+            if (ret) *ret = Value::text(master_->list_text());
+            return 0;
+        }
+        std::string dev;
+        if (!args.empty() && args[0].type == Value::STR) dev = args[0].str;
+        if (ret) *ret = Value::text(master_->status_text(dev));
+        return 0;
+    }
+
+    // ---- MBREG_ZONE/MBREG_PUT：按区读写 4x（脚本与固件库存同步；planA/20 P3b）----
+    if (name == "MBREG_ZONE" || name == "MBREG_PUT") {
+        if (!mb_) return fail("未启用 Modbus 固件库存（ModbusServer 未接线）");
+        if (name == "MBREG_ZONE") {
+            if (args.size() < 2 || args[0].type != Value::NUM || args[1].type != Value::NUM) {
+                return fail("MBREG_ZONE 需要 (start, count)");
+            }
+            const int st = (int)args[0].num, cnt = (int)args[1].num;
+            if (st < 0 || cnt < 1 || st + cnt > 65536 || cnt > 1024) {
+                return fail("MBREG_ZONE 参数越界（0<=start、1<=count<=1024、start+count<=65536）");
+            }
+            if (ret) *ret = Value::text(mb_->read_zone(st, cnt));
+            return 0;
+        }
+        if (args.size() < 2 || args[0].type != Value::NUM || args[1].type != Value::STR) {
+            return fail("MBREG_PUT 需要 (start, packed)");
+        }
+        mb_->write_zone((int)args[0].num, args[1].str);
+        return 0;
+    }
+
+    // ---- MB_READ/MB_WRITE/MB_LIST：Modbus 组态变量按名访问（planA/20；固件 ModbusServer）----
+    if (name == "MB_READ" || name == "MB_WRITE" || name == "MB_LIST") {
+        if (!mb_) return fail("未启用 Modbus 组态（固件 ModbusServer 未接线）");
+        if (name == "MB_LIST") {
+            if (ret) *ret = Value::text(mb_->list_text());
+            return 0;
+        }
+        if (args.empty() || args[0].type != Value::STR) {
+            return fail(name + " 需要变量名（字符串；MB_LIST() 可查看）");
+        }
+        std::string merr;
+        if (name == "MB_READ") {
+            double v = 0;
+            if (mb_->read_name(args[0].str, &v, &merr)) {
+                if (ret) *ret = Value::number(v);
+                return 0;
+            }
+            // 主站回退：“设备.点位”（planA/21）
+            if (master_) {
+                const size_t dot = args[0].str.rfind('.');
+                if (dot != std::string::npos) {
+                    std::string derr;
+                    if (master_->read_point(args[0].str.substr(0, dot),
+                                            args[0].str.substr(dot + 1), &v, &derr)) {
+                        if (ret) *ret = Value::number(v);
+                        return 0;
+                    }
+                    return fail(derr);
+                }
+            }
+            return fail(merr);
+        }
+        if (args.size() < 2 || args[1].type != Value::NUM) {
+            return fail("MB_WRITE 需要变量名与数值");
+        }
+        if (mb_->write_name(args[0].str, args[1].num, &merr)) return 0;
+        if (master_) {
+            const size_t dot = args[0].str.rfind('.');
+            if (dot != std::string::npos) {
+                std::string derr;
+                if (master_->write_point(args[0].str.substr(0, dot),
+                                         args[0].str.substr(dot + 1), args[1].num, &derr)) {
+                    return 0;
+                }
+                return fail(derr);
+            }
+        }
+        return fail(merr);
+    }
+
+    // ---- REGMAP_GET()：Modbus 寄存器表文本（脚本目录 .mbmap）----
+    //   Kine-X 用户寄存器（4x300~999）配置载体：脚本每秒轮询本命令做热加载；
+    //   写入由调试口 D11 `mbmap.set` 完成（原子写）；本命令只读。
+    if (name == "REGMAP_GET") {
+        std::string text;
+        if (!regmap_dir_.empty()) {
+            std::ifstream f(regmap_dir_ + "/.mbmap", std::ios::binary);
+            if (f) {
+                std::stringstream ss;
+                ss << f.rdbuf();
+                text = ss.str();
+            }
+        }
+        if (ret) *ret = Value::text(text);
         return 0;
     }
 

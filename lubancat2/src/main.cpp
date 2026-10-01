@@ -16,6 +16,7 @@
 #include <csignal>
 #include <cstdio>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <memory>
 #include <sstream>
@@ -30,6 +31,8 @@
 #include "motion/interp.h"
 #include "motion/rt_util.h"
 #include "script/boot_config.h"    // D8：主文件（开机运行）清单
+#include "modbus/modbus_master.h"   // 固件 Modbus 主站（产品内建；planA/21）
+#include "modbus/modbus_server.h"   // 固件 Modbus 从站（产品内建；planA/20）
 #include "script/port_config.h"    // D9：端口数量上限（.portmax）
 #include "script/port_manager.h"   // D9：运行期端口上限（全局）
 #include "script/debug_server.h"
@@ -444,7 +447,8 @@ void sdo_loop(EthercatMaster& master, ParamsMailbox& pmb) {
 //   * 进程退出时由 g_running 触发中止，脚本不会卡住关机。
 // ---------------------------------------------------------------------------
 void script_loop(Shared& sh, const AppConfig& cfg, std::atomic<bool>& running,
-                 std::atomic<bool>& abort_flag) {
+                 std::atomic<bool>& abort_flag, kx::NvramStore* nvram,
+                 kx::ModbusServer* mb_server, kx::ModbusMaster* mb_master) {
     // 0) 解析开机脚本（用户拍板 2026-09-26，方案 A）：
     //    DEBUG_SCRIPT_DIR/.boot 清单（插件「控制器文件 → 设为主文件」）优先，语言按扩展名；
     //    否则回退旧配置 SCRIPT_FILE + SCRIPT_ENGINE；两者都没有 → 不启动脚本。
@@ -528,18 +532,13 @@ void script_loop(Shared& sh, const AppConfig& cfg, std::atomic<bool>& running,
     MotionHost::Config hcfg;
     hcfg.move_timeout_ms  = (int)cfg.axis[0].timeout_ms + 2000;   // 兜底应大于定位超时
     hcfg.enable_timeout_ms= 5000;
-    // NVRAM：4x 寄存器持久化（NVSET/NVGET；文件=脚本目录内隐藏文件 .nvram；与 .portmax/.boot 同类）
-    kx::NvramStore nvram(boot_dir + "/.nvram");
-    {
-        std::string nverr;
-        nvram.load(&nverr);
-        if (!nverr.empty()) std::fprintf(stderr, "[nvram] %s\n", nverr.c_str());
-        std::printf("[nvram] 已加载 %d 条持久化记录（%s）\n", nvram.count(), nvram.file().c_str());
-    }
     MotionHost host(sh, hcfg);
     // 退出信号 -> 脚本中止；必须传「true=中止」的 g_abort（g_running 语义相反，传错会秒退）
     host.set_abort_flag(&abort_flag);
-    host.set_nvram(&nvram);                       // NVSET/NVGET 的目标存储
+    host.set_nvram(nvram);                        // NVSET/NVGET 的目标存储（main 装配）
+    host.set_modbus(mb_server);                   // MB_READ/MB_WRITE/MB_LIST（固件 ModbusServer）
+    host.set_master(mb_master);                   // MBD_STATUS/MBD_LIST 与“设备.点位”回退（主站）
+    host.set_regmap_dir(boot_dir);                // REGMAP_GET：.mbmap（Modbus 寄存器表）所在目录
     host.set_output([](const std::string& s) { std::printf("[script] %s\n", s.c_str()); });
 
     // 经单引擎槽装载：同一时刻只允许一个引擎（重复装载会被拒绝）
@@ -770,6 +769,79 @@ int main(int argc, char** argv) {
     }
     const bool boot_usable = !boot_bi.name.empty() && boot_bi.valid;
 
+    // ---- 进程级服务：NVRAM 持久化 + 固件 Modbus 从站（产品内建；planA/20）----
+    kx::NvramStore nvram(boot_dir + "/.nvram");
+    {
+        std::string nverr;
+        nvram.load(&nverr);
+        if (!nverr.empty()) std::fprintf(stderr, "[nvram] %s\n", nverr.c_str());
+        std::printf("[nvram] 已加载 %d 条持久化记录（%s）\n", nvram.count(), nvram.file().c_str());
+    }
+    const char* kMbCfgPath = "/userdata/kine-x/config/modbus.json";
+    kx::ModbusServer mb_server(&nvram);
+    mb_server.set_log([](const std::string& s2) { std::printf("%s\n", s2.c_str()); });
+    {
+        std::error_code ec;
+        std::filesystem::create_directories("/userdata/kine-x/config", ec);
+        std::string mbtext;
+        {
+            std::ifstream f(kMbCfgPath, std::ios::binary);
+            if (f) {
+                std::stringstream ss;
+                ss << f.rdbuf();
+                mbtext = ss.str();
+            }
+        }
+        if (!mbtext.empty()) {
+            std::string mberr;
+            if (mb_server.load_config_text(mbtext, &mberr)) {
+                std::printf("[mbreg] 组态载入 %d 条（%s）\n", mb_server.entry_count(), kMbCfgPath);
+            } else {
+                std::fprintf(stderr, "[mbreg] 组态加载失败：%s（以空表运行）\n", mberr.c_str());
+            }
+        } else {
+            std::printf("[mbreg] 未组态（%s 缺失），以空表运行\n", kMbCfgPath);
+        }
+        // ★过渡开关（2026-10-01 P3a）：Lua 脚本 502 仍在运行时**不得**让固件从站抢端口
+        //   （启动竞态：固件先绑 → 脚本 OPEN 失败 → 屏/机器人被空组态引擎接管）。
+        //   P3b 正式切换：退役脚本 502 后创建 config/modbus.enable，固件从站即随重启独占 502。
+        //   产品形态（无脚本 502）默认应启用；本工程过渡期以该文件显式放行。
+        if (std::filesystem::exists("/userdata/kine-x/config/modbus.enable")) {
+            mb_server.start(502);
+            std::printf("[mbreg] 固件从站已启用（config/modbus.enable 存在）\n");
+        } else {
+            std::printf("[mbreg] 固件从站未启动（缺 config/modbus.enable；P3 切换时创建）\n");
+        }
+    }
+
+    // ---- 固件 Modbus 主站（产品内建；planA/21 P4）：组态 config/modbus_master.json ----
+    const char* kMbDevCfgPath = "/userdata/kine-x/config/modbus_master.json";
+    kx::ModbusMaster mb_master(&mb_server);
+    mb_master.set_log([](const std::string& s3) { std::printf("%s\n", s3.c_str()); });
+    {
+        std::string dtext;
+        {
+            std::ifstream f(kMbDevCfgPath, std::ios::binary);
+            if (f) {
+                std::stringstream ss;
+                ss << f.rdbuf();
+                dtext = ss.str();
+            }
+        }
+        if (!dtext.empty()) {
+            std::string derr;
+            if (mb_master.load_config_text(dtext, &derr)) {
+                std::printf("[mbdev] 主站组态载入 %d 设备（%s）\n", mb_master.device_count(),
+                            kMbDevCfgPath);
+            } else {
+                std::fprintf(stderr, "[mbdev] 主站组态加载失败：%s（以空表运行）\n", derr.c_str());
+            }
+        } else {
+            std::printf("[mbdev] 未组态（%s 缺失），以空表运行\n", kMbDevCfgPath);
+        }
+        mb_master.start();
+    }
+
     std::thread th_script;
     const bool script_on = cfg.script.enable && (boot_usable || !cfg.script.file.empty());
     if (script_on) {
@@ -778,7 +850,7 @@ int main(int argc, char** argv) {
                     boot_usable ? boot_bi.name.c_str() : "(none)",
                     cfg.script.file.empty() ? "(none)" : cfg.script.file.c_str());
         th_script = std::thread(script_loop, std::ref(sh), std::cref(cfg), std::ref(g_running),
-                                std::ref(g_abort));
+                                std::ref(g_abort), &nvram, &mb_server, &mb_master);
     } else if (cfg.script.enable) {
         std::printf("[main] SCRIPT_ENABLE=1 但未配置开机脚本（.boot 主文件 / SCRIPT_FILE 均为空），跳过\n");
     }
@@ -807,6 +879,8 @@ int main(int argc, char** argv) {
                         dbg->port(),
                         script_on ? "D1；脚本引擎被自动脚本占用，D2/D4/D5 不可用"
                                   : "D1~D8；脚本语言由 DEBUG_SCRIPT_DIR 内现有脚本绑定");
+            dbg->set_modbus(&mb_server, kMbCfgPath);   // D12：mbreg.get/set（Modbus 组态）
+            dbg->set_master(&mb_master, kMbDevCfgPath); // D13：mbdev.get/set/status（主站组态）
         } else {
             std::printf("[main] 调试通道监听失败(%s:%d): %s\n", cfg.debug_cfg.bind.c_str(),
                         cfg.debug_cfg.port, derr.c_str());
@@ -841,6 +915,8 @@ int main(int argc, char** argv) {
 
     std::printf("\n[main] 收到退出信号，正在停止…\n");
     if (dbg) { dbg->stop(); dbg.reset(); }   // 先停调试口：它会叫停在跑的脚本并断开客户端
+    mb_server.stop();                        // 固件 Modbus 从站（D12/502）
+    mb_master.stop();                        // 固件 Modbus 主站（D13/P4）
     if (th_script.joinable()) th_script.join();
     if (th_sdo.joinable())    th_sdo.join();
     if (th_rt.joinable())     th_rt.join();

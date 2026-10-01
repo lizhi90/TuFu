@@ -1,0 +1,870 @@
+{
+  "version": 1,
+  "station": 1,
+  "registers": [
+    {
+      "name": "r0",
+      "addr": "4x0",
+      "type": "i16",
+      "access": "rw",
+      "persist": false,
+      "desc": "HMI 数据1（屏写入 → 脚本 `hmi_val(1)`）"
+    },
+    {
+      "name": "r1",
+      "addr": "4x1",
+      "type": "f32",
+      "access": "rw",
+      "persist": false,
+      "desc": "HMI 数据2（屏写入 → `hmi_val(2)`）"
+    },
+    {
+      "name": "r3",
+      "addr": "4x3",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "**轴状态码（2026-09-29 现场定义，取代旧位域）**：0 总线未就绪 / 1 就绪·未使能 / 2 就绪·已使能(空闲) / 3 运行中(已使能) / 4 报警 / 5 安全联锁（机器人急停/故障→强制去使能）；屏端用「多状态指示"
+    },
+    {
+      "name": "r4",
+      "addr": "4x4",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "4x0 回写（数据1 原样回读）"
+    },
+    {
+      "name": "r5",
+      "addr": "4x5",
+      "type": "f32",
+      "access": "r",
+      "persist": false,
+      "desc": "4x1/2 回写（数据2 原样回读）"
+    },
+    {
+      "name": "r9",
+      "addr": "4x9",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "总线轴数（恒 1）"
+    },
+    {
+      "name": "r10",
+      "addr": "4x10",
+      "type": "f32",
+      "access": "r",
+      "persist": false,
+      "desc": "轴0 MPOS 反馈位置（mm）"
+    },
+    {
+      "name": "r12",
+      "addr": "4x12",
+      "type": "f32",
+      "access": "r",
+      "persist": false,
+      "desc": "轴0 DPOS 指令位置（mm）"
+    },
+    {
+      "name": "r28",
+      "addr": "4x28",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "校准点重量输入（**十进制整数、不带小数点：最小 1g 输 1，10g 输 10**）；提交时按比例系数（4x132/133，默认 ×100）换算为模块计数"
+    },
+    {
+      "name": "r29",
+      "addr": "4x29",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "已提交点数（0~10）"
+    },
+    {
+      "name": "r30",
+      "addr": "4x30",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "**1 = 提交当前点**（首次自动关写保护 + 设 10 点折线；满 10 点后再提交有效重量=自动开始新一轮）；**2 = 重置计数**；处理完自动回 0"
+    },
+    {
+      "name": "r31",
+      "addr": "4x31",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "结果码：0 空闲 / 1 成功 / 2 重量无效 / 3 已满（仅无效重量时）/ 4 未连接"
+    },
+    {
+      "name": "r60",
+      "addr": "4x60",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "**命令字（写区）**（**上升沿**）：bit0 使能 / bit1 去使能 / **bit2 急停** / bit3 重扫总线；⚠ 「已使能**状态**」不在本寄存器——读 **4x3**（=2/3 表示已使能）"
+    },
+    {
+      "name": "r61",
+      "addr": "4x61",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "目标轴号（单轴固定 0）"
+    },
+    {
+      "name": "r62",
+      "addr": "4x62",
+      "type": "f32",
+      "access": "w",
+      "persist": false,
+      "desc": "目标位置（mm）"
+    },
+    {
+      "name": "r64",
+      "addr": "4x64",
+      "type": "f32",
+      "access": "w",
+      "persist": true,
+      "desc": "速度（mm/s）；**★掉电保持（.nvram）**；**旧屏兼容**：int16=显示值×10（≥1 时生效），<1 再按浮点解释；`4x65` 被浮点高字占用（旧“模式”失效）"
+    },
+    {
+      "name": "r66",
+      "addr": "4x66",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "运动触发（**上升沿**）：默认绝对定位；旧模式（int16 速度且 4x65=1）=相对定位"
+    },
+    {
+      "name": "r67",
+      "addr": "4x67",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "点动触发：**上升沿启动 / 0 停止**"
+    },
+    {
+      "name": "r68",
+      "addr": "4x68",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "点动方向：**1 = 正 / -1（0xFFFF）= 负**（脚本还原符号）"
+    },
+    {
+      "name": "r69",
+      "addr": "4x69",
+      "type": "f32",
+      "access": "w",
+      "persist": true,
+      "desc": "点动速度（mm/s）；**★掉电保持（.nvram）**；旧屏兼容同 4x64/65"
+    },
+    {
+      "name": "r71",
+      "addr": "4x71",
+      "type": "i16",
+      "access": "w",
+      "persist": true,
+      "desc": "**地轨运动速度**（mm/s，**直接整数**，如 250 = 250 mm/s；2026-09-30 晚由\"显示值×10\"改直接）；**★掉电保持**"
+    },
+    {
+      "name": "r72",
+      "addr": "4x72",
+      "type": "i16",
+      "access": "w",
+      "persist": true,
+      "desc": "**地轨加减速度**（mm/s²，加速与减速度共用，整数）；**★掉电保持**"
+    },
+    {
+      "name": "r73",
+      "addr": "4x73",
+      "type": "i16",
+      "access": "w",
+      "persist": true,
+      "desc": "**地轨速度曲线选项**：1=梯形（默认，短程自动成三角形）/ 2=三角形（短程自动）/ 3=S 曲线（50ms）；**★掉电保持**"
+    },
+    {
+      "name": "r74",
+      "addr": "4x74",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "**地轨参数「确定」**：写 1 应用（SPEED/ACCEL/DECEL + 内核缺省 + SRAMP；处理完自动回 0）"
+    },
+    {
+      "name": "r75",
+      "addr": "4x75",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "**轴使能按钮**（2026-09-29）：写 1 触发（上升沿/写即触发，处理完自动回 0）；**安全联锁（机器人急停 4x145）期间或总线未就绪时拒绝并日志**（4x147 故障不参与联锁，2026-09-29 晚）；使能状态读 4x"
+    },
+    {
+      "name": "r120",
+      "addr": "4x120",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "状态字（位域）：bit0 通讯正常 / bit1 数据有效 / bit2 通讯出错超时 / bit3 通道已连接 / bit4 命令执行中 / bit5 命令成功 / bit6 命令失败"
+    },
+    {
+      "name": "r121",
+      "addr": "4x121",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "错误计数"
+    },
+    {
+      "name": "r122",
+      "addr": "4x122",
+      "type": "f32",
+      "access": "r",
+      "persist": false,
+      "desc": "**重量（显示值，低字在前）** ← 屏上重量显示用这个"
+    },
+    {
+      "name": "r124",
+      "addr": "4x124",
+      "type": "f32",
+      "access": "r",
+      "persist": false,
+      "desc": "原始计数（= 显示值 × 比例系数；诊断用）"
+    },
+    {
+      "name": "r126",
+      "addr": "4x126",
+      "type": "f32",
+      "access": "r",
+      "persist": false,
+      "desc": "内码（AD 原始值）"
+    },
+    {
+      "name": "r128",
+      "addr": "4x128",
+      "type": "f32",
+      "access": "r",
+      "persist": false,
+      "desc": "零点内码（零点校准瞬间记录）"
+    },
+    {
+      "name": "r130",
+      "addr": "4x130",
+      "type": "i16",
+      "access": "rw",
+      "persist": true,
+      "desc": "模块站号（1~247）；**★掉电保持（.nvram）**"
+    },
+    {
+      "name": "r131",
+      "addr": "4x131",
+      "type": "i16",
+      "access": "rw",
+      "persist": true,
+      "desc": "轮询周期 ms（20~5000，非法回落默认）；**★掉电保持（.nvram）**"
+    },
+    {
+      "name": "r132",
+      "addr": "4x132",
+      "type": "f32",
+      "access": "rw",
+      "persist": true,
+      "desc": "重量比例系数（默认 100；换算 显示值 = 原始计数 ÷ 系数）；**★掉电保持（.nvram）**"
+    },
+    {
+      "name": "r134",
+      "addr": "4x134",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "命令字（**上升沿**）：1 去皮 / 2 取消去皮 / 3 零点校准 / 4 清错误"
+    },
+    {
+      "name": "r135",
+      "addr": "4x135",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "命令结果：0 空闲 / 1 执行中 / 2 成功 / 3 失败"
+    },
+    {
+      "name": "r136",
+      "addr": "4x136",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "**称重状态码（多状态屏显）**：0 空闲 / 1 未连接 / 2 通讯出错超时 / 3 已连接等数据 / 4 数据有效（常态）/ 5 命令执行中 / 6 命令成功（保持 2s）/ 7 命令失败（保持 2s）"
+    },
+    {
+      "name": "r140",
+      "addr": "4x140",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "状态字：bit0 连接 / bit1 通讯 / bit2 报警 / bit3 待发 / bit4 监控已建立"
+    },
+    {
+      "name": "r141",
+      "addr": "4x141",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "错误计数"
+    },
+    {
+      "name": "r142",
+      "addr": "4x142",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "累计报文数"
+    },
+    {
+      "name": "r202",
+      "addr": "4x202",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "状态码：0 未连接 / 1 已连接·未使能485 / 2 就绪 / 3 运行中 / 4 通讯超时 / 5 泵错误"
+    },
+    {
+      "name": "r203",
+      "addr": "4x203",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "命令码（写即触发、自动回 0）：1 启动 / 2 停止 / 3 写转速(取 4x204) / 4 重新使能485 / 5 全速ON / 6 全速OFF"
+    },
+    {
+      "name": "r204",
+      "addr": "4x204",
+      "type": "i16",
+      "access": "w",
+      "persist": true,
+      "desc": "设定转速 rpm（1~300，越界本地拒绝）；**★掉电保持（.nvram）**"
+    },
+    {
+      "name": "r205",
+      "addr": "4x205",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "读回转速 rpm"
+    },
+    {
+      "name": "r206",
+      "addr": "4x206",
+      "type": "f32",
+      "access": "r",
+      "persist": false,
+      "desc": "读回流速 ml/min（低字在前）"
+    },
+    {
+      "name": "r208",
+      "addr": "4x208",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "方向：1 左 / 2 右 / 0 未知"
+    },
+    {
+      "name": "r209",
+      "addr": "4x209",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "业务错误码（泵输入寄存器 50，0=无错）"
+    },
+    {
+      "name": "r210",
+      "addr": "4x210",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "控制方式：0 内控 / 1 外控 / 2 485"
+    },
+    {
+      "name": "r211",
+      "addr": "4x211",
+      "type": "f32",
+      "access": "w",
+      "persist": true,
+      "desc": "按圈数运行·圈数（1.5=一圈半）；**★掉电保持（.nvram）**"
+    },
+    {
+      "name": "r213",
+      "addr": "4x213",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "按圈数运行（写 1；先下发设定转速，到时自动停；4x203=2 中途停）"
+    },
+    {
+      "name": "r214",
+      "addr": "4x214",
+      "type": "i16",
+      "access": "rw",
+      "persist": true,
+      "desc": "**输送管数量（并联管数 N）**：1~99（非法按 1）；**★掉电保持（.nvram）**；圈数↔容积换算按「单管 ml/圈 × N」：223 ×N、227 ÷N、229 ÷N（2026-09-30）"
+    },
+    {
+      "name": "r215",
+      "addr": "4x215",
+      "type": "i16",
+      "access": "rw",
+      "persist": true,
+      "desc": "回吸角度（0=关闭；10~720°；读回仅变化时刷新）；**★掉电保持（存于泵内）**"
+    },
+    {
+      "name": "r217",
+      "addr": "4x217",
+      "type": "i16",
+      "access": "rw",
+      "persist": true,
+      "desc": "回吸速度 rpm（10~300）；**★掉电保持（存于泵内）**"
+    },
+    {
+      "name": "r219",
+      "addr": "4x219",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "回吸参数提交（写 1 下发泵 reg7/reg8）"
+    },
+    {
+      "name": "r221",
+      "addr": "4x221",
+      "type": "f32",
+      "access": "w",
+      "persist": true,
+      "desc": "ml/圈（每转出液量）；**★掉电保持（.nvram）**"
+    },
+    {
+      "name": "r223",
+      "addr": "4x223",
+      "type": "f32",
+      "access": "r",
+      "persist": false,
+      "desc": "预计出液量 ml（1 位小数）= 圈数 × ml/圈 × **输送管数量(4x214)**"
+    },
+    {
+      "name": "r225",
+      "addr": "4x225",
+      "type": "f32",
+      "access": "w",
+      "persist": true,
+      "desc": "设定容积 ml；**★掉电保持（.nvram）**；现场屏元件 ×10 → 控制器 ×0.1 还原 `VOL_IN_SCALE`"
+    },
+    {
+      "name": "r227",
+      "addr": "4x227",
+      "type": "f32",
+      "access": "r",
+      "persist": false,
+      "desc": "预计圈数（1 位小数）= 设定容积 ÷ ml/圈 ÷ **输送管数量(4x214)**"
+    },
+    {
+      "name": "r229",
+      "addr": "4x229",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "容积运行（写 1；自动算圈数并运行）"
+    },
+    {
+      "name": "sta_heartbeat",
+      "addr": "4x1000",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "心跳 → 屏幕 4x142 计数；超时 1.5s 判离线"
+    },
+    {
+      "name": "sta_alarm",
+      "addr": "4x1001",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "报警 → 屏幕 4x147"
+    },
+    {
+      "name": "sta_error_code",
+      "addr": "4x1002",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "错误码（日志码-30000）"
+    },
+    {
+      "name": "sta_estop",
+      "addr": "4x1003",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "急停（受「急停触发电平类型」影响）→ 4x145"
+    },
+    {
+      "name": "sta_soft_estop",
+      "addr": "4x1004",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "软急停"
+    },
+    {
+      "name": "sta_motor",
+      "addr": "4x1005",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "电机上电 → 4x143"
+    },
+    {
+      "name": "sta_operation_mode",
+      "addr": "4x1006",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "→ 4x146"
+    },
+    {
+      "name": "sta_program",
+      "addr": "4x1007",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "当前程序"
+    },
+    {
+      "name": "sta_program_full",
+      "addr": "4x1008",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "程序状态（1 运行/2 HMI 暂停/…/10 急停/11 安全门）→ 4x149"
+    },
+    {
+      "name": "sta_program_speed",
+      "addr": "4x1009",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "程序速度"
+    },
+    {
+      "name": "sta_robot_moving",
+      "addr": "4x1010",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "运动中 → 4x144"
+    },
+    {
+      "name": "sta_robot_is_busy",
+      "addr": "4x1011",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "忙"
+    },
+    {
+      "name": "sta_controller_is_running",
+      "addr": "4x1012",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "控制器运行"
+    },
+    {
+      "name": "sta_home",
+      "addr": "4x1016",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "回零/Home → 4x150"
+    },
+    {
+      "name": "sta_encoder_low_battery",
+      "addr": "4x1017",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "编码器低电量"
+    },
+    {
+      "name": "sta_program_not_run",
+      "addr": "4x1018",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "程序未运行"
+    },
+    {
+      "name": "sta_program_reset",
+      "addr": "4x1019",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "程序复位"
+    },
+    {
+      "name": "sta_safe_door",
+      "addr": "4x1020",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "安全门"
+    },
+    {
+      "name": "sta_jjwc_B",
+      "addr": "4x1021",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "jjwc 配对状态（对应 B 区 `ctrl_jjwc_A`）"
+    },
+    {
+      "name": "sta_ext_estop",
+      "addr": "4x1030",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "外部急停（mini ≥1.0.8.7）"
+    },
+    {
+      "name": "sta_hand_estop",
+      "addr": "4x1031",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "手持急停"
+    },
+    {
+      "name": "sta_tcp_vel_mag",
+      "addr": "4x1071",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "TCP 速度模"
+    },
+    {
+      "name": "r1080",
+      "addr": "4x1080",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "**轴0目标位置**——机器人写；**值变化即触发定位**（适应主站“周期刷新写”风格）"
+    },
+    {
+      "name": "r1082",
+      "addr": "4x1082",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "**轴0运动触发（可选）**：**0→1 沿** → 排程（**防抖 100ms**，期间 1080 变化则取消，避免 1082 先于 1080 到达时误动旧目标）；到期以当前 1080 触发（需已 armed）；**电平保持 1 的周期刷"
+    },
+    {
+      "name": "ext_error_code",
+      "addr": "4x1090",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "远程控制错误码（01 不支持/02 参数/03 控制标志/04 忙碌/…）"
+    },
+    {
+      "name": "ext_resp_set",
+      "addr": "4x1091",
+      "type": "i16",
+      "access": "w",
+      "persist": false,
+      "desc": "远程控制响应完成位"
+    },
+    {
+      "name": "ext_cmd_set",
+      "addr": "4x1100",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "远程控制请求位（写 `ext_request_data` 后置 1）"
+    },
+    {
+      "name": "ext_reset",
+      "addr": "4x1101",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "远程控制总开关（使用期间保持 1）"
+    },
+    {
+      "name": "ext_resp_get",
+      "addr": "4x1102",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "确认并清除上一条响应"
+    },
+    {
+      "name": "ctrl_clear_alarm",
+      "addr": "4x1111",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "清报警 ← 屏幕 4x156"
+    },
+    {
+      "name": "ctrl_estop_reset",
+      "addr": "4x1112",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "急停复位（屏幕新增按钮？）"
+    },
+    {
+      "name": "ctrl_jjwc_A",
+      "addr": "4x1113",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "jjwc 脉冲触发（原「拖动」4x155 已停用，本项暂空）"
+    },
+    {
+      "name": "ctrl_motor_off",
+      "addr": "4x1114",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "去使能 ← 4x153 关"
+    },
+    {
+      "name": "ctrl_motor_on",
+      "addr": "4x1115",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "使能 ← 4x153 开"
+    },
+    {
+      "name": "ctrl_motor_on_off",
+      "addr": "4x1116",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "← 4x153"
+    },
+    {
+      "name": "ctrl_motoron_pptomain_start",
+      "addr": "4x1117",
+      "type": "i16",
+      "access": "rw",
+      "persist": false,
+      "desc": "上电+回主程序+启动（一键）← 4x152 启动；**★主站（屏）可直接写（2026-10-01 现场：屏按钮直写本址；固件组态 access=rw，见 planA/20）**"
+    },
+    {
+      "name": "ctrl_motoron_start",
+      "addr": "4x1118",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "上电+启动"
+    },
+    {
+      "name": "ctrl_pause_motoroff",
+      "addr": "4x1119",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "暂停+下电"
+    },
+    {
+      "name": "ctrl_pptomain",
+      "addr": "4x1120",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "程序指针回 main ← 启动时序/4x157"
+    },
+    {
+      "name": "ctrl_program_start",
+      "addr": "4x1121",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "启动程序 ← 启动时序"
+    },
+    {
+      "name": "ctrl_program_start_stop",
+      "addr": "4x1122",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "启动/停止（同一信号）"
+    },
+    {
+      "name": "ctrl_program_stop",
+      "addr": "4x1123",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "停止程序 ← 4x152 停止"
+    },
+    {
+      "name": "ctrl_set_program_speed",
+      "addr": "4x1124",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "设置程序速度 ← 屏幕速度输入"
+    },
+    {
+      "name": "ctrl_soft_estop",
+      "addr": "4x1125",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "← 急停（4x60 bit2 触发 0，200ms 后回 1）"
+    },
+    {
+      "name": "ctrl_switch_auto_motoron",
+      "addr": "4x1126",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "自动上电"
+    },
+    {
+      "name": "ctrl_switch_operation_auto",
+      "addr": "4x1127",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "切自动 ← 4x154=1"
+    },
+    {
+      "name": "ctrl_switch_operation_auto_manu",
+      "addr": "4x1128",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "← 4x154"
+    },
+    {
+      "name": "ctrl_switch_operation_manu",
+      "addr": "4x1129",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "切手动 ← 4x154=0"
+    },
+    {
+      "name": "r1140",
+      "addr": "4x1140",
+      "type": "i16",
+      "access": "r",
+      "persist": false,
+      "desc": "**轴0运动状态（机器人读）**：**默认 0**；收到位置（4x1080）立即置 0（已受理）→ 到位 **2** / 失败 **4**（**2/4 保持 3 秒后自动回 0**，2026-09-29 晚由 1s 延长——机器人轮询周期较"
+    }
+  ]
+}

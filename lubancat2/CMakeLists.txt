@@ -133,7 +133,10 @@ set_tests_properties(port_script_selftest PROPERTIES TIMEOUT 30)
 add_executable(motion_host_test tools/motion_host_test.cpp
                src/script/motion_host.cpp src/script/port_manager.cpp src/script/script.cpp
                src/script/nvram_store.cpp
-               src/script/lua_engine.cpp)
+               src/script/lua_engine.cpp    src/modbus/modbus_config.cpp
+               src/modbus/modbus_server.cpp
+               src/modbus/modbus_master_config.cpp
+               src/modbus/modbus_master.cpp)
 target_include_directories(motion_host_test PRIVATE src)
 target_link_libraries(motion_host_test PRIVATE pthread lua)
 add_test(NAME motion_host_test COMMAND motion_host_test)
@@ -159,11 +162,37 @@ add_executable(debug_server_test tools/debug_server_test.cpp
                src/script/port_manager.cpp
                src/script/script.cpp
                src/script/engine_rule.cpp
-               src/script/lua_engine.cpp)
+               src/script/lua_engine.cpp
+               src/modbus/modbus_config.cpp
+               src/modbus/modbus_server.cpp
+               src/modbus/modbus_master_config.cpp
+               src/modbus/modbus_master.cpp)
 target_include_directories(debug_server_test PRIVATE src)
 target_link_libraries(debug_server_test PRIVATE lua pthread)
 add_test(NAME debug_server_test COMMAND debug_server_test)
 set_tests_properties(debug_server_test PROPERTIES TIMEOUT 60)
+
+# Modbus 从站引擎（产品化；planA/20）：组态/帧级回环自测，不需要 IgH / 硬件
+add_executable(modbus_server_test tools/modbus_server_test.cpp
+               src/modbus/modbus_server.cpp
+               src/modbus/modbus_config.cpp
+               src/script/nvram_store.cpp)
+target_include_directories(modbus_server_test PRIVATE src)
+target_link_libraries(modbus_server_test PRIVATE pthread)
+add_test(NAME modbus_server_test COMMAND modbus_server_test)
+set_tests_properties(modbus_server_test PROPERTIES TIMEOUT 60)
+
+# Modbus 主站引擎（产品化 P4；planA/21）：以 ModbusServer 当假从站做环回自测
+add_executable(modbus_master_test tools/modbus_master_test.cpp
+               src/modbus/modbus_master.cpp
+               src/modbus/modbus_master_config.cpp
+               src/modbus/modbus_server.cpp
+               src/modbus/modbus_config.cpp
+               src/script/nvram_store.cpp)
+target_include_directories(modbus_master_test PRIVATE src)
+target_link_libraries(modbus_master_test PRIVATE pthread)
+add_test(NAME modbus_master_test COMMAND modbus_master_test)
+set_tests_properties(modbus_master_test PROPERTIES TIMEOUT 60)
 
 # 脚本 CLI：语法检查 + dry 试跑（调试软件的脚本后端雏形）；支持 BASIC 与 Lua 双引擎
 add_executable(script_run tools/script_run.cpp
@@ -225,7 +254,11 @@ if(HAVE_ECRT)
       src/script/boot_config.cpp
       src/script/port_config.cpp
       src/script/nvram_store.cpp
-      src/script/source_include.cpp)
+      src/script/source_include.cpp
+      src/modbus/modbus_config.cpp
+      src/modbus/modbus_server.cpp
+      src/modbus/modbus_master_config.cpp
+      src/modbus/modbus_master.cpp)
   target_include_directories(kine-x PRIVATE ${ECRT_INCLUDE_DIR} src)
   target_link_libraries(kine-x PRIVATE ${ECRT_LIBRARY} pthread rt lua)
 endif()

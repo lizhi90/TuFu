@@ -25,6 +25,8 @@
 #include "common/config.h"
 #include "common/state.h"
 #include "script/debug_server.h"
+#include "modbus/modbus_server.h"
+#include "script/nvram_store.h"
 #include "script/json_lite.h"
 #include "script/port_manager.h"   // D9：占用模拟（进程级占用登记）
 
@@ -672,6 +674,67 @@ int main() {
             CHECK(!has_conn);
         }
         peer_pm.close_port(5);
+    }
+
+    // ---- D11 已废弃（2026-10-01）：不再上报 caps；路由明确 NOT_SUPPORTED（降级不伪装）----
+    {
+        CHECK(call_next(fd, buf, &id, "sys.info", "", &r) && ok_of(r));
+        {
+            const Json* caps = result_of(r) ? result_of(r)->find("caps") : nullptr;
+            bool has = false;
+            if (caps && caps->is_arr())
+                for (const Json& c : caps->arr)
+                    if (c.as_str() == "d11") has = true;
+            CHECK(!has);
+        }
+        CHECK(call_next(fd, buf, &id, "mbmap.get", "", &r) && code_of(r) == "NOT_SUPPORTED");
+        CHECK(call_next(fd, buf, &id, "mbmap.set", "{}", &r) && code_of(r) == "NOT_SUPPORTED");
+    }
+
+    // ---- D12: Modbus 组态（产品化；mbreg.get/set + 热加载）----
+    {
+        NvramStore  nv12("/tmp/kx_dbg_test_modbus.nvram");
+        ModbusServer mb12(&nv12);
+        const std::string mbf = "/tmp/kx_dbg_test_modbus.json";
+        ::remove(mbf.c_str());
+        ds.set_modbus(&mb12, mbf);
+        CHECK(call_next(fd, buf, &id, "sys.info", "", &r) && ok_of(r));
+        {
+            const Json* caps = result_of(r) ? result_of(r)->find("caps") : nullptr;
+            bool has = false;
+            if (caps && caps->is_arr())
+                for (const Json& c : caps->arr)
+                    if (c.as_str() == "d12") has = true;
+            CHECK(has);
+        }
+        CHECK(call_next(fd, buf, &id, "mbreg.get", "", &r) && ok_of(r));
+        CHECK(result_of(r) && result_of(r)->find("exists") &&
+              result_of(r)->find("exists")->as_bool(true) == false);
+        auto esc12 = [](const std::string& s) {
+            std::string o;
+            for (char c : s) {
+                if (c == '\\' || c == '"') o += '\\';
+                o += c;
+            }
+            return o;
+        };
+        const std::string good =
+            "{\"version\":1,\"station\":1,\"registers\":[{\"name\":\"温度\","
+            "\"addr\":\"4x300\",\"type\":\"f32\",\"access\":\"rw\"}]}";
+        CHECK(call_next(fd, buf, &id, "mbreg.set", "{\"text\":\"" + esc12(good) + "\"}", &r) &&
+              ok_of(r));
+        CHECK(result_of(r) && result_of(r)->find("count")->as_int(0) == 1);
+        CHECK(mb12.entry_count() == 1);
+        double v12 = 0;
+        CHECK(mb12.write_name("温度", 12.5, nullptr) && mb12.read_name("温度", &v12, nullptr) &&
+              v12 == 12.5);
+        CHECK(call_next(fd, buf, &id, "mbreg.get", "", &r) && ok_of(r));
+        CHECK(result_of(r) && result_of(r)->find("text")->as_str() == good);   // 已落盘可读回
+        const std::string bad =
+            "{\"registers\":[{\"name\":\"a\",\"addr\":\"4x300\"},{\"name\":\"a\",\"addr\":\"4x301\"}]}";
+        CHECK(call_next(fd, buf, &id, "mbreg.set", "{\"text\":\"" + esc12(bad) + "\"}", &r) &&
+              code_of(r) == "BAD_PARAM");
+        CHECK(mb12.entry_count() == 1 && mb12.read_name("温度", &v12, nullptr));   // 旧表保留
     }
 
     // ---- D8 语言：开机脚本占用引擎时的判定（v0.8.1 修复回归）----

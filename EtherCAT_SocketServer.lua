@@ -56,6 +56,7 @@ IP / 端口 / 报文格式 / 寄存器映射全部不变，上位机与触摸屏
 
 -- ======================== 模块 include（编译前展开；顺序=依赖顺序，勿调换） ========================
 include("kx_base.lua")
+include("kx_mbsync.lua")
 include("kx_bus.lua")
 include("kx_socket.lua")
 include("kx_modbus.lua")
@@ -105,6 +106,10 @@ local function main()
         print("[init] Socket 服务端已开启，端口 " .. SVR_PORT)
     end
     -- 1b) Modbus 502 也先开（对齐 ZMC：Modbus 服务先于总线初始化就绪，触摸屏无需等总线）
+    --     ★P3b/v0.12.2：MB_WIRE=false 时 502 由固件内建从站接管，本脚本不得再尝试 bind（否则每次启动误报占用）
+    if not MB_WIRE then
+        print("[mb] 502 由固件内站接管（MB_WIRE=false；Lua 502 线上处理已退役）")
+    else
     do
         local okmb, ermb = pcall(OPEN, MB_CH, "TCP_SERVER", MB_PORT)
         if okmb then
@@ -113,6 +118,7 @@ local function main()
         else
             print("[mb] 502 监听失败：" .. tostring(ermb) .. "（5s 后重试；需 CAP_NET_BIND_SERVICE）")
         end
+    end
     end
 
     beat_last = now()
@@ -131,7 +137,10 @@ local function main()
     pcall(FASTDEC, 0, FASTDEC_MM)      -- 急停/停机减速度（0=未设置）
     pcall(JOGLEAD, 0, JOG_LEAD_S)      -- ★放最后：命令槽为覆盖式，避免被紧随的 SRAMP/FASTDEC 顶掉
     local jl_check_t = 0               -- ★JOGLEAD 自愈计时（见主循环）
-    if nvram_restore then nvram_restore() end        -- ★掉电保存的屏输入参数恢复（.nvram）
+    local mbn_check_t = 0              -- ★v0.12.2：按名访问名字表刷新计时（组态可变，5s 一次）
+    if mbnames_refresh then mbnames_refresh() end    -- ★v0.12.2：先装载「地址→变量名」映射（按名访问层）
+    if nvram_restore then nvram_restore() end        -- ★掉电保存的屏输入参数恢复（.nvram；已组态地址按名直达固件）
+    if mbsync_pull then mbsync_pull() end            -- ★P3b：从固件库存拉取一次（业务寄存器初值）
     -- ★地轨参数重发已移至 bus_step「进入运行」时刻（2026-09-30）：init 阶段命令槽可能未被 RT 取走
 
     -- 3) 称重/机器人首次 OPEN 由各自 step 负责；总线由 bus_step 分步初始化
@@ -147,6 +156,8 @@ local function main()
 
         -- 网络服务优先：bus_step 里的总线扫描/使能会阻塞本线程，
         -- 先把 Modbus(502) 与上位机(4321) 的应答跑完，触摸屏不被总线动作拖超时。
+        if mbnames_tick then mbnames_tick() end      -- ★v0.12.2：按拍读缓存失效（本拍首读回源固件）
+        safe("mbsync_pull", mbsync_pull)             -- ★P3b：先取固件库存（主站写入/组态值）再跑业务
         safe("modbus", modbus_step)
         safe("socket", socket_step)
         safe("bus", bus_step)
@@ -163,6 +174,11 @@ local function main()
             end
         end
         safe("pump", pump_step)
+        safe("mbsync_push", mbsync_push)             -- ★P3b：本拍脏字按段回推固件（不触碰主站未改写字）
+        if elapsed(mbn_check_t) > 5000 then          -- ★v0.12.2：组态热更新后名称映射自动跟随
+            mbn_check_t = now()
+            safe("mbnames", mbnames_refresh)
+        end
 
         DELAY(2)
     end
@@ -226,6 +242,11 @@ if KX_TEST then
         robot_bridge_cmd = robot_bridge_cmd,
         robot_bridge_init = robot_bridge_init,
         rail_apply = rail_apply,
+        mbsync_pull = mbsync_pull,
+        mbsync_push = mbsync_push,
+        mbnames_refresh = mbnames_refresh,
+        mbnames_tick = mbnames_tick,
+        _set_mb_wire = function(v) MB_WIRE = v end,
         rail_apply_saved = rail_apply_saved,
         robot_axis_apply = robot_axis_apply,
         robot_axis = robot_axis,
